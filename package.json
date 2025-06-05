@@ -31,23 +31,25 @@
   "author": "kirbah",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
-    "dotenv": "^16.4.7",
-    "googleapis": "^129.0.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "dotenv": "^16.5.0",
+    "googleapis": "^150.0.1",
     "tsx": "^4.19.4",
-    "youtube-captions-scraper": "^2.0.0",
-    "zod": "^3.24.2"
+    "youtube-captions-scraper": "^2.0.3",
+    "zod": "^3.25.51"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
+    "@eslint/js": "^9.28.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.15.29",
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
-    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.1",
+    "@typescript-eslint/parser": "^8.33.1",
+    "eslint": "^9.28.0",
     "jest": "^29.7.0",
-    "rimraf": "^5.0.10",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.8.3"
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.3.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1"
   },
   "engines": {
     "node": ">=18.0.0"

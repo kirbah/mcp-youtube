@@ -32,29 +32,8 @@ export const compareVideosHandler = async (
       videoIds: validatedParams.videoIds,
     });
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(comparison, null, 2),
-        },
-      ],
-    };
+    return formatSuccess(comparison);
   } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              error: error.message || "An unknown error occurred",
-              details: error.response?.data,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
+    return formatError(error);
   }
 };

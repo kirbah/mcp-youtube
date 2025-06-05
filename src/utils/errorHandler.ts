@@ -5,7 +5,7 @@ export interface ErrorResponse {
 
 export const formatError = (
   error: any
-): { content: Array<{ type: string; text: string }> } => {
+): { content: Array<{ type: "text"; text: string }> } => {
   const errorResponse: ErrorResponse = {
     error: error.message || "An unknown error occurred",
   };

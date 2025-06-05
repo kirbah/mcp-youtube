@@ -41,29 +41,8 @@ export const getVideoDetailsHandler = async (
     const videoDetailsList = await Promise.all(videoPromises);
     const result = formatVideoMap(validatedParams.videoIds, videoDetailsList);
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
+    return formatSuccess(result);
   } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              error: error.message || "An unknown error occurred",
-              details: error.response?.data,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
+    return formatError(error);
   }
 };

@@ -45,28 +45,8 @@ export const getTranscriptsHandler = async (
     const transcripts = await Promise.all(transcriptPromises);
     const result = formatVideoMap(validatedParams.videoIds, transcripts);
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
+    return formatSuccess(result);
   } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              error: error.message || "An unknown error occurred",
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
+    return formatError(error);
   }
 };

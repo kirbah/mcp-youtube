@@ -1,6 +1,6 @@
 export const formatSuccess = (
   data: any
-): { content: Array<{ type: string; text: string }> } => {
+): { content: Array<{ type: "text"; text: string }> } => {
   return {
     content: [
       {

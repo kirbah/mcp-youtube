@@ -38,29 +38,8 @@ export const searchVideosHandler = async (
       maxResults: validatedParams.maxResults,
     });
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(searchResults, null, 2),
-        },
-      ],
-    };
+    return formatSuccess(searchResults);
   } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              error: error.message || "An unknown error occurred",
-              details: error.response?.data,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
+    return formatError(error);
   }
 };
