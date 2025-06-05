@@ -8,7 +8,6 @@ A Model Context Protocol (MCP) server implementation utilizing the YouTube Data 
 
 - Retrieve detailed video information (title, description, duration, statistics)
 - Search for videos by keywords
-- Get related videos based on a specific video
 - Calculate and analyze video engagement ratios
 
 ### Transcript/Caption Management
@@ -104,13 +103,6 @@ npm run build
 # Run via modelcontextprotocol/inspector
 npm run inspector
 ```
-
-## Network Configuration
-
-The server exposes the following ports for communication:
-
-- HTTP: 3000
-- gRPC: 3001
 
 ## System Requirements
 
