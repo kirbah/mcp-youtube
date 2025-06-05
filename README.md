@@ -38,7 +38,6 @@ The server provides the following MCP tools:
 | `getVideoDetails`         | Get detailed information about multiple YouTube videos including metadata, statistics, and content details | `videoIds` (array)                                                        |
 | `searchVideos`            | Search for videos based on a query string                                                                  | `query`, `maxResults` (optional)                                          |
 | `getTranscripts`          | Retrieve transcripts for multiple videos                                                                   | `videoIds` (array), `lang` (optional)                                     |
-| `getRelatedVideos`        | Get videos related to a specific video based on YouTube's recommendation algorithm                         | `videoId`, `maxResults` (optional)                                        |
 | `getChannelStatistics`    | Retrieve detailed metrics for multiple channels including subscriber count, view count, and video count    | `channelIds` (array)                                                      |
 | `getChannelTopVideos`     | Get the most viewed videos from a specific channel                                                         | `channelId`, `maxResults` (optional)                                      |
 | `getVideoEngagementRatio` | Calculate engagement metrics for multiple videos (views, likes, comments, and engagement ratio)            | `videoIds` (array)                                                        |

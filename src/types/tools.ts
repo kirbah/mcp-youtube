@@ -12,11 +12,6 @@ export interface TranscriptsParams {
   lang?: string;
 }
 
-export interface RelatedVideosParams {
-  videoId: string;
-  maxResults?: number;
-}
-
 export interface ChannelParams {
   channelId: string;
   maxResults?: number;
