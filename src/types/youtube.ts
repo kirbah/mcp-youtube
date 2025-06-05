@@ -72,4 +72,4 @@ export interface CommentInfo {
     };
     totalReplyCount: number;
   };
-} 
+}
