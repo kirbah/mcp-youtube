@@ -1,11 +1,11 @@
 {
-  "name": "mcp-youtube-data",
+  "name": "mcp-youtube",
   "version": "0.0.1",
   "description": "YouTube MCP Server Implementation",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "mcp-youtube-data": "./dist/index.js"
+    "mcp-youtube": "./dist/index.js"
   },
   "files": [
     "dist",
