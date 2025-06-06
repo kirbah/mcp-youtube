@@ -42,9 +42,9 @@ export const searchVideosConfig = {
     maxResults: z
       .number()
       .min(1)
-      .max(50)
+      .max(500)
       .optional()
-      .describe("Maximum number of results to return (1-50, default: 10)"),
+      .describe("Maximum number of results to return (1-500, default: 10)"),
     order: z
       .enum(["relevance", "date", "viewCount"])
       .optional()
