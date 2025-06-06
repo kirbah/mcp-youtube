@@ -6,11 +6,11 @@ export interface LeanVideoDetails {
   channelTitle: string | null | undefined;
   publishedAt: string | null | undefined;
   duration: string | null | undefined;
-  viewCount: string | null | undefined;
-  likeCount: string | null | undefined;
-  commentCount: string | null | undefined;
-  likeToViewRatio: string | null | undefined;
-  commentToViewRatio: string | null | undefined;
+  viewCount: number | null | undefined;
+  likeCount: number | null | undefined;
+  commentCount: number | null | undefined;
+  likeToViewRatio: number | null | undefined;
+  commentToViewRatio: number | null | undefined;
   tags: string[] | null | undefined;
   categoryId: string | null | undefined;
   defaultLanguage: string | null | undefined;
@@ -21,11 +21,11 @@ export interface LeanChannelTopVideo {
   title: string | null | undefined;
   publishedAt: string | null | undefined;
   duration: string | null | undefined;
-  viewCount: string | null | undefined;
-  likeCount: string | null | undefined;
-  commentCount: string | null | undefined;
-  likeToViewRatio: string | null | undefined;
-  commentToViewRatio: string | null | undefined;
+  viewCount: number | null | undefined;
+  likeCount: number | null | undefined;
+  commentCount: number | null | undefined;
+  likeToViewRatio: number | null | undefined;
+  commentToViewRatio: number | null | undefined;
 }
 
 export interface LeanTrendingVideo {
@@ -35,11 +35,11 @@ export interface LeanTrendingVideo {
   channelTitle: string | null | undefined;
   publishedAt: string | null | undefined;
   duration: string | null | undefined;
-  viewCount: string | null | undefined;
-  likeCount: string | null | undefined;
-  commentCount: string | null | undefined;
-  likeToViewRatio: string | null | undefined;
-  commentToViewRatio: string | null | undefined;
+  viewCount: number | null | undefined;
+  likeCount: number | null | undefined;
+  commentCount: number | null | undefined;
+  likeToViewRatio: number | null | undefined;
+  commentToViewRatio: number | null | undefined;
 }
 
 export interface LeanVideoSearchResult {
@@ -54,9 +54,9 @@ export interface LeanVideoSearchResult {
 export interface LeanChannelStatistics {
   channelId: string | null | undefined;
   title: string | null | undefined;
-  subscriberCount: string | null | undefined;
-  viewCount: string | null | undefined;
-  videoCount: string | null | undefined;
+  subscriberCount: number | null | undefined;
+  viewCount: number | null | undefined;
+  videoCount: number | null | undefined;
   createdAt: string | null | undefined;
 }
 

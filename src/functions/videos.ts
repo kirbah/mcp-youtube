@@ -4,6 +4,7 @@ import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
 } from "../utils/engagementCalculator.js";
+import { parseYouTubeNumber } from "../utils/numberParser.js";
 import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
@@ -127,9 +128,11 @@ export class VideoManagement {
       return {
         channelId: channelId,
         title: channel.snippet?.title,
-        subscriberCount: channel.statistics?.subscriberCount,
-        viewCount: channel.statistics?.viewCount,
-        videoCount: channel.statistics?.videoCount,
+        subscriberCount: parseYouTubeNumber(
+          channel.statistics?.subscriberCount
+        ),
+        viewCount: parseYouTubeNumber(channel.statistics?.viewCount),
+        videoCount: parseYouTubeNumber(channel.statistics?.videoCount),
         createdAt: channel.snippet?.publishedAt,
       };
     } catch (error: any) {
@@ -197,23 +200,26 @@ export class VideoManagement {
         }
       }
 
-      return videoDetails.slice(0, targetResults).map((video) => ({
-        id: video.id,
-        title: video.snippet?.title,
-        publishedAt: video.snippet?.publishedAt,
-        duration: video.contentDetails?.duration,
-        viewCount: video.statistics?.viewCount,
-        likeCount: video.statistics?.likeCount,
-        commentCount: video.statistics?.commentCount,
-        likeToViewRatio: calculateLikeToViewRatio(
-          video.statistics?.viewCount,
-          video.statistics?.likeCount
-        ),
-        commentToViewRatio: calculateCommentToViewRatio(
-          video.statistics?.viewCount,
-          video.statistics?.commentCount
-        ),
-      }));
+      return videoDetails.slice(0, targetResults).map((video) => {
+        const viewCount = parseYouTubeNumber(video.statistics?.viewCount);
+        const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
+        const commentCount = parseYouTubeNumber(video.statistics?.commentCount);
+
+        return {
+          id: video.id,
+          title: video.snippet?.title,
+          publishedAt: video.snippet?.publishedAt,
+          duration: video.contentDetails?.duration,
+          viewCount: viewCount,
+          likeCount: likeCount,
+          commentCount: commentCount,
+          likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
+          commentToViewRatio: calculateCommentToViewRatio(
+            viewCount,
+            commentCount
+          ),
+        };
+      });
     } catch (error: any) {
       throw new Error(
         `Failed to retrieve channel's top videos: ${error.message}`
@@ -241,25 +247,30 @@ export class VideoManagement {
       const response = await this.youtube.videos.list(params);
 
       return (
-        response.data.items?.map((video) => ({
-          id: video.id,
-          title: video.snippet?.title,
-          channelId: video.snippet?.channelId,
-          channelTitle: video.snippet?.channelTitle,
-          publishedAt: video.snippet?.publishedAt,
-          duration: video.contentDetails?.duration,
-          viewCount: video.statistics?.viewCount,
-          likeCount: video.statistics?.likeCount,
-          commentCount: video.statistics?.commentCount,
-          likeToViewRatio: calculateLikeToViewRatio(
-            video.statistics?.viewCount,
-            video.statistics?.likeCount
-          ),
-          commentToViewRatio: calculateCommentToViewRatio(
-            video.statistics?.viewCount,
+        response.data.items?.map((video) => {
+          const viewCount = parseYouTubeNumber(video.statistics?.viewCount);
+          const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
+          const commentCount = parseYouTubeNumber(
             video.statistics?.commentCount
-          ),
-        })) || []
+          );
+
+          return {
+            id: video.id,
+            title: video.snippet?.title,
+            channelId: video.snippet?.channelId,
+            channelTitle: video.snippet?.channelTitle,
+            publishedAt: video.snippet?.publishedAt,
+            duration: video.contentDetails?.duration,
+            viewCount: viewCount,
+            likeCount: likeCount,
+            commentCount: commentCount,
+            likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
+            commentToViewRatio: calculateCommentToViewRatio(
+              viewCount,
+              commentCount
+            ),
+          };
+        }) || []
       );
     } catch (error: any) {
       throw new Error(`Failed to retrieve trending videos: ${error.message}`);
