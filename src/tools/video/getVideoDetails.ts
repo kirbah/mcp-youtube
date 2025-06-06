@@ -4,7 +4,10 @@ import { VideoManagement } from "../../functions/videos.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
-import { calculateEngagementRatio } from "../../utils/engagementCalculator.js";
+import {
+  calculateLikeToViewRatio,
+  calculateCommentToViewRatio,
+} from "../../utils/engagementCalculator.js";
 import type { VideoDetailsParams } from "../../types/tools.js";
 import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -60,9 +63,12 @@ export const getVideoDetailsHandler = async (
           viewCount: fullVideoDetails.statistics?.viewCount ?? null,
           likeCount: fullVideoDetails.statistics?.likeCount ?? null,
           commentCount: fullVideoDetails.statistics?.commentCount ?? null,
-          engagementRatio: calculateEngagementRatio(
+          likeToViewRatio: calculateLikeToViewRatio(
             fullVideoDetails.statistics?.viewCount,
-            fullVideoDetails.statistics?.likeCount,
+            fullVideoDetails.statistics?.likeCount
+          ),
+          commentToViewRatio: calculateCommentToViewRatio(
+            fullVideoDetails.statistics?.viewCount,
             fullVideoDetails.statistics?.commentCount
           ),
           tags: fullVideoDetails.snippet?.tags ?? [],

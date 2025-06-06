@@ -9,10 +9,37 @@ export interface LeanVideoDetails {
   viewCount: string | null | undefined;
   likeCount: string | null | undefined;
   commentCount: string | null | undefined;
-  engagementRatio: string | null | undefined;
+  likeToViewRatio: string | null | undefined;
+  commentToViewRatio: string | null | undefined;
   tags: string[] | null | undefined;
   categoryId: string | null | undefined;
   defaultLanguage: string | null | undefined;
+}
+
+export interface LeanChannelTopVideo {
+  id: string | null | undefined;
+  title: string | null | undefined;
+  publishedAt: string | null | undefined;
+  duration: string | null | undefined;
+  viewCount: string | null | undefined;
+  likeCount: string | null | undefined;
+  commentCount: string | null | undefined;
+  likeToViewRatio: string | null | undefined;
+  commentToViewRatio: string | null | undefined;
+}
+
+export interface LeanTrendingVideo {
+  id: string | null | undefined;
+  title: string | null | undefined;
+  channelId: string | null | undefined;
+  channelTitle: string | null | undefined;
+  publishedAt: string | null | undefined;
+  duration: string | null | undefined;
+  viewCount: string | null | undefined;
+  likeCount: string | null | undefined;
+  commentCount: string | null | undefined;
+  likeToViewRatio: string | null | undefined;
+  commentToViewRatio: string | null | undefined;
 }
 
 export interface LeanVideoSearchResult {

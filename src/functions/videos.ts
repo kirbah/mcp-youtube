@@ -1,6 +1,14 @@
 import { google, youtube_v3 } from "googleapis";
 import { getSubtitles } from "youtube-captions-scraper";
-import type { LeanChannelStatistics } from "../types/youtube.js";
+import {
+  calculateLikeToViewRatio,
+  calculateCommentToViewRatio,
+} from "../utils/engagementCalculator.js";
+import type {
+  LeanChannelStatistics,
+  LeanChannelTopVideo,
+  LeanTrendingVideo,
+} from "../types/youtube.js";
 
 export interface VideoOptions {
   videoId: string;
@@ -131,7 +139,10 @@ export class VideoManagement {
     }
   }
 
-  async getChannelTopVideos({ channelId, maxResults = 10 }: ChannelOptions) {
+  async getChannelTopVideos({
+    channelId,
+    maxResults = 10,
+  }: ChannelOptions): Promise<LeanChannelTopVideo[]> {
     try {
       const searchResults: youtube_v3.Schema$SearchResult[] = [];
       let nextPageToken: string | undefined = undefined;
@@ -194,6 +205,14 @@ export class VideoManagement {
         viewCount: video.statistics?.viewCount,
         likeCount: video.statistics?.likeCount,
         commentCount: video.statistics?.commentCount,
+        likeToViewRatio: calculateLikeToViewRatio(
+          video.statistics?.viewCount,
+          video.statistics?.likeCount
+        ),
+        commentToViewRatio: calculateCommentToViewRatio(
+          video.statistics?.viewCount,
+          video.statistics?.commentCount
+        ),
       }));
     } catch (error: any) {
       throw new Error(
@@ -206,7 +225,7 @@ export class VideoManagement {
     regionCode = "US",
     categoryId,
     maxResults = 10,
-  }: TrendingOptions) {
+  }: TrendingOptions): Promise<LeanTrendingVideo[]> {
     try {
       const params: youtube_v3.Params$Resource$Videos$List = {
         part: ["snippet", "statistics", "contentDetails"],
@@ -232,6 +251,14 @@ export class VideoManagement {
           viewCount: video.statistics?.viewCount,
           likeCount: video.statistics?.likeCount,
           commentCount: video.statistics?.commentCount,
+          likeToViewRatio: calculateLikeToViewRatio(
+            video.statistics?.viewCount,
+            video.statistics?.likeCount
+          ),
+          commentToViewRatio: calculateCommentToViewRatio(
+            video.statistics?.viewCount,
+            video.statistics?.commentCount
+          ),
         })) || []
       );
     } catch (error: any) {
