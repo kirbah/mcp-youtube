@@ -35,10 +35,10 @@ export const getTrendingVideosConfig = {
     maxResults: z
       .number()
       .min(1)
-      .max(500)
+      .max(50)
       .optional()
       .describe(
-        "Maximum number of trending videos to return (1-500, default: 10)"
+        "Maximum number of trending videos to return (1-50, default: 10)"
       ),
   },
 };
