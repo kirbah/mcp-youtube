@@ -11,10 +11,6 @@ import {
   getTranscriptsConfig,
   getTranscriptsHandler,
 } from "./video/getTranscripts.js";
-import {
-  compareVideosConfig,
-  compareVideosHandler,
-} from "./video/compareVideos.js";
 
 // Channel tools
 import {
@@ -60,10 +56,6 @@ export const allTools: ToolDefinition[] = [
   {
     config: getTranscriptsConfig,
     handler: getTranscriptsHandler,
-  },
-  {
-    config: compareVideosConfig,
-    handler: compareVideosHandler,
   },
   // Channel tools
   {

@@ -26,7 +26,3 @@ export interface TrendingParams {
   categoryId?: string;
   maxResults?: number;
 }
-
-export interface CompareVideosParams {
-  videoIds: string[];
-}

@@ -22,10 +22,6 @@ export interface TrendingOptions {
   maxResults?: number;
 }
 
-export interface CompareVideosOptions {
-  videoIds: string[];
-}
-
 export class VideoManagement {
   private youtube: youtube_v3.Youtube;
   private readonly MAX_RESULTS_PER_PAGE = 50;
@@ -231,30 +227,6 @@ export class VideoManagement {
       );
     } catch (error: any) {
       throw new Error(`Failed to retrieve trending videos: ${error.message}`);
-    }
-  }
-
-  async compareVideos({ videoIds }: CompareVideosOptions) {
-    try {
-      const response = await this.youtube.videos.list({
-        part: ["snippet", "statistics"],
-        id: videoIds,
-      });
-
-      if (!response.data.items?.length) {
-        throw new Error("No videos found.");
-      }
-
-      return response.data.items.map((video) => ({
-        id: video.id,
-        title: video.snippet?.title,
-        viewCount: video.statistics?.viewCount,
-        likeCount: video.statistics?.likeCount,
-        commentCount: video.statistics?.commentCount,
-        publishedAt: video.snippet?.publishedAt,
-      }));
-    } catch (error: any) {
-      throw new Error(`Failed to compare videos: ${error.message}`);
     }
   }
 }
