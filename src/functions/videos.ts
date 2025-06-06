@@ -177,7 +177,7 @@ export class VideoManagement {
       for (let i = 0; i < videoIds.length; i += this.MAX_RESULTS_PER_PAGE) {
         const batch = videoIds.slice(i, i + this.MAX_RESULTS_PER_PAGE);
         const videosResponse = await this.youtube.videos.list({
-          part: ["snippet", "statistics"],
+          part: ["snippet", "statistics", "contentDetails"],
           id: batch,
         });
 
@@ -190,6 +190,7 @@ export class VideoManagement {
         id: video.id,
         title: video.snippet?.title,
         publishedAt: video.snippet?.publishedAt,
+        duration: video.contentDetails?.duration,
         viewCount: video.statistics?.viewCount,
         likeCount: video.statistics?.likeCount,
         commentCount: video.statistics?.commentCount,
@@ -208,7 +209,7 @@ export class VideoManagement {
   }: TrendingOptions) {
     try {
       const params: youtube_v3.Params$Resource$Videos$List = {
-        part: ["snippet", "statistics"],
+        part: ["snippet", "statistics", "contentDetails"],
         chart: "mostPopular",
         regionCode: regionCode,
         maxResults: maxResults,
@@ -224,10 +225,13 @@ export class VideoManagement {
         response.data.items?.map((video) => ({
           id: video.id,
           title: video.snippet?.title,
+          channelId: video.snippet?.channelId,
           channelTitle: video.snippet?.channelTitle,
           publishedAt: video.snippet?.publishedAt,
+          duration: video.contentDetails?.duration,
           viewCount: video.statistics?.viewCount,
           likeCount: video.statistics?.likeCount,
+          commentCount: video.statistics?.commentCount,
         })) || []
       );
     } catch (error: any) {
