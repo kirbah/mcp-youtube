@@ -57,14 +57,3 @@ const hasResponseData = (
     "data" in error.response
   );
 };
-
-export const handleAsyncError = async <T>(
-  operation: () => Promise<T>,
-  errorMessage: string
-): Promise<T> => {
-  try {
-    return await operation();
-  } catch (error: unknown) {
-    throw new Error(`${errorMessage}: ${getErrorMessage(error)}`);
-  }
-};
