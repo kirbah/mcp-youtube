@@ -26,3 +26,7 @@ export interface TrendingParams {
   categoryId?: string;
   maxResults?: number;
 }
+
+export interface VideoCategoriesParams {
+  regionCode?: string;
+}

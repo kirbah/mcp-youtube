@@ -19,7 +19,7 @@ export const getTrendingVideosSchema = z.object({
 export const getTrendingVideosConfig = {
   name: "getTrendingVideos",
   description:
-    "Retrieves trending videos based on region and category. Returns a list of videos that are currently popular in the specified region and category. Use this when you want to discover what's trending in specific areas or categories. Available category IDs: 1 (Film & Animation), 2 (Autos & Vehicles), 10 (Music), 15 (Pets & Animals), 17 (Sports), 18 (Short Movies), 19 (Travel & Events), 20 (Gaming), 21 (Videoblogging), 22 (People & Blogs), 23 (Comedy), 24 (Entertainment), 25 (News & Politics), 26 (Howto & Style), 27 (Education), 28 (Science & Technology), 29 (Nonprofits & Activism), 30 (Movies), 31 (Anime/Animation), 32 (Action/Adventure), 33 (Classics), 34 (Comedy), 35 (Documentary), 36 (Drama), 37 (Family), 38 (Foreign), 39 (Horror), 40 (Sci-Fi/Fantasy), 41 (Thriller), 42 (Shorts), 43 (Shows), 44 (Trailers).",
+    "Retrieves trending videos based on region and category. Returns a list of videos that are currently popular in the specified region and category. Use this when you want to discover what's trending in specific areas or categories. To get available category IDs and their names, use the getVideoCategories tool first.",
   inputSchema: {
     regionCode: z
       .string()
@@ -31,7 +31,9 @@ export const getTrendingVideosConfig = {
     categoryId: z
       .string()
       .optional()
-      .describe("YouTube category ID to filter trending videos by category"),
+      .describe(
+        "YouTube category ID to filter trending videos by category. Use getVideoCategories tool to get available category IDs."
+      ),
     maxResults: z
       .number()
       .min(1)

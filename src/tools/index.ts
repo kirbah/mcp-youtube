@@ -27,6 +27,10 @@ import {
   getTrendingVideosConfig,
   getTrendingVideosHandler,
 } from "./general/getTrendingVideos.js";
+import {
+  getVideoCategoriesConfig,
+  getVideoCategoriesHandler,
+} from "./general/getVideoCategories.js";
 
 import type { VideoManagement } from "../functions/videos.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -70,5 +74,9 @@ export const allTools: ToolDefinition[] = [
   {
     config: getTrendingVideosConfig,
     handler: getTrendingVideosHandler,
+  },
+  {
+    config: getVideoCategoriesConfig,
+    handler: getVideoCategoriesHandler,
   },
 ];

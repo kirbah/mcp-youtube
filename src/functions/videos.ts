@@ -276,4 +276,22 @@ export class VideoManagement {
       throw new Error(`Failed to retrieve trending videos: ${error.message}`);
     }
   }
+
+  async getVideoCategories(regionCode: string = "US") {
+    try {
+      const response = await this.youtube.videoCategories.list({
+        part: ["snippet"],
+        regionCode: regionCode,
+      });
+
+      const categories = response.data.items?.map((category) => ({
+        id: category.id,
+        title: category.snippet?.title,
+      }));
+
+      return categories || [];
+    } catch (error: any) {
+      throw new Error(`Failed to retrieve video categories: ${error.message}`);
+    }
+  }
 }
