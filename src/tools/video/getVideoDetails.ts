@@ -1,12 +1,11 @@
 import { z } from "zod";
+import { youtube_v3 } from "googleapis";
 import { VideoManagement } from "../../functions/videos.js";
 import { formatError } from "../../utils/errorHandler.js";
-import {
-  formatSuccess,
-  formatVideoMap,
-} from "../../utils/responseFormatter.js";
+import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
 import type { VideoDetailsParams } from "../../types/tools.js";
+import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getVideoDetailsSchema = z.object({
@@ -24,6 +23,15 @@ export const getVideoDetailsConfig = {
   },
 };
 
+const truncateDescription = (
+  description: string | null | undefined,
+  maxLength: number = 1000
+): string | null => {
+  if (!description) return null;
+  if (description.length <= maxLength) return description;
+  return description.substring(0, maxLength) + "...";
+};
+
 export const getVideoDetailsHandler = async (
   params: VideoDetailsParams,
   videoManager: VideoManagement
@@ -31,17 +39,48 @@ export const getVideoDetailsHandler = async (
   try {
     const validatedParams = getVideoDetailsSchema.parse(params);
 
-    const videoPromises = validatedParams.videoIds.map((videoId) =>
-      videoManager.getVideo({
-        videoId,
-        parts: ["snippet", "statistics"],
-      })
+    const videoPromises = validatedParams.videoIds.map(async (videoId) => {
+      try {
+        const fullVideoDetails: youtube_v3.Schema$Video =
+          await videoManager.getVideo({
+            videoId,
+            parts: ["snippet", "statistics", "contentDetails"],
+          });
+
+        const leanDetails: LeanVideoDetails = {
+          id: fullVideoDetails.id ?? null,
+          title: fullVideoDetails.snippet?.title ?? null,
+          description:
+            truncateDescription(fullVideoDetails.snippet?.description) ?? null,
+          channelId: fullVideoDetails.snippet?.channelId ?? null,
+          channelTitle: fullVideoDetails.snippet?.channelTitle ?? null,
+          publishedAt: fullVideoDetails.snippet?.publishedAt ?? null,
+          duration: fullVideoDetails.contentDetails?.duration ?? null,
+          viewCount: fullVideoDetails.statistics?.viewCount ?? null,
+          likeCount: fullVideoDetails.statistics?.likeCount ?? null,
+          commentCount: fullVideoDetails.statistics?.commentCount ?? null,
+          tags: fullVideoDetails.snippet?.tags ?? [],
+          categoryId: fullVideoDetails.snippet?.categoryId ?? null,
+          defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
+        };
+
+        return { [videoId]: leanDetails };
+      } catch (error: any) {
+        console.error(
+          `Video details not found for ID: ${videoId}`,
+          error.message
+        );
+        return { [videoId]: null };
+      }
+    });
+
+    const results = await Promise.all(videoPromises);
+    const finalOutput = results.reduce(
+      (acc, current) => ({ ...acc, ...current }),
+      {} as Record<string, LeanVideoDetails | null>
     );
 
-    const videoDetailsList = await Promise.all(videoPromises);
-    const result = formatVideoMap(validatedParams.videoIds, videoDetailsList);
-
-    return formatSuccess(result);
+    return formatSuccess(finalOutput);
   } catch (error: any) {
     return formatError(error);
   }
