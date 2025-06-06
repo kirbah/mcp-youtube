@@ -15,6 +15,15 @@ export interface LeanVideoDetails {
   defaultLanguage: string | null | undefined;
 }
 
+export interface LeanVideoSearchResult {
+  videoId: string | null | undefined;
+  title: string | null | undefined;
+  descriptionSnippet: string | null | undefined;
+  channelId: string | null | undefined;
+  channelTitle: string | null | undefined;
+  publishedAt: string | null | undefined;
+}
+
 export interface VideoInfo {
   id: string;
   snippet: {
