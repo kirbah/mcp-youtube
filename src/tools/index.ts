@@ -12,10 +12,6 @@ import {
   getTranscriptsHandler,
 } from "./video/getTranscripts.js";
 import {
-  getVideoEngagementRatioConfig,
-  getVideoEngagementRatioHandler,
-} from "./video/getVideoEngagementRatio.js";
-import {
   compareVideosConfig,
   compareVideosHandler,
 } from "./video/compareVideos.js";
@@ -64,10 +60,6 @@ export const allTools: ToolDefinition[] = [
   {
     config: getTranscriptsConfig,
     handler: getTranscriptsHandler,
-  },
-  {
-    config: getVideoEngagementRatioConfig,
-    handler: getVideoEngagementRatioHandler,
   },
   {
     config: compareVideosConfig,

@@ -30,7 +30,3 @@ export interface TrendingParams {
 export interface CompareVideosParams {
   videoIds: string[];
 }
-
-export interface VideoEngagementRatiosParams {
-  videoIds: string[];
-}

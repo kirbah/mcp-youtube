@@ -4,6 +4,7 @@ import { VideoManagement } from "../../functions/videos.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
+import { calculateEngagementRatio } from "../../utils/engagementCalculator.js";
 import type { VideoDetailsParams } from "../../types/tools.js";
 import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -59,6 +60,11 @@ export const getVideoDetailsHandler = async (
           viewCount: fullVideoDetails.statistics?.viewCount ?? null,
           likeCount: fullVideoDetails.statistics?.likeCount ?? null,
           commentCount: fullVideoDetails.statistics?.commentCount ?? null,
+          engagementRatio: calculateEngagementRatio(
+            fullVideoDetails.statistics?.viewCount,
+            fullVideoDetails.statistics?.likeCount,
+            fullVideoDetails.statistics?.commentCount
+          ),
           tags: fullVideoDetails.snippet?.tags ?? [],
           categoryId: fullVideoDetails.snippet?.categoryId ?? null,
           defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,

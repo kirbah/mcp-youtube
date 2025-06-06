@@ -9,6 +9,7 @@ export interface LeanVideoDetails {
   viewCount: string | null | undefined;
   likeCount: string | null | undefined;
   commentCount: string | null | undefined;
+  engagementRatio: string | null | undefined;
   tags: string[] | null | undefined;
   categoryId: string | null | undefined;
   defaultLanguage: string | null | undefined;

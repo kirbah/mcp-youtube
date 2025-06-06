@@ -200,40 +200,6 @@ export class VideoManagement {
     }
   }
 
-  async getVideoEngagementRatio(videoId: string) {
-    try {
-      const response = await this.youtube.videos.list({
-        part: ["statistics"],
-        id: [videoId],
-      });
-
-      if (!response.data.items?.length) {
-        throw new Error("Video not found.");
-      }
-
-      const stats = response.data.items[0].statistics;
-      const viewCount = parseInt(stats?.viewCount || "0");
-      const likeCount = parseInt(stats?.likeCount || "0");
-      const commentCount = parseInt(stats?.commentCount || "0");
-
-      const engagementRatio =
-        viewCount > 0
-          ? (((likeCount + commentCount) / viewCount) * 100).toFixed(2)
-          : "0";
-
-      return {
-        viewCount,
-        likeCount,
-        commentCount,
-        engagementRatio: `${engagementRatio}%`,
-      };
-    } catch (error: any) {
-      throw new Error(
-        `Failed to calculate video engagement ratio: ${error.message}`
-      );
-    }
-  }
-
   async getTrendingVideos({
     regionCode = "US",
     categoryId,
