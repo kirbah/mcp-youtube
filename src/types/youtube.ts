@@ -24,6 +24,15 @@ export interface LeanVideoSearchResult {
   publishedAt: string | null | undefined;
 }
 
+export interface LeanChannelStatistics {
+  channelId: string | null | undefined;
+  title: string | null | undefined;
+  subscriberCount: string | null | undefined;
+  viewCount: string | null | undefined;
+  videoCount: string | null | undefined;
+  createdAt: string | null | undefined;
+}
+
 export interface VideoInfo {
   id: string;
   snippet: {

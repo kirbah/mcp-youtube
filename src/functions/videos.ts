@@ -1,5 +1,6 @@
 import { google, youtube_v3 } from "googleapis";
 import { getSubtitles } from "youtube-captions-scraper";
+import type { LeanChannelStatistics } from "../types/youtube.js";
 
 export interface VideoOptions {
   videoId: string;
@@ -101,7 +102,9 @@ export class VideoManagement {
     }
   }
 
-  async getChannelStatistics(channelId: string) {
+  async getChannelStatistics(
+    channelId: string
+  ): Promise<LeanChannelStatistics> {
     try {
       const response = await this.youtube.channels.list({
         part: ["snippet", "statistics"],
@@ -114,10 +117,12 @@ export class VideoManagement {
 
       const channel = response.data.items[0];
       return {
+        channelId: channelId,
         title: channel.snippet?.title,
         subscriberCount: channel.statistics?.subscriberCount,
         viewCount: channel.statistics?.viewCount,
         videoCount: channel.statistics?.videoCount,
+        createdAt: channel.snippet?.publishedAt,
       };
     } catch (error: any) {
       throw new Error(

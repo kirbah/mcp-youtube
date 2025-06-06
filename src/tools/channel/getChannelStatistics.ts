@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { VideoManagement } from "../../functions/videos.js";
 import { formatError } from "../../utils/errorHandler.js";
-import {
-  formatSuccess,
-  formatChannelMap,
-} from "../../utils/responseFormatter.js";
+import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema } from "../../utils/validation.js";
 import type { ChannelStatisticsParams } from "../../types/tools.js";
+import type { LeanChannelStatistics } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelStatisticsSchema = z.object({
@@ -16,7 +14,7 @@ export const getChannelStatisticsSchema = z.object({
 export const getChannelStatisticsConfig = {
   name: "getChannelStatistics",
   description:
-    "Retrieves statistics for multiple channels. Returns detailed metrics including subscriber count, view count, and video count for each channel. Use this when you need to analyze the performance and reach of multiple YouTube channels.",
+    "Retrieves statistics for multiple channels. Returns detailed metrics including subscriber count, view count, video count, and channel creation date for each channel. Use this when you need to analyze the performance and reach of multiple YouTube channels.",
   inputSchema: {
     channelIds: z
       .array(z.string())
@@ -35,13 +33,11 @@ export const getChannelStatisticsHandler = async (
       videoManager.getChannelStatistics(channelId)
     );
 
-    const statisticsResults = await Promise.all(statisticsPromises);
-    const result = formatChannelMap(
-      validatedParams.channelIds,
-      statisticsResults
+    const statisticsResults: LeanChannelStatistics[] = await Promise.all(
+      statisticsPromises
     );
 
-    return formatSuccess(result);
+    return formatSuccess(statisticsResults);
   } catch (error: any) {
     return formatError(error);
   }
