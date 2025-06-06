@@ -19,6 +19,20 @@ export interface VideoOptions {
 export interface SearchOptions {
   query: string;
   maxResults?: number;
+  order?: "relevance" | "date" | "viewCount";
+  type?: "video" | "channel";
+  channelId?: string;
+  videoDuration?: "any" | "short" | "medium" | "long";
+  publishedAfter?: string;
+  recency?:
+    | "any"
+    | "pastHour"
+    | "pastDay"
+    | "pastWeek"
+    | "pastMonth"
+    | "pastQuarter"
+    | "pastYear";
+  regionCode?: string;
 }
 
 export interface ChannelOptions {
@@ -44,6 +58,35 @@ export class VideoManagement {
     });
   }
 
+  private calculatePublishedAfter(recency: string): string {
+    const now = new Date();
+
+    switch (recency) {
+      case "pastHour":
+        now.setHours(now.getHours() - 1);
+        break;
+      case "pastDay":
+        now.setDate(now.getDate() - 1);
+        break;
+      case "pastWeek":
+        now.setDate(now.getDate() - 7);
+        break;
+      case "pastMonth":
+        now.setDate(now.getDate() - 30);
+        break;
+      case "pastQuarter":
+        now.setDate(now.getDate() - 90);
+        break;
+      case "pastYear":
+        now.setDate(now.getDate() - 365);
+        break;
+      default:
+        return "";
+    }
+
+    return now.toISOString();
+  }
+
   async getVideo({ videoId, parts = ["snippet"] }: VideoOptions) {
     try {
       const response = await this.youtube.videos.list({
@@ -61,24 +104,60 @@ export class VideoManagement {
     }
   }
 
-  async searchVideos({ query, maxResults = 10 }: SearchOptions) {
+  async searchVideos({
+    query,
+    maxResults = 10,
+    order = "relevance",
+    type = "video",
+    channelId,
+    videoDuration,
+    publishedAfter,
+    recency,
+    regionCode,
+  }: SearchOptions) {
     try {
       const results: youtube_v3.Schema$SearchResult[] = [];
       let nextPageToken: string | undefined = undefined;
       const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
 
+      // Calculate publishedAfter from recency if provided
+      let calculatedPublishedAfter = publishedAfter;
+      if (recency && recency !== "any") {
+        calculatedPublishedAfter = this.calculatePublishedAfter(recency);
+      }
+
       while (results.length < targetResults) {
+        const searchParams: youtube_v3.Params$Resource$Search$List = {
+          part: ["snippet"],
+          q: query,
+          maxResults: Math.min(
+            this.MAX_RESULTS_PER_PAGE,
+            targetResults - results.length
+          ),
+          type: [type],
+          order: order,
+          pageToken: nextPageToken,
+        };
+
+        // Add optional parameters if provided
+        if (channelId) {
+          searchParams.channelId = channelId;
+        }
+
+        if (videoDuration && videoDuration !== "any") {
+          searchParams.videoDuration = videoDuration;
+        }
+
+        if (calculatedPublishedAfter) {
+          searchParams.publishedAfter = calculatedPublishedAfter;
+        }
+
+        if (regionCode) {
+          searchParams.regionCode = regionCode;
+        }
+
         const response: youtube_v3.Schema$SearchListResponse = (
-          await this.youtube.search.list({
-            part: ["snippet"],
-            q: query,
-            maxResults: Math.min(
-              this.MAX_RESULTS_PER_PAGE,
-              targetResults - results.length
-            ),
-            type: ["video"],
-            pageToken: nextPageToken,
-          })
+          await this.youtube.search.list(searchParams)
         ).data;
 
         if (!response.items?.length) {

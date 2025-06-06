@@ -11,6 +11,26 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 export const searchVideosSchema = z.object({
   query: querySchema,
   maxResults: maxResultsSchema,
+  order: z.enum(["relevance", "date", "viewCount"]).optional(),
+  type: z.enum(["video", "channel"]).optional(),
+  channelId: z.string().optional(),
+  videoDuration: z.enum(["any", "short", "medium", "long"]).optional(),
+  publishedAfter: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+    .optional(),
+  recency: z
+    .enum([
+      "any",
+      "pastHour",
+      "pastDay",
+      "pastWeek",
+      "pastMonth",
+      "pastQuarter",
+      "pastYear",
+    ])
+    .optional(),
+  regionCode: z.string().length(2).optional(),
 });
 
 export const searchVideosConfig = {
@@ -25,6 +45,46 @@ export const searchVideosConfig = {
       .max(50)
       .optional()
       .describe("Maximum number of results to return (1-50, default: 10)"),
+    order: z
+      .enum(["relevance", "date", "viewCount"])
+      .optional()
+      .describe("Sort order for results (default: relevance)"),
+    type: z
+      .enum(["video", "channel"])
+      .optional()
+      .describe("Type of content to search for (default: video)"),
+    channelId: z
+      .string()
+      .optional()
+      .describe("Restrict search to specific channel ID"),
+    videoDuration: z
+      .enum(["any", "short", "medium", "long"])
+      .optional()
+      .describe(
+        "Filter by video duration. 'any' (default): no duration filter. 'short': videos less than 4 minutes. 'medium': videos 4 to 20 minutes. 'long': videos longer than 20 minutes."
+      ),
+    publishedAfter: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+      .optional()
+      .describe("Filter content published after this date (ISO 8601 format)"),
+    recency: z
+      .enum([
+        "any",
+        "pastHour",
+        "pastDay",
+        "pastWeek",
+        "pastMonth",
+        "pastQuarter",
+        "pastYear",
+      ])
+      .optional()
+      .describe("Filter by recency (overrides publishedAfter if set)"),
+    regionCode: z
+      .string()
+      .length(2)
+      .optional()
+      .describe("2-letter country code to restrict results"),
   },
 };
 
@@ -38,6 +98,13 @@ export const searchVideosHandler = async (
     const searchResults = await videoManager.searchVideos({
       query: validatedParams.query,
       maxResults: validatedParams.maxResults,
+      order: validatedParams.order,
+      type: validatedParams.type,
+      channelId: validatedParams.channelId,
+      videoDuration: validatedParams.videoDuration,
+      publishedAfter: validatedParams.publishedAfter,
+      recency: validatedParams.recency,
+      regionCode: validatedParams.regionCode,
     });
 
     const leanResults: LeanVideoSearchResult[] = searchResults.map(

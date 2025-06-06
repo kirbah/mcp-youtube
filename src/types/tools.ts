@@ -5,6 +5,20 @@ export interface VideoDetailsParams {
 export interface SearchParams {
   query: string;
   maxResults?: number;
+  order?: "relevance" | "date" | "viewCount";
+  type?: "video" | "channel";
+  channelId?: string;
+  videoDuration?: "any" | "short" | "medium" | "long";
+  publishedAfter?: string;
+  recency?:
+    | "any"
+    | "pastHour"
+    | "pastDay"
+    | "pastWeek"
+    | "pastMonth"
+    | "pastQuarter"
+    | "pastYear";
+  regionCode?: string;
 }
 
 export interface TranscriptsParams {
