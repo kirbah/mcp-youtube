@@ -46,11 +46,19 @@ export const getVideoDetailsHandler = async (
 
     const videoPromises = validatedParams.videoIds.map(async (videoId) => {
       try {
-        const fullVideoDetails: youtube_v3.Schema$Video =
+        const fullVideoDetails: youtube_v3.Schema$Video | null = // Allow null
           await videoManager.getVideo({
             videoId,
             parts: ["snippet", "statistics", "contentDetails"],
           });
+
+        if (!fullVideoDetails) {
+          console.error(
+            `Video details not found for ID: ${videoId}`,
+            "Returned null from videoManager.getVideo"
+          );
+          return { [videoId]: null };
+        }
 
         const viewCount = parseYouTubeNumber(
           fullVideoDetails.statistics?.viewCount

@@ -1,13 +1,11 @@
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
 export const formatSuccess = (
   data: any
-): { content: Array<{ type: "text"; text: string }> } => {
+): CallToolResult => {
   return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(data, null, 2),
-      },
-    ],
+    success: true,
+    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
   };
 };
 
