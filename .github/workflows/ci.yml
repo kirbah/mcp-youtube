@@ -45,13 +45,14 @@ jobs:
           CI: true
 
       - name: Upload coverage to Codecov
+        if: matrix.node-version == '22.x' && !cancelled()
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: kirbah/mcp-youtube
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: matrix.node-version == '22.x' && !cancelled()
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

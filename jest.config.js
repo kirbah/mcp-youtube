@@ -42,4 +42,22 @@ export default {
   //   },
   // },
   // --- End New Coverage Configuration ---
+
+  // --- Test Reporters Configuration ---
+  // This will output the default Jest reporter to the console AND a JUnit XML file
+  reporters: [
+    "default", // Keeps the default console output from Jest
+    [
+      "jest-junit",
+      {
+        outputDirectory: "test-results", // Directory where the JUnit XML will be saved
+        outputName: "junit.xml", // Name of the JUnit XML file
+        ancestorSeparator: " › ", // Separator for describe blocks in test names
+        classNameTemplate: "{classname}",
+        titleTemplate: "{title}",
+        suiteNameTemplate: "{filepath}", // How suite names are generated
+      },
+    ],
+  ],
+  // --- End Test Reporters Configuration ---
 };
