@@ -60,31 +60,33 @@ export class VideoManagement {
 
   private calculatePublishedAfter(recency: string): string {
     const now = new Date();
+    let millisecondsToSubtract = 0;
 
     switch (recency) {
       case "pastHour":
-        now.setHours(now.getHours() - 1);
+        millisecondsToSubtract = 60 * 60 * 1000; // 1 hour
         break;
       case "pastDay":
-        now.setDate(now.getDate() - 1);
+        millisecondsToSubtract = 24 * 60 * 60 * 1000; // 1 day
         break;
       case "pastWeek":
-        now.setDate(now.getDate() - 7);
+        millisecondsToSubtract = 7 * 24 * 60 * 60 * 1000; // 7 days
         break;
       case "pastMonth":
-        now.setDate(now.getDate() - 30);
+        millisecondsToSubtract = 30 * 24 * 60 * 60 * 1000; // 30 days
         break;
       case "pastQuarter":
-        now.setDate(now.getDate() - 90);
+        millisecondsToSubtract = 90 * 24 * 60 * 60 * 1000; // 90 days
         break;
       case "pastYear":
-        now.setDate(now.getDate() - 365);
+        millisecondsToSubtract = 365 * 24 * 60 * 60 * 1000; // 365 days
         break;
       default:
         return "";
     }
 
-    return now.toISOString();
+    const targetTime = new Date(now.getTime() - millisecondsToSubtract);
+    return targetTime.toISOString();
   }
 
   async getVideo({ videoId, parts = ["snippet"] }: VideoOptions) {
