@@ -1,5 +1,7 @@
 # YouTube Data MCP Server (mcp-youtube)
 
+[![codecov](https://codecov.io/gh/kirbah/mcp-youtube/graph/badge.svg?token=Y6B2E0T82P)](https://codecov.io/gh/kirbah/mcp-youtube)
+
 A Model Context Protocol (MCP) server that allows AI language models to interact with YouTube content using the YouTube Data API v3. This server provides tools to search videos, retrieve video details, fetch transcripts, analyze channel data, and discover trending content.
 
 ## Key Features
