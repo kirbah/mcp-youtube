@@ -1,5 +1,5 @@
 {
-  "name": "mcp-youtube",
+  "name": "@kirbah/mcp-youtube",
   "version": "0.0.1",
   "description": "YouTube MCP Server Implementation",
   "main": "dist/index.js",
@@ -50,7 +50,7 @@
     "typescript-eslint": "^8.33.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"

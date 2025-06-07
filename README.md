@@ -87,7 +87,7 @@ npm run inspector
 
 This server is an MCP server that communicates via **Standard Input/Output (stdio)**. It does not listen on network ports. An MCP client application will typically spawn this server script as a child process and communicate by writing requests to its stdin and reading responses from its stdout.
 
-**Example 1: If the package is published to npm (e.g., as `mcp-youtube`)**
+**Example 1: If the package is published to npm (e.g., as `@kirbah/mcp-youtube`)**
 
 An MCP client (like Claude Desktop or a custom client) might configure it as follows:
 
@@ -96,7 +96,7 @@ An MCP client (like Claude Desktop or a custom client) might configure it as fol
   "mcpServers": {
     "youtube": {
       "command": "npx",
-      "args": ["-y", "mcp-youtube"], // Use your actual published package name
+      "args": ["-y", "@kirbah/mcp-youtube"],
       "env": {
         // Environment variables for the spawned process
         "YOUTUBE_API_KEY": "YOUR_API_KEY_HERE",
@@ -137,7 +137,7 @@ To have a client run your local development version:
 
 ## System Requirements
 
-- Node.js 18.0.0 or higher
+- Node.js 20.0.0 or higher
 - npm (for managing dependencies and running scripts)
 
 ## Security Considerations
