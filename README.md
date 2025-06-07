@@ -1,41 +1,108 @@
-# YouTube Data MCP Server (mcp-youtube)
+# YouTube Data MCP Server (@kirbah/mcp-youtube)
 
-[![codecov](https://codecov.io/gh/kirbah/mcp-youtube/graph/badge.svg?token=Y6B2E0T82P)](https://codecov.io/gh/kirbah/mcp-youtube)
+<!-- Badges Start -->
+<p align="left">
+  <!-- GitHub Actions CI -->
+  <a href="https://github.com/kirbah/mcp-youtube/actions/workflows/ci.yml">
+    <img src="https://github.com/kirbah/mcp-youtube/actions/workflows/ci.yml/badge.svg" alt="CI Status" />
+  </a>
+  <!-- Codecov -->
+  <a href="https://codecov.io/gh/kirbah/mcp-youtube">
+    <img src="https://codecov.io/gh/kirbah/mcp-youtube/branch/main/graph/badge.svg?token=Y6B2E0T82P" alt="Code Coverage"/>
+  </a>
+  <!-- NPM Version -->
+  <a href="https://www.npmjs.com/package/@kirbah/mcp-youtube">
+    <img src="https://img.shields.io/npm/v/@kirbah/mcp-youtube.svg" alt="NPM Version" />
+  </a>
+  <!-- License -->
+  <a href="https://github.com/kirbah/mcp-youtube/blob/main/LICENSE">
+    <img src="https://img.shields.io/npm/l/@kirbah/mcp-youtube.svg" alt="License" />
+  </a>
+  <!-- NPM Downloads -->
+  <a href="https://www.npmjs.com/package/@kirbah/mcp-youtube">
+    <img src="https://img.shields.io/npm/dt/@kirbah/mcp-youtube.svg" alt="NPM Downloads" />
+  </a>
+  <!-- Node Version -->
+  <a href="package.json">
+    <img src="https://img.shields.io/node/v/@kirbah/mcp-youtube.svg" alt="Node.js Version Support" />
+  </a>
+</p>
+<!-- Badges End -->
 
-A Model Context Protocol (MCP) server that allows AI language models to interact with YouTube content using the YouTube Data API v3. This server provides tools to search videos, retrieve video details, fetch transcripts, analyze channel data, and discover trending content.
+**High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.**
+
+This Model Context Protocol (MCP) server empowers AI language models to seamlessly interact with YouTube. It's engineered to return **lean, structured data**, significantly **reducing token consumption** and making it ideal for cost-effective and performant LLM applications. Access a comprehensive suite of tools for video search, detail retrieval, transcript fetching, channel analysis, and trend discovery—all optimized for AI.
+
+## Why `@kirbah/mcp-youtube`?
+
+In the world of Large Language Models, every token counts. `@kirbah/mcp-youtube` is designed from the ground up with this principle in mind:
+
+- 🚀 **Token Efficiency:** Get just the data you need, precisely structured to minimize overhead for your LLM prompts and responses.
+- 🧠 **LLM-Centric Design:** Tools and data formats are tailored for easy integration and consumption by AI models.
+- 📊 **Comprehensive YouTube Toolkit:** Access a wide array of YouTube functionalities, from video details and transcripts to channel statistics and trending content.
+- 🛡️ **Robust & Reliable:** Built with strong input validation (Zod) and clear error handling.
 
 ## Key Features
 
-- **Video Information:** Search videos with advanced filters, get detailed metadata, statistics (views, likes, etc.), and content details.
-- **Transcript Management:** Retrieve video captions/subtitles with multi-language support.
-- **Channel Analysis:** Get channel statistics (subscribers, views, video count) and discover a channel's top-performing videos.
-- **Trend Discovery:** Find trending videos by region and category, and get a list of available video categories.
-- **Data Optimization:** Returns lean, structured data to minimize token consumption by AI models.
+- **Optimized Video Information:** Search videos with advanced filters. Retrieve detailed metadata, statistics (views, likes, etc.), and content details, all structured for minimal token footprint.
+- **Efficient Transcript Management:** Fetch video captions/subtitles with multi-language support, perfect for content analysis by LLMs.
+- **Insightful Channel Analysis:** Get concise channel statistics (subscribers, views, video count) and discover a channel's top-performing videos without data bloat.
+- **Lean Trend Discovery:** Find trending videos by region and category, and get lists of available video categories, optimized for quick AI processing.
+- **Structured for AI:** All responses are designed to be easily parsable and immediately useful for language models.
 
 ## Available Tools
 
-The server provides the following MCP tools:
+The server provides the following MCP tools, each designed to return token-optimized data:
 
-| Tool Name              | Description                                                                                                                              | Parameters (see details in tool schema)                                                                               |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `getVideoDetails`      | Retrieves detailed, lean information for multiple YouTube videos including metadata, statistics, engagement ratios, and content details. | `videoIds` (array of strings)                                                                                         |
-| `searchVideos`         | Searches for videos or channels based on a query string with various filtering options (e.g., order, duration, recency).                 | `query` (string), `maxResults` (optional number), `order` (optional), `type` (optional), `channelId` (optional), etc. |
-| `getTranscripts`       | Retrieves transcripts (captions) for multiple videos.                                                                                    | `videoIds` (array of strings), `lang` (optional string for language code)                                             |
-| `getChannelStatistics` | Retrieves lean statistics for multiple channels (subscriber count, view count, video count, creation date).                              | `channelIds` (array of strings)                                                                                       |
-| `getChannelTopVideos`  | Retrieves a list of a channel's top-performing videos with lean details and engagement ratios.                                           | `channelId` (string), `maxResults` (optional number)                                                                  |
-| `getTrendingVideos`    | Retrieves a list of trending videos for a given region and optional category, with lean details and engagement ratios.                   | `regionCode` (optional string), `categoryId` (optional string), `maxResults` (optional number)                        |
-| `getVideoCategories`   | Retrieves available YouTube video categories (ID and title) for a specific region.                                                       | `regionCode` (optional string)                                                                                        |
+| Tool Name              | Description                                                                                                                                  | Parameters (see details in tool schema)                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `getVideoDetails`      | Retrieves detailed, **lean** information for multiple YouTube videos including metadata, statistics, engagement ratios, and content details. | `videoIds` (array of strings)                                                                                         |
+| `searchVideos`         | Searches for videos or channels based on a query string with various filtering options, returning **concise** results.                       | `query` (string), `maxResults` (optional number), `order` (optional), `type` (optional), `channelId` (optional), etc. |
+| `getTranscripts`       | Retrieves **token-efficient** transcripts (captions) for multiple videos.                                                                    | `videoIds` (array of strings), `lang` (optional string for language code)                                             |
+| `getChannelStatistics` | Retrieves **lean** statistics for multiple channels (subscriber count, view count, video count, creation date).                              | `channelIds` (array of strings)                                                                                       |
+| `getChannelTopVideos`  | Retrieves a list of a channel's top-performing videos with **lean** details and engagement ratios.                                           | `channelId` (string), `maxResults` (optional number)                                                                  |
+| `getTrendingVideos`    | Retrieves a list of trending videos for a given region and optional category, with **lean** details and engagement ratios.                   | `regionCode` (optional string), `categoryId` (optional string), `maxResults` (optional number)                        |
+| `getVideoCategories`   | Retrieves available YouTube video categories (ID and title) for a specific region, providing **essential data only**.                        | `regionCode` (optional string)                                                                                        |
 
 _For detailed input parameters and their descriptions, please refer to the `inputSchema` within each tool's configuration file in the `src/tools/` directory (e.g., `src/tools/video/getVideoDetails.ts`)._
 
-## Installation
+## Getting Started
 
-```bash
-# Clone this repository (replace with your actual GitHub username if different)
-git clone https://github.com/kirbah/mcp-youtube.git
-cd mcp-youtube
-npm install
-```
+### Prerequisites
+
+- Node.js (version specified in `package.json` engines field - currently `>=20.0.0`)
+- npm (usually comes with Node.js)
+- A YouTube Data API v3 Key
+
+### Installation & Setup
+
+1.  **Obtain a YouTube API Key:**
+    Follow the steps in the [YouTube API Setup](#youtube-api-setup) section below.
+
+2.  **For Direct Use / Local Development:**
+
+    ```bash
+    # Clone this repository
+    git clone https://github.com/kirbah/mcp-youtube.git
+    cd mcp-youtube
+
+    # Install dependencies
+    npm install
+
+    # Configure Environment
+    # Create a .env file in the root by copying .env.example:
+    cp .env.example .env
+    # Then, edit .env to add your YOUTUBE_API_KEY:
+    # YOUTUBE_API_KEY=your_youtube_api_key_here
+    # YOUTUBE_TRANSCRIPT_LANG=en # Optional
+    ```
+
+3.  **For Use as an MCP Server (e.g., with Claude Desktop or custom client):**
+    Once published to NPM, you can use `npx`:
+    ```bash
+    # No local clone needed if using the published NPM package
+    # The MCP client will handle invoking it.
+    ```
 
 ## Environment Configuration
 
@@ -150,4 +217,4 @@ To have a client run your local development version:
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the LICENSE file for details.

@@ -1,3 +1,5 @@
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+
 export interface ErrorResponse {
   error: string;
   details?: any;
@@ -21,6 +23,7 @@ export const formatError = (
   return {
     success: false,
     error: errorResponse,
+    content: [], // Add empty content array to satisfy TS compiler
   };
 };
 

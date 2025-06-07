@@ -5,7 +5,7 @@ export const formatSuccess = (
 ): CallToolResult => {
   return {
     success: true,
-    data: data, // The actual data, not stringified
+    content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
   };
 };
 

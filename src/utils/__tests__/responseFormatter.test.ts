@@ -6,7 +6,7 @@ describe('responseFormatter', () => {
       const data = { message: "Success!", data: { id: 1, value: "test" } };
       expect(formatSuccess(data)).toEqual({
         success: true,
-        data: data,
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       });
     });
 
@@ -14,7 +14,7 @@ describe('responseFormatter', () => {
       const data = ["item1", "item2", { nested: true }];
       expect(formatSuccess(data)).toEqual({
         success: true,
-        data: data,
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       });
     });
 
@@ -22,7 +22,7 @@ describe('responseFormatter', () => {
       const data = null;
       expect(formatSuccess(data)).toEqual({
         success: true,
-        data: null,
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       });
     });
 
@@ -30,7 +30,7 @@ describe('responseFormatter', () => {
       const data = "Just a string";
       expect(formatSuccess(data)).toEqual({
         success: true,
-        data: "Just a string",
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       });
     });
 
@@ -38,7 +38,7 @@ describe('responseFormatter', () => {
       const data = {};
       expect(formatSuccess(data)).toEqual({
         success: true,
-        data: {},
+        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       });
     });
   });

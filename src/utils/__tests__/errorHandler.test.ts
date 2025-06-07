@@ -7,6 +7,7 @@ describe('errorHandler', () => {
       expect(formatError(error)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "Standard error message" },
+        content: [],
       });
     });
 
@@ -15,6 +16,7 @@ describe('errorHandler', () => {
       expect(formatError(error)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "String error message" },
+        content: [],
       });
     });
 
@@ -23,6 +25,7 @@ describe('errorHandler', () => {
       expect(formatError(error)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "Object with message property" },
+        content: [],
       });
     });
 
@@ -46,6 +49,7 @@ describe('errorHandler', () => {
             message: "Not Found",
           },
         },
+        content: [],
       });
     });
 
@@ -53,6 +57,7 @@ describe('errorHandler', () => {
       expect(formatError(null)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "An unknown error occurred" },
+        content: [],
       });
     });
 
@@ -60,6 +65,7 @@ describe('errorHandler', () => {
       expect(formatError(undefined)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "An unknown error occurred" },
+        content: [],
       });
     });
 
@@ -67,6 +73,7 @@ describe('errorHandler', () => {
       expect(formatError(123)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "An unknown error occurred" },
+        content: [],
       });
     });
 
@@ -75,6 +82,7 @@ describe('errorHandler', () => {
       expect(formatError(error)).toEqual({
         success: false,
         error: { error: "ToolExecutionError", message: "An unknown error occurred" },
+        content: [],
       });
     });
   });
