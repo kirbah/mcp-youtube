@@ -1,13 +1,16 @@
 export interface ErrorResponse {
   error: string;
   details?: any;
+  message: string; // Add message to align with common error structures
 }
 
 export const formatError = (
   error: unknown
-): { content: Array<{ type: "text"; text: string }> } => {
+): CallToolResult => {
+  const errorMessage = getErrorMessage(error);
   const errorResponse: ErrorResponse = {
-    error: getErrorMessage(error),
+    error: "ToolExecutionError", // Standard error type
+    message: errorMessage,
   };
 
   // Include additional details if available (e.g., from YouTube API)
@@ -16,12 +19,8 @@ export const formatError = (
   }
 
   return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(errorResponse, null, 2),
-      },
-    ],
+    success: false,
+    error: errorResponse,
   };
 };
 
@@ -30,6 +29,9 @@ const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message;
   }
+  // Ensure that we import CallToolResult from the SDK if it's not already imported.
+  // For now, we assume it's available or this change is part of a larger refactor.
+  // import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
   if (typeof error === "string") {
     return error;
   }

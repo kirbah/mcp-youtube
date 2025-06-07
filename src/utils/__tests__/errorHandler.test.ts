@@ -1,65 +1,80 @@
-import { formatError } from '../errorHandler';
+import { formatError, ErrorResponse } from '../errorHandler'; // Assuming ErrorResponse is exported for type checking if needed
 
 describe('errorHandler', () => {
   describe('formatError', () => {
     it('should format a standard Error object', () => {
       const error = new Error("Standard error message");
       expect(formatError(error)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "Standard error message" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "Standard error message" },
       });
     });
 
     it('should format a string error message', () => {
       const error = "String error message";
       expect(formatError(error)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "String error message" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "String error message" },
       });
     });
 
     it('should format an object with a message property', () => {
       const error = { message: "Object with message property" };
       expect(formatError(error)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "Object with message property" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "Object with message property" },
       });
     });
 
     it('should format an error object with response data', () => {
       const error = {
-        response: { data: { code: 404, message: "Not Found" } },
         message: "Request failed",
+        response: {
+          data: {
+            code: 404,
+            message: "Not Found",
+          },
+        },
       };
       expect(formatError(error)).toEqual({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({ error: "Request failed", details: { code: 404, message: "Not Found" } }, null, 2),
+        success: false,
+        error: {
+          error: "ToolExecutionError",
+          message: "Request failed",
+          details: {
+            code: 404,
+            message: "Not Found",
           },
-        ],
+        },
       });
     });
 
     it('should format null with a default error message', () => {
       expect(formatError(null)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "An unknown error occurred" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "An unknown error occurred" },
       });
     });
 
     it('should format undefined with a default error message', () => {
       expect(formatError(undefined)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "An unknown error occurred" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "An unknown error occurred" },
       });
     });
 
     it('should format a number with a default error message', () => {
       expect(formatError(123)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "An unknown error occurred" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "An unknown error occurred" },
       });
     });
 
     it('should format an object without a message property with a default error message', () => {
       const error = { foo: "bar" };
       expect(formatError(error)).toEqual({
-        content: [{ type: "text", text: JSON.stringify({ error: "An unknown error occurred" }, null, 2) }],
+        success: false,
+        error: { error: "ToolExecutionError", message: "An unknown error occurred" },
       });
     });
   });
