@@ -1,7 +1,7 @@
 {
   "name": "@kirbah/mcp-youtube",
   "version": "0.1.0",
-  "description": "A Model Context Protocol (MCP) server for interacting with YouTube content via the YouTube Data API v3.",
+  "description": "High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
