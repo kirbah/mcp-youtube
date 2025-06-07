@@ -19,4 +19,5 @@ nvm current # Should print "v22.16.0".
 npm -v # Should print "10.9.2".
 
 # Install the project
-npm install
+npm ci
+npm run build
