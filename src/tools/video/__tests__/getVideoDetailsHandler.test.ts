@@ -20,8 +20,10 @@ jest.mock('../../../functions/videos');
 
 describe('getVideoDetailsHandler - Transformation Logic', () => {
   let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockConsoleError: jest.SpyInstance;
 
   beforeEach(() => {
+    mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
     // Create a new mock instance for VideoManagement before each test
     mockVideoManager = new VideoManagement() as jest.Mocked<VideoManagement>;
 
@@ -31,6 +33,7 @@ describe('getVideoDetailsHandler - Transformation Logic', () => {
   });
 
   afterEach(() => {
+    mockConsoleError.mockRestore();
     jest.clearAllMocks();
   });
 
@@ -142,7 +145,7 @@ describe('getVideoDetailsHandler - Transformation Logic', () => {
     expect(result).toEqual(expectedResult);
   });
 
-  it('should handle multiple videos, including one with an error', async () => {
+  it('should handle errors gracefully and log them when a video is not found', async () => {
     mockVideoManager.getVideo
       .mockResolvedValueOnce(mockFullVideoDetails1) // For mockVideoId1
       .mockRejectedValueOnce(new Error('Video not found for ID: ' + mockVideoId2)); // For mockVideoId2
@@ -178,6 +181,8 @@ describe('getVideoDetailsHandler - Transformation Logic', () => {
         }]
     };
     expect(result).toEqual(expectedResult);
+    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(console.error).toHaveBeenCalledWith('Video details not found for ID: testVideoId2Error', 'Video not found for ID: testVideoId2Error');
   });
 
   it('should handle missing optional fields gracefully', async () => {
