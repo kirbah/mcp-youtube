@@ -23,9 +23,10 @@ export default tseslint.config(
   // This is what brings in the stricter type checking.
   ...tseslint.configs.recommendedTypeChecked,
 
-  // Configuration for all TypeScript files
+  // Configuration for TypeScript source files
   {
     files: ["src/**/*.ts"],
+    ignores: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -74,12 +75,20 @@ export default tseslint.config(
     },
   },
 
-  // Additional relaxed rules for test files only
+  // Configuration for TypeScript test files
   {
     files: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
     languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
       globals: {
+        ...globals.node,
+        ...globals.es2021,
         ...globals.jest,
+      },
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
