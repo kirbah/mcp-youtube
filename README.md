@@ -23,6 +23,12 @@
     <img src="https://img.shields.io/node/v/@kirbah/mcp-youtube.svg" alt="Node.js Version Support" />
   </a>
 </p>
+
+<p align="left">
+  <a href="https://smithery.ai/server/@kirbah/mcp-youtube">
+    <img src="https://smithery.ai/badge/@kirbah/mcp-youtube" alt="View on Smithery" />
+  </a>
+</p>
 <!-- Badges End -->
 
 **High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.**
