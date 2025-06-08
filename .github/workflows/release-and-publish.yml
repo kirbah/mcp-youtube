@@ -1,0 +1,92 @@
+name: Release and Publish to NPM
+
+on:
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+    inputs:
+      version_type:
+        description: "Version increment (patch, minor, major) OR a specific version string (e.g., 0.1.0)"
+        required: true
+        default: "patch" # Default action if you just click run
+        type: string
+      dist_tag:
+        description: 'NPM distribution tag (e.g., latest, beta, next). Default is "latest".'
+        required: false
+        default: "latest"
+        type: string
+
+jobs:
+  release-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for PAT_GITHUB to push commits/tags and create releases
+      id-token: write # Recommended for npm publish --provenance (can be added to npm publish later)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for versioning correctly (access to full git history)
+          token: ${{ secrets.PAT_GITHUB }} # Use PAT to allow pushing back to the repository
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x" # Or your project's primary Node.js version
+          registry-url: "https://registry.npmjs.org" # Configures npm for publishing
+
+      - name: Install dependencies
+        run: npm ci # Clean install based on package-lock.json
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Bump version in package.json
+        id: bump_version # Give step an ID to access its outputs if needed later
+        run: |
+          echo "Input for version_type: ${{ github.event.inputs.version_type }}"
+          # npm version updates package.json & package-lock.json.
+          # --no-git-tag-version prevents npm from creating a git tag here; we do it explicitly later.
+          VERSION_OUTPUT=$(npm version ${{ github.event.inputs.version_type }} --no-git-tag-version)
+
+          # Extract version number correctly (npm version might output 'vX.Y.Z' or 'X.Y.Z')
+          if [[ "$VERSION_OUTPUT" == "v"* ]]; then
+            NEW_VERSION="${VERSION_OUTPUT:1}"
+          else
+            NEW_VERSION="$VERSION_OUTPUT"
+          fi
+
+          echo "Bumped version to: $NEW_VERSION"
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV # Make version available to subsequent steps
+
+      - name: Build project
+        run: npm run build
+
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore(release): bump version to v${{ env.VERSION }}"
+          # Pushing to the branch the workflow was run on (typically your main/default branch)
+          # Assumes the PAT_GITHUB has permissions to push to this branch.
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Create and push Git tag
+        run: |
+          echo "Creating Git tag v${{ env.VERSION }}"
+          git tag -a "v${{ env.VERSION }}" -m "Release v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2 # Use latest version of the action
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          generate_release_notes: true # Let GitHub auto-generate release notes from commit messages
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }} # Use PAT for reliable release creation & note generation
+
+      - name: Publish to NPM
+        run: npm publish --tag ${{ github.event.inputs.dist_tag }} # Uses default 'latest' if not provided
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
