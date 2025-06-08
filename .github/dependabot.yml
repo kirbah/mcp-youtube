@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers: # Optional
+      - "kirbah"
+    labels: # Optional
+      - "ci"
+      - "dependabot"
+    commit-message: # Optional
+      prefix: "chore(actions)"
+
+  # Maintain dependencies for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly" # Consider "daily" if preferred
+    reviewers: # Optional
+      - "kirbah"
+    labels: # Optional
+      - "dependencies"
+      - "dependabot"
+    commit-message: # Optional
+      prefix: "chore(deps)"
