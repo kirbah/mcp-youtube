@@ -14,10 +14,6 @@
   <a href="https://www.npmjs.com/package/@kirbah/mcp-youtube">
     <img src="https://img.shields.io/npm/v/@kirbah/mcp-youtube.svg" alt="NPM Version" />
   </a>
-  <!-- License -->
-  <a href="https://github.com/kirbah/mcp-youtube/blob/main/LICENSE">
-    <img src="https://img.shields.io/npm/l/@kirbah/mcp-youtube.svg" alt="License" />
-  </a>
   <!-- NPM Downloads -->
   <a href="https://www.npmjs.com/package/@kirbah/mcp-youtube">
     <img src="https://img.shields.io/npm/dt/@kirbah/mcp-youtube.svg" alt="NPM Downloads" />
@@ -32,6 +28,40 @@
 **High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.**
 
 This Model Context Protocol (MCP) server empowers AI language models to seamlessly interact with YouTube. It's engineered to return **lean, structured data**, significantly **reducing token consumption** and making it ideal for cost-effective and performant LLM applications. Access a comprehensive suite of tools for video search, detail retrieval, transcript fetching, channel analysis, and trend discovery—all optimized for AI.
+
+## Quick Start: Adding to an MCP Client
+
+The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client application (like Claude Desktop or a custom client).
+
+1.  **Ensure you have a YouTube Data API v3 Key.**
+
+    - If you don't have one, follow the [YouTube API Setup](#youtube-api-setup) instructions below.
+
+2.  **Configure your MCP client:**
+    Add the following JSON configuration to your client, replacing `"YOUR_YOUTUBE_API_KEY_HERE"` with your actual API key.
+
+    ```json
+    {
+      "mcpServers": {
+        "youtube": {
+          "command": "npx",
+          "args": ["-y", "@kirbah/mcp-youtube"],
+          "env": {
+            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
+            "YOUTUBE_TRANSCRIPT_LANG": "en"
+          }
+        }
+      }
+    }
+    ```
+
+    - **Windows PowerShell Users:** `npx` can sometimes cause issues directly. If you encounter problems, try modifying the command as follows:
+      ```json
+        "command": "cmd",
+        "args": ["/k", "npx", "-y", "@kirbah/mcp-youtube"],
+      ```
+
+That's it! Your MCP client should now be able to leverage the YouTube tools provided by this server.
 
 ## Why `@kirbah/mcp-youtube`?
 
@@ -66,55 +96,93 @@ The server provides the following MCP tools, each designed to return token-optim
 
 _For detailed input parameters and their descriptions, please refer to the `inputSchema` within each tool's configuration file in the `src/tools/` directory (e.g., `src/tools/video/getVideoDetails.ts`)._
 
-## Getting Started
+## Advanced Usage & Local Development
+
+If you wish to contribute, modify the server, or run it locally outside of an MCP client's managed environment:
 
 ### Prerequisites
 
 - Node.js (version specified in `package.json` engines field - currently `>=20.0.0`)
 - npm (usually comes with Node.js)
-- A YouTube Data API v3 Key
+- A YouTube Data API v3 Key (see [YouTube API Setup](#youtube-api-setup))
 
-### Installation & Setup
+### Local Setup
 
-1.  **Obtain a YouTube API Key:**
-    Follow the steps in the [YouTube API Setup](#youtube-api-setup) section below.
-
-2.  **For Direct Use / Local Development:**
+1.  **Clone the repository:**
 
     ```bash
-    # Clone this repository
     git clone https://github.com/kirbah/mcp-youtube.git
     cd mcp-youtube
-
-    # Install dependencies
-    npm install
-
-    # Configure Environment
-    # Create a .env file in the root by copying .env.example:
-    cp .env.example .env
-    # Then, edit .env to add your YOUTUBE_API_KEY:
-    # YOUTUBE_API_KEY=your_youtube_api_key_here
-    # YOUTUBE_TRANSCRIPT_LANG=en # Optional
     ```
 
-3.  **For Use as an MCP Server (e.g., with Claude Desktop or custom client):**
-    Once published to NPM, you can use `npx`:
+2.  **Install dependencies:**
+
     ```bash
-    # No local clone needed if using the published NPM package
-    # The MCP client will handle invoking it.
+    npm ci
     ```
 
-## Environment Configuration
+3.  **Configure Environment:**
+    Create a `.env` file in the root by copying `.env.example`:
+    ```bash
+    cp .env.example .env
+    ```
+    Then, edit `.env` to add your `YOUTUBE_API_KEY`:
+    ```
+    YOUTUBE_API_KEY=your_youtube_api_key_here
+    YOUTUBE_TRANSCRIPT_LANG=en # Optional
+    ```
 
-Create a `.env` file in the root of the project by copying `.env.example` and filling in your details:
+### Development Scripts
 
+```bash
+# Run in development mode with live reloading
+npm run dev
+
+# Build for production
+npm run build
+
+# Run the production build (after npm run build)
+npm start
+
+# Lint files
+npm run lint
+
+# Run tests
+npm run test
+npm run test -- --coverage # To generate coverage reports
+
+# Inspect MCP server using the Model Context Protocol Inspector
+npm run inspector
 ```
-YOUTUBE_API_KEY=your_youtube_api_key_here
-YOUTUBE_TRANSCRIPT_LANG=en # Optional: Default language for transcripts (e.g., 'en', 'ko', 'es')
-```
 
-- `YOUTUBE_API_KEY`: **Required**. Your YouTube Data API v3 key.
-- `YOUTUBE_TRANSCRIPT_LANG`: Optional. Defaults to 'en' if not set in the environment, and your server logic uses this.
+### Local Development with an MCP Client
+
+To have an MCP client run your _local development version_ (instead of the published NPM package):
+
+1.  Ensure you have a script in `package.json` for a non-watching start, e.g.:
+
+    ```json
+    "scripts": {
+      "start:client": "tsx ./src/index.ts"
+    }
+    ```
+
+2.  Configure your MCP client to spawn this local script:
+    ```json
+    {
+      "mcpServers": {
+        "youtube_local_dev": {
+          "command": "npm",
+          "args": ["run", "start:client"],
+          "working_directory": "/absolute/path/to/your/cloned/mcp-youtube",
+          "env": {
+            "YOUTUBE_API_KEY": "YOUR_LOCAL_DEV_API_KEY_HERE"
+          }
+        }
+      }
+    }
+    ```
+    _Note on the env block above: Setting YOUTUBE_API_KEY directly in the env block for the client configuration is one way to provide the API key. Alternatively, if your server correctly loads its .env file based on the working_directory, you might not need to specify it in the client's env block, as long as your local .env file in the project root contains the YOUTUBE_API_KEY. The working_directory path must be absolute and correct for the server to find its .env file._
 
 ## YouTube API Setup
 
@@ -127,86 +195,13 @@ YOUTUBE_TRANSCRIPT_LANG=en # Optional: Default language for transcripts (e.g., '
 7.  Copy the generated API key. This is your `YOUTUBE_API_KEY`.
 8.  **Important Security Step:** Restrict your API key to prevent unauthorized use. Click on the API key name, and under "API restrictions," select "Restrict key" and choose "YouTube Data API v3." You can also add "Application restrictions" (e.g., IP addresses) if applicable.
 
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run in development mode with live reloading
-npm run dev
-
-# Build for production
-npm run build
-
-# Run the production build
-npm start
-
-# Lint files
-npm run lint
-
-# Run tests
-npm run test
-
-# Inspect MCP server using the Model Context Protocol Inspector
-npm run inspector
-```
-
-## Usage with an MCP Client
+## How it Works (MCP stdio)
 
 This server is an MCP server that communicates via **Standard Input/Output (stdio)**. It does not listen on network ports. An MCP client application will typically spawn this server script as a child process and communicate by writing requests to its stdin and reading responses from its stdout.
 
-**Example 1: If the package is published to npm (e.g., as `@kirbah/mcp-youtube`)**
-
-An MCP client (like Claude Desktop or a custom client) might configure it as follows:
-
-```json
-{
-  "mcpServers": {
-    "youtube": {
-      "command": "npx",
-      "args": ["-y", "@kirbah/mcp-youtube"],
-      "env": {
-        // Environment variables for the spawned process
-        "YOUTUBE_API_KEY": "YOUR_API_KEY_HERE",
-        "YOUTUBE_TRANSCRIPT_LANG": "en" // Optional
-      }
-    }
-  }
-}
-```
-
-**Example 2: For local development with a client**
-
-To have a client run your local development version:
-
-1.  Add a dedicated script to your server's `package.json` if you don't want the client to use the `watch` mode from `npm run dev`:
-
-    ```json
-    "scripts": {
-      // ...
-      "start:client": "tsx ./src/index.ts" // Runs with tsx, no watch
-    }
-    ```
-
-2.  The client can then be configured to spawn this script:
-    ```json
-    {
-      "mcpServers": {
-        "youtube_local_dev": {
-          "command": "npm", // or "npm.cmd" on Windows for reliability
-          "args": ["run", "start:client"],
-          "working_directory": "/absolute/path/to/your/cloned/mcp-youtube" // CRITICAL: Set this correctly
-          // "env": { ... } // Usually not needed if .env is loaded by the server script and working_directory is correct
-        }
-      }
-    }
-    ```
-    _Note: The server loads `.env` from its root directory. If `working_directory` is set correctly for the `npm run` command, the server should pick up your `.env` file._
-
 ## System Requirements
 
-- Node.js 20.0.0 or higher
+- Node.js: `>=20.0.0` (as specified in `package.json`)
 - npm (for managing dependencies and running scripts)
 
 ## Security Considerations
@@ -217,4 +212,4 @@ To have a client run your local development version:
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
