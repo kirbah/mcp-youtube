@@ -9,6 +9,7 @@ import {
   calculateCommentToViewRatio,
 } from "../../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../../utils/numberParser.js";
+import { truncateDescription } from "../../utils/textUtils.js";
 import type { VideoDetailsParams } from "../../types/tools.js";
 import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -26,15 +27,6 @@ export const getVideoDetailsConfig = {
       .array(z.string())
       .describe("Array of YouTube video IDs to get details for"),
   },
-};
-
-const truncateDescription = (
-  description: string | null | undefined,
-  maxLength: number = 1000
-): string | null => {
-  if (!description) return null;
-  if (description.length <= maxLength) return description;
-  return description.substring(0, maxLength) + "...";
 };
 
 export const getVideoDetailsHandler = async (

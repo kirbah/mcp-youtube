@@ -19,6 +19,7 @@ export interface LeanVideoDetails {
 export interface LeanChannelTopVideo {
   id: string | null | undefined;
   title: string | null | undefined;
+  description: string | null | undefined;
   publishedAt: string | null | undefined;
   duration: string | null | undefined;
   viewCount: number | null | undefined;
@@ -26,6 +27,9 @@ export interface LeanChannelTopVideo {
   commentCount: number | null | undefined;
   likeToViewRatio: number | null | undefined;
   commentToViewRatio: number | null | undefined;
+  tags: string[] | null | undefined;
+  categoryId: string | null | undefined;
+  defaultLanguage: string | null | undefined;
 }
 
 export interface LeanTrendingVideo {

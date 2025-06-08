@@ -5,6 +5,7 @@ import {
   calculateCommentToViewRatio,
 } from "../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
+import { truncateDescription } from "../utils/textUtils.js";
 import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
@@ -289,6 +290,7 @@ export class VideoManagement {
         return {
           id: video.id,
           title: video.snippet?.title,
+          description: truncateDescription(video.snippet?.description),
           publishedAt: video.snippet?.publishedAt,
           duration: video.contentDetails?.duration,
           viewCount: viewCount,
@@ -299,6 +301,9 @@ export class VideoManagement {
             viewCount,
             commentCount
           ),
+          tags: video.snippet?.tags ?? [],
+          categoryId: video.snippet?.categoryId ?? null,
+          defaultLanguage: video.snippet?.defaultLanguage ?? null,
         };
       });
     } catch (error: any) {
