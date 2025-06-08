@@ -25,3 +25,6 @@ updates:
       - "dependabot"
     commit-message: # Optional
       prefix: "chore(deps)"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
