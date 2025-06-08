@@ -23,6 +23,7 @@ export function calculateLikeToViewRatio(
     return Math.max(0, likes) / views; // Ensure likes is not negative
   } catch (error) {
     // Catch any other unforeseen error during conversion/parsing
+    console.error('Error in calculateLikeToViewRatio:', { viewCount, likeCount, error });
     return 0;
   }
 }
@@ -50,6 +51,7 @@ export function calculateCommentToViewRatio(
     }
     return Math.max(0, comments) / views; // Ensure comments is not negative
   } catch (error) {
+    console.error('Error in calculateCommentToViewRatio:', { viewCount, commentCount, error });
     return 0;
   }
 }

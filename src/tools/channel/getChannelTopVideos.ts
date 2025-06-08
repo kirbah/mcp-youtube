@@ -8,7 +8,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelTopVideosSchema = z.object({
   channelId: channelIdSchema,
-  maxResults: maxResultsSchema,
+  maxResults: maxResultsSchema.optional().default(10),
 });
 
 export const getChannelTopVideosConfig = {
