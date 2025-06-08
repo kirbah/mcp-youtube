@@ -96,6 +96,8 @@ The server provides the following MCP tools, each designed to return token-optim
 
 _For detailed input parameters and their descriptions, please refer to the `inputSchema` within each tool's configuration file in the `src/tools/` directory (e.g., `src/tools/video/getVideoDetails.ts`)._
 
+> _**Note on API Quota Costs:** Most tools are highly efficient, costing only **1 unit** per call. The exceptions are the search-based tools: `searchVideos` costs **100 units** and `getChannelTopVideos` costs **101 units**. The `getTranscripts` tool has **0** API cost._
+
 ## Advanced Usage & Local Development
 
 If you wish to contribute, modify the server, or run it locally outside of an MCP client's managed environment:
@@ -207,7 +209,7 @@ This server is an MCP server that communicates via **Standard Input/Output (stdi
 ## Security Considerations
 
 - **API Key Security:** Your `YOUTUBE_API_KEY` is sensitive. Never commit it directly to your repository. Use environment variables (e.g., via a `.env` file which should be listed in `.gitignore`).
-- **API Quotas:** The YouTube Data API has usage quotas. Monitor your usage in the Google Cloud Console. Consider setting budget alerts or quota limits for your API key to prevent unexpected charges or service disruptions.
+- **API Quotas:** The YouTube Data API has a daily usage quota (default is 10,000 units). All tool calls deduct from this quota. Monitor your usage in the Google Cloud Console and be mindful of the cost of each tool. For a detailed breakdown of costs per API method, see the [official documentation](https://developers.google.com/youtube/v3/determine_quota_cost).
 - **Input Validation:** The server uses Zod for robust input validation for all tool parameters, enhancing security and reliability.
 
 ## License
