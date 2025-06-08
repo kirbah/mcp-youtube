@@ -8,7 +8,7 @@ import type { LeanChannelStatistics } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelStatisticsSchema = z.object({
-  channelIds: z.array(channelIdSchema),
+  channelIds: z.array(channelIdSchema).min(1, "Channel IDs array must contain at least 1 element(s)"),
 });
 
 export const getChannelStatisticsConfig = {
