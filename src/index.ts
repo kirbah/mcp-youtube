@@ -6,6 +6,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { allTools } from "./tools/index.js";
 
+// --- Import package.json ---
+// For ES Modules, you need to use an assertion for JSON modules
+// and ensure your tsconfig allows it.
+import pkg from "../package.json" with { type: "json" };
+
 // Environment variable validation
 if (!process.env.YOUTUBE_API_KEY) {
   console.error("Error: YOUTUBE_API_KEY environment variable is not set.");
@@ -18,7 +23,7 @@ async function main() {
   // Create MCP server
   const server = new McpServer({
     name: "YouTube",
-    version: "1.0.0",
+    version: pkg.version, // <-- Use the version from package.json
   });
 
   // Register all tools
@@ -35,7 +40,7 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  console.error("YouTube MCP server has started.");
+  console.error(`YouTube MCP server (v${pkg.version}) has started.`); // Optional: log version
 }
 
 main().catch((err) => {
