@@ -35,6 +35,7 @@ import {
   findConsistentOutlierChannelsConfig,
   findConsistentOutlierChannelsHandler,
 } from "./general/findConsistentOutlierChannels.js";
+import { isEnabled } from "../utils/featureFlags.js";
 
 import type { VideoManagement } from "../functions/videos.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -51,40 +52,51 @@ export interface ToolDefinition {
   ) => Promise<CallToolResult>;
 }
 
-export const allTools: ToolDefinition[] = [
-  // Video tools
-  {
-    config: getVideoDetailsConfig,
-    handler: getVideoDetailsHandler,
-  },
-  {
-    config: searchVideosConfig,
-    handler: searchVideosHandler,
-  },
-  {
-    config: getTranscriptsConfig,
-    handler: getTranscriptsHandler,
-  },
-  // Channel tools
-  {
-    config: getChannelStatisticsConfig,
-    handler: getChannelStatisticsHandler,
-  },
-  {
-    config: getChannelTopVideosConfig,
-    handler: getChannelTopVideosHandler,
-  },
-  // General tools
-  {
-    config: getTrendingVideosConfig,
-    handler: getTrendingVideosHandler,
-  },
-  {
-    config: getVideoCategoriesConfig,
-    handler: getVideoCategoriesHandler,
-  },
-  {
-    config: findConsistentOutlierChannelsConfig,
-    handler: findConsistentOutlierChannelsHandler,
-  },
-];
+export function getAllTools(): ToolDefinition[] {
+  const baseTools: ToolDefinition[] = [
+    // Video tools
+    {
+      config: getVideoDetailsConfig,
+      handler: getVideoDetailsHandler,
+    },
+    {
+      config: searchVideosConfig,
+      handler: searchVideosHandler,
+    },
+    {
+      config: getTranscriptsConfig,
+      handler: getTranscriptsHandler,
+    },
+    // Channel tools
+    {
+      config: getChannelStatisticsConfig,
+      handler: getChannelStatisticsHandler,
+    },
+    {
+      config: getChannelTopVideosConfig,
+      handler: getChannelTopVideosHandler,
+    },
+    // General tools
+    {
+      config: getTrendingVideosConfig,
+      handler: getTrendingVideosHandler,
+    },
+    {
+      config: getVideoCategoriesConfig,
+      handler: getVideoCategoriesHandler,
+    },
+  ];
+
+  // Add feature-flagged tools conditionally
+  if (isEnabled("toolFindConsistentOutlierChannels")) {
+    baseTools.push({
+      config: findConsistentOutlierChannelsConfig,
+      handler: findConsistentOutlierChannelsHandler,
+    });
+  }
+
+  return baseTools;
+}
+
+// For backward compatibility, export the tools as a getter
+export const allTools: ToolDefinition[] = getAllTools();
