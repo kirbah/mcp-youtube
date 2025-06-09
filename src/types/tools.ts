@@ -1,5 +1,6 @@
 export interface VideoDetailsParams {
   videoIds: string[];
+  includeTags?: boolean;
 }
 
 export interface SearchParams {

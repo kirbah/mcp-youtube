@@ -11,7 +11,7 @@ export interface LeanVideoDetails {
   commentCount: number | null | undefined;
   likeToViewRatio: number | null | undefined;
   commentToViewRatio: number | null | undefined;
-  tags: string[] | null | undefined;
+  tags?: string[] | null | undefined;
   categoryId: string | null | undefined;
   defaultLanguage: string | null | undefined;
 }

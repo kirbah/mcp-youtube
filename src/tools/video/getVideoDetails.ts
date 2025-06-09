@@ -16,6 +16,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getVideoDetailsSchema = z.object({
   videoIds: z.array(videoIdSchema),
+  includeTags: z.boolean().optional().default(false),
 });
 
 export const getVideoDetailsConfig = {
@@ -26,6 +27,12 @@ export const getVideoDetailsConfig = {
     videoIds: z
       .array(z.string())
       .describe("Array of YouTube video IDs to get details for"),
+    includeTags: z
+      .boolean()
+      .optional()
+      .describe(
+        "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
+      ),
   },
 };
 
@@ -62,7 +69,7 @@ export const getVideoDetailsHandler = async (
           fullVideoDetails.statistics?.commentCount
         );
 
-        const leanDetails: LeanVideoDetails = {
+        const baseLeanDetails = {
           id: fullVideoDetails.id ?? null,
           title: fullVideoDetails.snippet?.title ?? null,
           description:
@@ -79,10 +86,13 @@ export const getVideoDetailsHandler = async (
             viewCount,
             commentCount
           ),
-          tags: fullVideoDetails.snippet?.tags ?? [],
           categoryId: fullVideoDetails.snippet?.categoryId ?? null,
           defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
         };
+
+        const leanDetails: LeanVideoDetails = validatedParams.includeTags
+          ? { ...baseLeanDetails, tags: fullVideoDetails.snippet?.tags ?? [] }
+          : baseLeanDetails;
 
         return { [videoId]: leanDetails };
       } catch (error: any) {
