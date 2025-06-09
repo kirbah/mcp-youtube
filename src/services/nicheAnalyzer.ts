@@ -670,9 +670,10 @@ export class NicheAnalyzer {
   private async fetchChannelTopVideos(
     channelId: string,
     publishedAfter: string
-  ): Promise<any[]> {
+  ): Promise<youtube_v3.Schema$Video[]> {
     try {
-      const response = await this.youtube.search.list({
+      // Step 1: Search for video IDs by viewCount
+      const searchResponse = await this.youtube.search.list({
         channelId: channelId,
         part: ["snippet"],
         order: "viewCount",
@@ -681,7 +682,22 @@ export class NicheAnalyzer {
         type: ["video"],
       });
 
-      return response.data.items || [];
+      const videoIds =
+        searchResponse.data.items
+          ?.map((item) => item.id?.videoId)
+          .filter((id): id is string => id !== undefined) || [];
+
+      if (videoIds.length === 0) {
+        return [];
+      }
+
+      // Step 2: Retrieve full video details including statistics for the fetched video IDs
+      const videosResponse = await this.youtube.videos.list({
+        part: ["statistics"],
+        id: videoIds,
+      });
+
+      return videosResponse.data.items || [];
     } catch (error: any) {
       throw new Error(
         `Failed to fetch top videos for channel ${channelId}: ${error.message}`
@@ -690,7 +706,7 @@ export class NicheAnalyzer {
   }
 
   private calculateConsistencyPercentage(
-    videos: any[],
+    videos: youtube_v3.Schema$Video[],
     subscriberCount: number,
     outlierMultiplier: number
   ): { consistencyPercentage: number; outlierCount: number } {
@@ -702,24 +718,14 @@ export class NicheAnalyzer {
     const threshold = subscriberCount * outlierMultiplier;
 
     for (const video of videos) {
-      // Note: YouTube search API doesn't return view counts directly
-      // In a real implementation, you'd need to fetch video details separately
-      // For now, we'll use a placeholder logic
-      const estimatedViews = this.estimateVideoViews(video);
-      if (estimatedViews > threshold) {
+      const viewCount = parseInt(video.statistics?.viewCount || "0");
+      if (viewCount > threshold) {
         outlierCount++;
       }
     }
 
     const consistencyPercentage = (outlierCount / videos.length) * 100;
     return { consistencyPercentage, outlierCount };
-  }
-
-  private estimateVideoViews(video: any): number {
-    // Placeholder: In a real implementation, you'd fetch video statistics
-    // For now, return a random number for demonstration
-    // This should be replaced with actual video.statistics.viewCount
-    return Math.floor(Math.random() * 100000);
   }
 
   private formatChannelResult(channelData: ChannelCache): any {
