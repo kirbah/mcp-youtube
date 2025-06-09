@@ -166,7 +166,6 @@ describe("VideoManagement.getChannelTopVideos", () => {
         commentCount: 1, // From the mockVideosList implementation
         likeToViewRatio: 0.1, // Default mock from beforeEach
         commentToViewRatio: 0.01, // Default mock from beforeEach
-        tags: [], // Default empty array for undefined tags
         categoryId: null, // Default null for undefined categoryId
         defaultLanguage: null, // Default null for undefined defaultLanguage
       }))

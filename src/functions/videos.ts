@@ -39,6 +39,7 @@ export interface SearchOptions {
 export interface ChannelOptions {
   channelId: string;
   maxResults?: number;
+  includeTags?: boolean;
 }
 
 export interface TrendingOptions {
@@ -227,6 +228,7 @@ export class VideoManagement {
   async getChannelTopVideos({
     channelId,
     maxResults = 10,
+    includeTags = false,
   }: ChannelOptions): Promise<LeanChannelTopVideo[]> {
     try {
       const searchResults: youtube_v3.Schema$SearchResult[] = [];
@@ -287,7 +289,7 @@ export class VideoManagement {
         const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
         const commentCount = parseYouTubeNumber(video.statistics?.commentCount);
 
-        return {
+        const baseVideo = {
           id: video.id,
           title: video.snippet?.title,
           description: truncateDescription(video.snippet?.description),
@@ -301,10 +303,13 @@ export class VideoManagement {
             viewCount,
             commentCount
           ),
-          tags: video.snippet?.tags ?? [],
           categoryId: video.snippet?.categoryId ?? null,
           defaultLanguage: video.snippet?.defaultLanguage ?? null,
         };
+
+        return includeTags
+          ? { ...baseVideo, tags: video.snippet?.tags ?? [] }
+          : baseVideo;
       });
     } catch (error: any) {
       throw new Error(

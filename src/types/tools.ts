@@ -29,6 +29,7 @@ export interface TranscriptsParams {
 export interface ChannelParams {
   channelId: string;
   maxResults?: number;
+  includeTags?: boolean;
 }
 
 export interface ChannelStatisticsParams {

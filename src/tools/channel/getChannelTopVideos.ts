@@ -9,6 +9,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 export const getChannelTopVideosSchema = z.object({
   channelId: channelIdSchema,
   maxResults: maxResultsSchema.optional().default(10),
+  includeTags: z.boolean().optional().default(false),
 });
 
 export const getChannelTopVideosConfig = {
@@ -23,6 +24,12 @@ export const getChannelTopVideosConfig = {
       .max(500)
       .optional()
       .describe("Maximum number of top videos to return (1-500, default: 10)"),
+    includeTags: z
+      .boolean()
+      .optional()
+      .describe(
+        "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
+      ),
   },
 };
 
@@ -36,6 +43,7 @@ export const getChannelTopVideosHandler = async (
     const topVideos = await videoManager.getChannelTopVideos({
       channelId: validatedParams.channelId,
       maxResults: validatedParams.maxResults,
+      includeTags: validatedParams.includeTags,
     });
 
     return formatSuccess(topVideos);
