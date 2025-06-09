@@ -684,11 +684,6 @@ export class NicheAnalyzer {
         }
       }
 
-      // Sort by consistency percentage (highest first)
-      promisingChannels.sort(
-        (a, b) => b.consistencyPercentage - a.consistencyPercentage
-      );
-
       return {
         results: promisingChannels,
         quotaExceeded: quotaExceeded,
