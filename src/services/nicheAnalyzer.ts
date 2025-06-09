@@ -1,5 +1,6 @@
 import { MongoClient, Db } from "mongodb";
 import { google, youtube_v3 } from "googleapis";
+import { createHash } from "crypto";
 
 export interface FindConsistentOutlierChannelsOptions {
   query: string;
@@ -11,12 +12,23 @@ export interface FindConsistentOutlierChannelsOptions {
   maxResults: number;
 }
 
+interface SearchCache {
+  _id?: string;
+  searchParamsHash: string;
+  searchParams: youtube_v3.Params$Resource$Search$List;
+  results: any[];
+  createdAt: Date;
+  expiresAt: Date;
+}
+
 export class NicheAnalyzer {
   private youtube: youtube_v3.Youtube;
   private mongoClient: MongoClient;
   private db: Db | null = null;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly DATABASE_NAME = "youtube_niche_analysis";
+  private readonly SEARCH_CACHE_COLLECTION = "search_cache";
+  private readonly CACHE_TTL_HOURS = 24;
 
   constructor() {
     // Initialize YouTube API client
@@ -72,6 +84,72 @@ export class NicheAnalyzer {
     return targetTime.toISOString();
   }
 
+  private generateSearchParamsHash(
+    searchParams: youtube_v3.Params$Resource$Search$List
+  ): string {
+    // Create a consistent string representation of search parameters
+    const paramsString = JSON.stringify(
+      searchParams,
+      Object.keys(searchParams).sort()
+    );
+    return createHash("sha256").update(paramsString).digest("hex");
+  }
+
+  private async getCachedSearchResults(
+    searchParams: youtube_v3.Params$Resource$Search$List
+  ): Promise<any[] | null> {
+    try {
+      const collection = this.db!.collection(this.SEARCH_CACHE_COLLECTION);
+      const searchParamsHash = this.generateSearchParamsHash(searchParams);
+
+      const cachedResult = (await collection.findOne({
+        searchParamsHash,
+        expiresAt: { $gt: new Date() },
+      })) as SearchCache | null;
+
+      if (cachedResult) {
+        return cachedResult.results;
+      }
+
+      return null;
+    } catch (error: any) {
+      // Log error but don't throw - fallback to YouTube API
+      console.error(`Cache retrieval failed: ${error.message}`);
+      return null;
+    }
+  }
+
+  private async storeCachedSearchResults(
+    searchParams: youtube_v3.Params$Resource$Search$List,
+    results: any[]
+  ): Promise<void> {
+    try {
+      const collection = this.db!.collection(this.SEARCH_CACHE_COLLECTION);
+      const searchParamsHash = this.generateSearchParamsHash(searchParams);
+      const now = new Date();
+      const expiresAt = new Date(
+        now.getTime() + this.CACHE_TTL_HOURS * 60 * 60 * 1000
+      );
+
+      const cacheDocument: SearchCache = {
+        searchParamsHash,
+        searchParams,
+        results,
+        createdAt: now,
+        expiresAt,
+      };
+
+      await collection.updateOne(
+        { searchParamsHash },
+        { $set: cacheDocument },
+        { upsert: true }
+      );
+    } catch (error: any) {
+      // Log error but don't throw - caching failure shouldn't break the main functionality
+      console.error(`Cache storage failed: ${error.message}`);
+    }
+  }
+
   async findConsistentOutlierChannels({
     query,
     channelAge,
@@ -94,7 +172,7 @@ export class NicheAnalyzer {
         part: ["snippet"],
         type: ["video"],
         order: "relevance",
-        maxResults: 50,
+        maxResults: this.MAX_RESULTS_PER_PAGE,
       };
 
       // Add optional parameters if provided
@@ -106,13 +184,23 @@ export class NicheAnalyzer {
         searchParams.videoCategoryId = videoCategoryId;
       }
 
-      // Perform the search
+      // Check cache first
+      const cachedResults = await this.getCachedSearchResults(searchParams);
+      if (cachedResults) {
+        return cachedResults;
+      }
+
+      // Perform the search from YouTube API
       const initialSearchResults = await this.youtube.search.list(searchParams);
+      const results = initialSearchResults.data.items || [];
+
+      // Store results in cache for future use
+      await this.storeCachedSearchResults(searchParams, results);
 
       // Return raw search results for now
       // TODO: Implement outlier analysis logic based on consistencyLevel and outlierMagnitude
       // TODO: Store/retrieve channel statistics from MongoDB to avoid recalculation
-      return initialSearchResults.data.items || [];
+      return results;
     } catch (error: any) {
       throw new Error(
         `Failed to find consistent outlier channels: ${error.message}`
