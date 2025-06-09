@@ -9,7 +9,7 @@ import {
   calculateCommentToViewRatio,
 } from "../../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../../utils/numberParser.js";
-import { truncateDescription } from "../../utils/textUtils.js";
+import { formatDescription } from "../../utils/textUtils.js";
 import type { VideoDetailsParams } from "../../types/tools.js";
 import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -17,6 +17,10 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 export const getVideoDetailsSchema = z.object({
   videoIds: z.array(videoIdSchema),
   includeTags: z.boolean().optional().default(false),
+  descriptionDetail: z
+    .enum(["NONE", "SNIPPET", "LONG"])
+    .optional()
+    .default("NONE"),
 });
 
 export const getVideoDetailsConfig = {
@@ -32,6 +36,12 @@ export const getVideoDetailsConfig = {
       .optional()
       .describe(
         "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
+      ),
+    descriptionDetail: z
+      .enum(["NONE", "SNIPPET", "LONG"])
+      .optional()
+      .describe(
+        "Controls video description detail to manage token cost. Options: 'NONE' (default, no text), 'SNIPPET' (a brief preview for broad scans), 'LONG' (a 500-char text for deep analysis of specific targets)."
       ),
   },
 };
@@ -69,11 +79,14 @@ export const getVideoDetailsHandler = async (
           fullVideoDetails.statistics?.commentCount
         );
 
+        const formattedDescription = formatDescription(
+          fullVideoDetails.snippet?.description,
+          validatedParams.descriptionDetail
+        );
+
         const baseLeanDetails = {
           id: fullVideoDetails.id ?? null,
           title: fullVideoDetails.snippet?.title ?? null,
-          description:
-            truncateDescription(fullVideoDetails.snippet?.description) ?? null,
           channelId: fullVideoDetails.snippet?.channelId ?? null,
           channelTitle: fullVideoDetails.snippet?.channelTitle ?? null,
           publishedAt: fullVideoDetails.snippet?.publishedAt ?? null,
@@ -90,9 +103,18 @@ export const getVideoDetailsHandler = async (
           defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
         };
 
+        // Conditionally add description if not NONE
+        const detailsWithDescription =
+          formattedDescription !== undefined
+            ? { ...baseLeanDetails, description: formattedDescription }
+            : baseLeanDetails;
+
         const leanDetails: LeanVideoDetails = validatedParams.includeTags
-          ? { ...baseLeanDetails, tags: fullVideoDetails.snippet?.tags ?? [] }
-          : baseLeanDetails;
+          ? {
+              ...detailsWithDescription,
+              tags: fullVideoDetails.snippet?.tags ?? [],
+            }
+          : detailsWithDescription;
 
         return { [videoId]: leanDetails };
       } catch (error: any) {

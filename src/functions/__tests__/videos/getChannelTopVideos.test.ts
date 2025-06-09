@@ -158,7 +158,6 @@ describe("VideoManagement.getChannelTopVideos", () => {
       mockVideos.map((video) => ({
         id: video.id,
         title: video.title,
-        description: null, // truncateDescription returns null for undefined input
         publishedAt: undefined, // snippet.publishedAt is not in the mock for videos.list in this test
         duration: "PT1M", // From the mockVideosList implementation in this test
         viewCount: 100, // From the mockVideosList implementation

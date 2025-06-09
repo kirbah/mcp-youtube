@@ -74,6 +74,7 @@ describe("getChannelTopVideosHandler", () => {
       channelId: "UC123",
       maxResults: 2,
       includeTags: false,
+      descriptionDetail: "NONE",
     });
     expect(formatSuccess).toHaveBeenCalledWith(mockTopVideosResult);
     expect(result.statusCode).toBe(200);
@@ -93,6 +94,7 @@ describe("getChannelTopVideosHandler", () => {
       channelId: "UC123",
       maxResults: 10, // Default value
       includeTags: false,
+      descriptionDetail: "NONE",
     });
     expect(formatSuccess).toHaveBeenCalledWith(mockTopVideosResult);
   });
@@ -146,6 +148,7 @@ describe("getChannelTopVideosHandler", () => {
       channelId: "UC123",
       maxResults: 5,
       includeTags: false,
+      descriptionDetail: "NONE",
     });
     expect(formatError).toHaveBeenCalledWith(new Error(errorMessage));
     expect(result.statusCode).toBe(500);

@@ -1,6 +1,7 @@
 export interface VideoDetailsParams {
   videoIds: string[];
   includeTags?: boolean;
+  descriptionDetail?: "NONE" | "SNIPPET" | "LONG";
 }
 
 export interface SearchParams {
@@ -31,6 +32,7 @@ export interface ChannelParams {
   channelId: string;
   maxResults?: number;
   includeTags?: boolean;
+  descriptionDetail?: "NONE" | "SNIPPET" | "LONG";
 }
 
 export interface ChannelStatisticsParams {

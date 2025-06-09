@@ -10,6 +10,10 @@ export const getChannelTopVideosSchema = z.object({
   channelId: channelIdSchema,
   maxResults: maxResultsSchema.optional().default(10),
   includeTags: z.boolean().optional().default(false),
+  descriptionDetail: z
+    .enum(["NONE", "SNIPPET", "LONG"])
+    .optional()
+    .default("NONE"),
 });
 
 export const getChannelTopVideosConfig = {
@@ -30,6 +34,12 @@ export const getChannelTopVideosConfig = {
       .describe(
         "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
       ),
+    descriptionDetail: z
+      .enum(["NONE", "SNIPPET", "LONG"])
+      .optional()
+      .describe(
+        "Controls video description detail to manage token cost. Options: 'NONE' (default, no text), 'SNIPPET' (a brief preview for broad scans), 'LONG' (a 500-char text for deep analysis of specific targets)."
+      ),
   },
 };
 
@@ -44,6 +54,7 @@ export const getChannelTopVideosHandler = async (
       channelId: validatedParams.channelId,
       maxResults: validatedParams.maxResults,
       includeTags: validatedParams.includeTags,
+      descriptionDetail: validatedParams.descriptionDetail,
     });
 
     return formatSuccess(topVideos);

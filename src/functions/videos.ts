@@ -5,7 +5,7 @@ import {
   calculateCommentToViewRatio,
 } from "../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
-import { truncateDescription } from "../utils/textUtils.js";
+import { formatDescription } from "../utils/textUtils.js";
 import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
@@ -40,6 +40,7 @@ export interface ChannelOptions {
   channelId: string;
   maxResults?: number;
   includeTags?: boolean;
+  descriptionDetail?: "NONE" | "SNIPPET" | "LONG";
 }
 
 export interface TrendingOptions {
@@ -229,6 +230,7 @@ export class VideoManagement {
     channelId,
     maxResults = 10,
     includeTags = false,
+    descriptionDetail = "NONE",
   }: ChannelOptions): Promise<LeanChannelTopVideo[]> {
     try {
       const searchResults: youtube_v3.Schema$SearchResult[] = [];
@@ -289,10 +291,14 @@ export class VideoManagement {
         const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
         const commentCount = parseYouTubeNumber(video.statistics?.commentCount);
 
+        const formattedDescription = formatDescription(
+          video.snippet?.description,
+          descriptionDetail
+        );
+
         const baseVideo = {
           id: video.id,
           title: video.snippet?.title,
-          description: truncateDescription(video.snippet?.description),
           publishedAt: video.snippet?.publishedAt,
           duration: video.contentDetails?.duration,
           viewCount: viewCount,
@@ -307,9 +313,15 @@ export class VideoManagement {
           defaultLanguage: video.snippet?.defaultLanguage ?? null,
         };
 
+        // Conditionally add description if not NONE
+        const videoWithDescription =
+          formattedDescription !== undefined
+            ? { ...baseVideo, description: formattedDescription }
+            : baseVideo;
+
         return includeTags
-          ? { ...baseVideo, tags: video.snippet?.tags ?? [] }
-          : baseVideo;
+          ? { ...videoWithDescription, tags: video.snippet?.tags ?? [] }
+          : videoWithDescription;
       });
     } catch (error: any) {
       throw new Error(

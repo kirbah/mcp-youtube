@@ -1,7 +1,7 @@
 export interface LeanVideoDetails {
   id: string | null | undefined;
   title: string | null | undefined;
-  description: string | null | undefined;
+  description?: string | null | undefined;
   channelId: string | null | undefined;
   channelTitle: string | null | undefined;
   publishedAt: string | null | undefined;
@@ -19,7 +19,7 @@ export interface LeanVideoDetails {
 export interface LeanChannelTopVideo {
   id: string | null | undefined;
   title: string | null | undefined;
-  description: string | null | undefined;
+  description?: string | null | undefined;
   publishedAt: string | null | undefined;
   duration: string | null | undefined;
   viewCount: number | null | undefined;

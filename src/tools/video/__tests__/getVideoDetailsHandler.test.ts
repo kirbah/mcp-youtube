@@ -182,7 +182,6 @@ describe("getVideoDetailsHandler", () => {
         testVideoId1: {
           id: "testVideoId1",
           title: "Test Video Title 1",
-          description: veryLongDesc.substring(0, 1000) + "...",
           channelId: "testChannelId1",
           channelTitle: "Test Channel Title 1",
           publishedAt: "2023-01-01T00:00:00Z",
@@ -222,7 +221,6 @@ describe("getVideoDetailsHandler", () => {
         testVideoId1: {
           id: "testVideoId1",
           title: "Test Video Title 1",
-          description: veryLongDesc.substring(0, 1000) + "...",
           channelId: "testChannelId1",
           channelTitle: "Test Channel Title 1",
           publishedAt: "2023-01-01T00:00:00Z",
@@ -265,7 +263,6 @@ describe("getVideoDetailsHandler", () => {
         testVideoId3MissingFields: {
           id: "testVideoId3MissingFields",
           title: "Test Video Title 3 Missing",
-          description: null,
           channelId: "testChannelId3",
           channelTitle: "Test Channel Title 3",
           publishedAt: "2023-01-03T00:00:00Z",
@@ -309,61 +306,65 @@ describe("getVideoDetailsHandler", () => {
       expect(calculateCommentToViewRatio).toHaveBeenCalledWith(11110, 10);
     });
 
-    it("should correctly truncate description longer than 1000 characters", async () => {
+    it("should correctly truncate description longer than 500 characters when using LONG", async () => {
       (calculateLikeToViewRatio as jest.Mock).mockReturnValue(0);
       (calculateCommentToViewRatio as jest.Mock).mockReturnValue(0);
-      const params = { videoIds: ["veryLongDescVideo"] };
+      const params = {
+        videoIds: ["veryLongDescVideo"],
+        descriptionDetail: "LONG" as const,
+      };
       const result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
       const returnedData = JSON.parse(result.content[0].text);
       const videoResult = returnedData["veryLongDescVideo"];
 
-      expect(videoResult.description.length).toBe(1000 + 3);
+      expect(videoResult.description.length).toBe(500 + 3);
       expect(videoResult.description.endsWith("...")).toBe(true);
       expect(videoResult.description).toBe(
-        veryLongDesc.substring(0, 1000) + "..."
+        veryLongDesc.substring(0, 500) + "..."
       );
     });
 
-    it("should not truncate description if it is 1000 characters or less", async () => {
+    it("should not truncate description if it is within LONG limit when using LONG", async () => {
       (calculateLikeToViewRatio as jest.Mock).mockReturnValue(0);
       (calculateCommentToViewRatio as jest.Mock).mockReturnValue(0);
-      let params = { videoIds: ["exactLengthVideo"] };
+      let params = {
+        videoIds: ["shortDescVideo"],
+        descriptionDetail: "LONG" as const,
+      };
       let result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
       let returnedData = JSON.parse(result.content[0].text);
-      let videoResult = returnedData["exactLengthVideo"];
-      expect(videoResult.description).toBe(exactLengthDescription);
-
-      params = { videoIds: ["shortDescVideo"] };
-      result = await getVideoDetailsHandler(params, mockVideoManager);
-      if (!result.success || !result.content)
-        throw new Error("Test failed: success true but no content");
-      returnedData = JSON.parse(result.content[0].text);
-      videoResult = returnedData["shortDescVideo"];
+      let videoResult = returnedData["shortDescVideo"];
       expect(videoResult.description).toBe("Short and sweet.");
     });
 
-    it("should return null description if original description is null or undefined", async () => {
+    it("should return undefined description if original description is null or undefined when using LONG", async () => {
       (calculateLikeToViewRatio as jest.Mock).mockReturnValue(0);
       (calculateCommentToViewRatio as jest.Mock).mockReturnValue(0);
-      let params = { videoIds: ["nullDescVideo"] };
+      let params = {
+        videoIds: ["nullDescVideo"],
+        descriptionDetail: "LONG" as const,
+      };
       let result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
       let returnedData = JSON.parse(result.content[0].text);
       let videoResult = returnedData["nullDescVideo"];
-      expect(videoResult.description).toBeNull();
+      expect(videoResult.description).toBeUndefined();
 
-      params = { videoIds: ["undefinedDescVideo"] };
+      params = {
+        videoIds: ["undefinedDescVideo"],
+        descriptionDetail: "LONG" as const,
+      };
       result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
       returnedData = JSON.parse(result.content[0].text);
       videoResult = returnedData["undefinedDescVideo"];
-      expect(videoResult.description).toBeNull();
+      expect(videoResult.description).toBeUndefined();
     });
   });
 });
