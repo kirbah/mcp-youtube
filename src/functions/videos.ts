@@ -49,6 +49,16 @@ export interface TrendingOptions {
   maxResults?: number;
 }
 
+export interface FindConsistentOutlierChannelsOptions {
+  query: string;
+  channelAge: "NEW" | "ESTABLISHED";
+  consistencyLevel: "MODERATE" | "HIGH";
+  outlierMagnitude: "STANDARD" | "STRONG";
+  videoCategoryId?: string;
+  regionCode?: string;
+  maxResults: number;
+}
+
 export class VideoManagement {
   private youtube: youtube_v3.Youtube;
   private readonly MAX_RESULTS_PER_PAGE = 50;
@@ -88,6 +98,16 @@ export class VideoManagement {
         return "";
     }
 
+    const targetTime = new Date(now.getTime() - millisecondsToSubtract);
+    return targetTime.toISOString();
+  }
+
+  private calculateChannelAgePublishedAfter(
+    channelAge: "NEW" | "ESTABLISHED"
+  ): string {
+    const now = new Date();
+    const monthsToSubtract = channelAge === "NEW" ? 6 : 24;
+    const millisecondsToSubtract = monthsToSubtract * 30 * 24 * 60 * 60 * 1000;
     const targetTime = new Date(now.getTime() - millisecondsToSubtract);
     return targetTime.toISOString();
   }
@@ -395,6 +415,51 @@ export class VideoManagement {
       return categories || [];
     } catch (error: any) {
       throw new Error(`Failed to retrieve video categories: ${error.message}`);
+    }
+  }
+
+  async findConsistentOutlierChannels({
+    query,
+    channelAge,
+    consistencyLevel,
+    outlierMagnitude,
+    videoCategoryId,
+    regionCode,
+    maxResults,
+  }: FindConsistentOutlierChannelsOptions) {
+    try {
+      // Calculate publishedAfter based on channelAge
+      const publishedAfter = this.calculateChannelAgePublishedAfter(channelAge);
+
+      // Build search parameters
+      const searchParams: youtube_v3.Params$Resource$Search$List = {
+        q: query,
+        publishedAfter: publishedAfter,
+        part: ["snippet"],
+        type: ["video"],
+        order: "relevance",
+        maxResults: 50,
+      };
+
+      // Add optional parameters if provided
+      if (regionCode) {
+        searchParams.regionCode = regionCode;
+      }
+
+      if (videoCategoryId) {
+        searchParams.videoCategoryId = videoCategoryId;
+      }
+
+      // Perform the search
+      const initialSearchResults = await this.youtube.search.list(searchParams);
+
+      // Return raw search results for now
+      // TODO: Implement outlier analysis logic based on consistencyLevel and outlierMagnitude
+      return initialSearchResults.data.items || [];
+    } catch (error: any) {
+      throw new Error(
+        `Failed to find consistent outlier channels: ${error.message}`
+      );
     }
   }
 }

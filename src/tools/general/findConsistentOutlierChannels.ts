@@ -77,15 +77,17 @@ export const findConsistentOutlierChannelsHandler = async (
   try {
     const validatedParams = findConsistentOutlierChannelsSchema.parse(params);
 
-    // Phase 1 implementation - return success message with validated parameters
-    const result = {
-      message: "findConsistentOutlierChannels tool executed successfully",
-      status: "OK",
-      parameters: validatedParams,
-      note: "This is a Phase 1 implementation. Full channel discovery functionality will be implemented in future phases.",
-    };
+    const searchResults = await videoManager.findConsistentOutlierChannels({
+      query: validatedParams.query,
+      channelAge: validatedParams.channelAge,
+      consistencyLevel: validatedParams.consistencyLevel,
+      outlierMagnitude: validatedParams.outlierMagnitude,
+      videoCategoryId: validatedParams.videoCategoryId,
+      regionCode: validatedParams.regionCode,
+      maxResults: validatedParams.maxResults,
+    });
 
-    return formatSuccess(result);
+    return formatSuccess(searchResults);
   } catch (error: any) {
     return formatError(error);
   }
