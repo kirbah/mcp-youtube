@@ -30,7 +30,8 @@ interface ChannelCache {
     | "archived_too_old"
     | "archived_low_potential"
     | "analyzed_low_consistency"
-    | "analyzed_promising";
+    | "analyzed_promising"
+    | "archived_too_large";
   latestStats: {
     fetchedAt: Date;
     subscriberCount: number;
@@ -67,6 +68,8 @@ export class NicheAnalyzer {
   private readonly STALENESS_DAYS_NEW = 14;
   private readonly STALENESS_DAYS_ESTABLISHED = 45;
   private readonly MIN_AVG_VIEWS_THRESHOLD = 1000;
+  private readonly MAX_SUBSCRIBER_CAP = 100_000;
+  private readonly MIN_OUTLIER_VIEW_COUNT = 1000;
 
   constructor() {
     // Initialize YouTube API client
@@ -466,6 +469,14 @@ export class NicheAnalyzer {
           continue;
         }
 
+        // Filter 1 (Hardcoded Cap): Check subscriber count
+        if (channelData.latestStats.subscriberCount > this.MAX_SUBSCRIBER_CAP) {
+          await this.updateChannelCache(channelId, {
+            status: "archived_too_large",
+          });
+          continue; // Discard and move to the next channel
+        }
+
         // Step 5: Apply age filtering
         const channelAge = this.calculateChannelAge(channelData.createdAt);
         const isValidAge = this.isValidChannelAge(
@@ -760,7 +771,8 @@ export class NicheAnalyzer {
 
     for (const video of videos) {
       const viewCount = parseInt(video.statistics?.viewCount || "0");
-      if (viewCount > threshold) {
+      // A video is an outlier if it beats the relative threshold AND the absolute threshold
+      if (viewCount > threshold && viewCount > this.MIN_OUTLIER_VIEW_COUNT) {
         outlierCount++;
       }
     }
@@ -820,16 +832,21 @@ export class NicheAnalyzer {
 
       // Phase 4: Filter, Sort, Slice & Format (as per requirements)
 
-      // The data is already filtered by consistency and sorted. Now we format and slice.
-      const finalResults = analysisResults
-        .slice(0, maxResults) // Apply maxResults limit
+      // Phase 4: Confidence-Weighted Ranking and Formatting
+      const rankedAndFormattedResults = analysisResults
         .map((result) => {
+          // First, calculate the confidence score for each result
+          const confidenceScore =
+            result.consistencyPercentage * Math.log10(result.outlierCount + 1); // Using log10 is common and effective
+
+          // Now, create the final, clean result object while passing the score through
           const now = new Date();
           const createdAt = new Date(result.channelData.createdAt);
           const ageInMillis = now.getTime() - createdAt.getTime();
-          const ageInDays = Math.floor(ageInMillis / (1000 * 60 * 60 * 24)); // Calculate age in DAYS
+          const ageInDays = Math.floor(ageInMillis / (1000 * 60 * 60 * 24));
 
           return {
+            // The final object structure for the AI agent
             channelId: result.channelData._id,
             channelTitle: result.channelData.channelTitle,
             channelAgeDays: ageInDays,
@@ -839,8 +856,17 @@ export class NicheAnalyzer {
               consistencyPercentage: result.consistencyPercentage,
               outlierVideoCount: result.outlierCount,
             },
+            // Internal data used only for sorting
+            _confidenceScore: confidenceScore,
           };
-        });
+        })
+        .sort((a, b) => b._confidenceScore - a._confidenceScore) // Sort by the new score
+        .slice(0, maxResults); // Apply maxResults limit AFTER sorting
+
+      // Before returning, remove the temporary sorting key from the final objects
+      const finalResults = rankedAndFormattedResults.map(
+        ({ _confidenceScore, ...rest }) => rest
+      );
 
       // Construct the final return object exactly as specified
       const finalStatus = quotaExceeded
