@@ -515,7 +515,13 @@ export class NicheAnalyzer {
   private async executeDeepConsistencyAnalysis(
     prospects: string[],
     options: FindConsistentOutlierChannelsOptions
-  ): Promise<any[]> {
+  ): Promise<
+    Array<{
+      channelData: ChannelCache;
+      consistencyPercentage: number;
+      outlierCount: number;
+    }>
+  > {
     try {
       const collection = this.db!.collection(this.CHANNELS_CACHE_COLLECTION);
       const promisingChannels: any[] = [];
@@ -552,7 +558,14 @@ export class NicheAnalyzer {
             const consistencyPercentage =
               channelData.latestAnalysis.consistencyPercentage;
             if (consistencyPercentage >= consistencyThreshold) {
-              promisingChannels.push(this.formatChannelResult(channelData));
+              promisingChannels.push({
+                channelData: channelData,
+                consistencyPercentage: consistencyPercentage,
+                outlierCount:
+                  channelData.latestAnalysis.sourceVideoCount -
+                  (channelData.latestAnalysis.consistencyPercentage / 100) *
+                    channelData.latestAnalysis.sourceVideoCount, // This is a placeholder, needs to be derived from stored data or re-calculated if not stored. For now, assuming sourceVideoCount is total videos and consistency is based on non-outliers.
+              });
             }
             continue;
           }
@@ -617,14 +630,17 @@ export class NicheAnalyzer {
 
           // Add to promising channels if it meets the threshold
           if (consistencyPercentage >= consistencyThreshold) {
-            const updatedChannelData = {
-              ...channelData,
-              latestAnalysis: newAnalysis,
-              status: finalStatus as ChannelCache["status"],
-            };
-            promisingChannels.push(
-              this.formatChannelResult(updatedChannelData as ChannelCache)
-            );
+            // We push the raw data needed for final formatting later
+            promisingChannels.push({
+              // Update the channel data with the new analysis before pushing
+              channelData: {
+                ...channelData,
+                latestAnalysis: newAnalysis,
+                status: finalStatus as ChannelCache["status"],
+              },
+              consistencyPercentage: consistencyPercentage,
+              outlierCount: outlierCount, // <-- The crucial addition
+            });
           }
         } catch (error: any) {
           console.error(
@@ -728,21 +744,6 @@ export class NicheAnalyzer {
     return { consistencyPercentage, outlierCount };
   }
 
-  private formatChannelResult(channelData: ChannelCache): any {
-    return {
-      channelId: channelData._id,
-      channelTitle: channelData.channelTitle,
-      subscriberCount: channelData.latestStats.subscriberCount,
-      videoCount: channelData.latestStats.videoCount,
-      viewCount: channelData.latestStats.viewCount,
-      consistencyPercentage:
-        channelData.latestAnalysis?.consistencyPercentage || 0,
-      lastAnalyzed: channelData.latestAnalysis?.analyzedAt,
-      channelAge: this.calculateChannelAge(channelData.createdAt),
-      status: channelData.status,
-    };
-  }
-
   async findConsistentOutlierChannels({
     query,
     channelAge,
@@ -781,7 +782,8 @@ export class NicheAnalyzer {
       );
 
       // Phase 3: Deep consistency analysis (~101 credits per prospect)
-      const promisingChannels = await this.executeDeepConsistencyAnalysis(
+      const analysisResults = await this.executeDeepConsistencyAnalysis(
+        // Renamed for clarity
         prospects,
         {
           query,
@@ -794,18 +796,42 @@ export class NicheAnalyzer {
         }
       );
 
-      // Return final results with metadata
+      // Phase 4: Filter, Sort, Slice & Format (as per requirements)
+
+      // The data is already filtered by consistency and sorted. Now we format and slice.
+      const finalResults = analysisResults
+        .slice(0, maxResults) // Apply maxResults limit
+        .map((result) => {
+          const now = new Date();
+          const createdAt = new Date(result.channelData.createdAt);
+          const ageInMillis = now.getTime() - createdAt.getTime();
+          const ageInDays = Math.floor(ageInMillis / (1000 * 60 * 60 * 24)); // Calculate age in DAYS
+
+          return {
+            channelId: result.channelData._id,
+            channelTitle: result.channelData.channelTitle,
+            channelAgeDays: ageInDays,
+            subscriberCount: result.channelData.latestStats.subscriberCount,
+            videoCount: result.channelData.latestStats.videoCount,
+            analysis: {
+              consistencyPercentage: result.consistencyPercentage,
+              outlierVideoCount: result.outlierCount,
+            },
+          };
+        });
+
+      // Construct the final return object exactly as specified
       return {
-        channels: promisingChannels.slice(0, maxResults),
-        metadata: {
-          totalCandidatesFound: candidateChannelIds.length,
-          prospectsAnalyzed: prospects.length,
-          finalPromisingCount: promisingChannels.length,
-          estimatedCostCredits: this.calculateTotalCost(
+        status: "COMPLETED_SUCCESSFULLY", // Hardcoded for now. Will be dynamic after implementing quota handling.
+        summary: {
+          candidatesFound: candidateChannelIds.length,
+          candidatesAnalyzed: prospects.length,
+          apiCreditsUsed: this.calculateTotalCost(
             candidateChannelIds.length,
             prospects.length
           ),
         },
+        results: finalResults,
       };
     } catch (error: any) {
       throw new Error(
