@@ -31,6 +31,10 @@ import {
   getVideoCategoriesConfig,
   getVideoCategoriesHandler,
 } from "./general/getVideoCategories.js";
+import {
+  findConsistentOutlierChannelsConfig,
+  findConsistentOutlierChannelsHandler,
+} from "./general/findConsistentOutlierChannels.js";
 
 import type { VideoManagement } from "../functions/videos.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -78,5 +82,9 @@ export const allTools: ToolDefinition[] = [
   {
     config: getVideoCategoriesConfig,
     handler: getVideoCategoriesHandler,
+  },
+  {
+    config: findConsistentOutlierChannelsConfig,
+    handler: findConsistentOutlierChannelsHandler,
   },
 ];
