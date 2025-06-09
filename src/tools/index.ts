@@ -46,10 +46,9 @@ export interface ToolDefinition {
     description: string;
     inputSchema: any;
   };
-  handler: (
-    params: any,
-    videoManager: VideoManagement
-  ) => Promise<CallToolResult>;
+  handler:
+    | ((params: any, videoManager: VideoManagement) => Promise<CallToolResult>)
+    | ((params: any) => Promise<CallToolResult>);
 }
 
 export function getAllTools(): ToolDefinition[] {

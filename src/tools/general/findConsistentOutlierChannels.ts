@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VideoManagement } from "../../functions/videos.js";
+import { NicheAnalyzer } from "../../services/nicheAnalyzer.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
@@ -71,13 +71,17 @@ export const findConsistentOutlierChannelsConfig = {
 };
 
 export const findConsistentOutlierChannelsHandler = async (
-  params: FindConsistentOutlierChannelsParams,
-  videoManager: VideoManagement
+  params: FindConsistentOutlierChannelsParams
 ): Promise<CallToolResult> => {
+  const nicheAnalyzer = new NicheAnalyzer();
+
   try {
+    // Connect to MongoDB
+    await nicheAnalyzer.connect();
+
     const validatedParams = findConsistentOutlierChannelsSchema.parse(params);
 
-    const searchResults = await videoManager.findConsistentOutlierChannels({
+    const searchResults = await nicheAnalyzer.findConsistentOutlierChannels({
       query: validatedParams.query,
       channelAge: validatedParams.channelAge,
       consistencyLevel: validatedParams.consistencyLevel,
@@ -90,5 +94,13 @@ export const findConsistentOutlierChannelsHandler = async (
     return formatSuccess(searchResults);
   } catch (error: any) {
     return formatError(error);
+  } finally {
+    // Always disconnect from MongoDB
+    try {
+      await nicheAnalyzer.disconnect();
+    } catch (disconnectError) {
+      // Log disconnect error but don't override the main error
+      console.error("Failed to disconnect from MongoDB:", disconnectError);
+    }
   }
 };

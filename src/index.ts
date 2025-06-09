@@ -32,7 +32,16 @@ async function main() {
       config.name,
       config.description,
       config.inputSchema,
-      (params: any) => handler(params, videoManager)
+      (params: any) => {
+        // Check if handler expects videoManager parameter
+        if (handler.length === 2) {
+          // Handler expects (params, videoManager)
+          return (handler as (params: any, videoManager: VideoManagement) => Promise<any>)(params, videoManager);
+        } else {
+          // Handler expects only (params)
+          return (handler as (params: any) => Promise<any>)(params);
+        }
+      }
     );
   });
 
