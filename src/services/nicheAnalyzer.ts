@@ -112,6 +112,18 @@ export class NicheAnalyzer {
     }
   }
 
+  private isQuotaError(error: any): boolean {
+    if (error && error.code === 403) {
+      // Check for the standard HTTP 403 error code
+      return true;
+    }
+    if (error && error.errors && Array.isArray(error.errors)) {
+      // Dig into the detailed error object from googleapis
+      return error.errors.some((err: any) => err.reason === "quotaExceeded");
+    }
+    return false;
+  }
+
   private calculateChannelAgePublishedAfter(
     channelAge: "NEW" | "ESTABLISHED"
   ): string {
@@ -516,13 +528,14 @@ export class NicheAnalyzer {
   private async executeDeepConsistencyAnalysis(
     prospects: string[],
     options: FindConsistentOutlierChannelsOptions
-  ): Promise<
-    Array<{
+  ): Promise<{
+    results: Array<{
       channelData: ChannelCache;
       consistencyPercentage: number;
       outlierCount: number;
-    }>
-  > {
+    }>;
+    quotaExceeded: boolean;
+  }> {
     try {
       const collection = this.db!.collection(this.CHANNELS_CACHE_COLLECTION);
       const promisingChannels: any[] = [];
@@ -535,6 +548,9 @@ export class NicheAnalyzer {
       const consistencyThreshold = this.getConsistencyThreshold(
         options.consistencyLevel
       );
+
+      // Initialize a flag before the loop starts
+      let quotaExceeded = false;
 
       for (const channelId of prospects) {
         try {
@@ -643,11 +659,17 @@ export class NicheAnalyzer {
             });
           }
         } catch (error: any) {
-          console.error(
-            `Failed to analyze channel ${channelId}: ${error.message}`
-          );
-          // Continue with other channels even if one fails
-          continue;
+          if (this.isQuotaError(error)) {
+            console.warn("YouTube API quota exceeded. Stopping analysis.");
+            quotaExceeded = true; // Set the flag
+            break; // <-- CRUCIAL: Stop the loop immediately
+          } else {
+            // It's a different error (e.g., channel not found), so just log it and move on
+            console.error(
+              `Failed to analyze channel ${channelId}: ${error.message}`
+            );
+            continue;
+          }
         }
       }
 
@@ -656,7 +678,10 @@ export class NicheAnalyzer {
         (a, b) => b.consistencyPercentage - a.consistencyPercentage
       );
 
-      return promisingChannels;
+      return {
+        results: promisingChannels,
+        quotaExceeded: quotaExceeded,
+      };
     } catch (error: any) {
       throw new Error(`Phase 3 failed: ${error.message}`);
     }
@@ -782,10 +807,8 @@ export class NicheAnalyzer {
       );
 
       // Phase 3: Deep consistency analysis (~101 credits per prospect)
-      const analysisResults = await this.executeDeepConsistencyAnalysis(
-        // Renamed for clarity
-        prospects,
-        {
+      const { results: analysisResults, quotaExceeded } =
+        await this.executeDeepConsistencyAnalysis(prospects, {
           query,
           channelAge,
           consistencyLevel,
@@ -793,8 +816,7 @@ export class NicheAnalyzer {
           videoCategoryId,
           regionCode,
           maxResults,
-        }
-      );
+        });
 
       // Phase 4: Filter, Sort, Slice & Format (as per requirements)
 
@@ -821,16 +843,26 @@ export class NicheAnalyzer {
         });
 
       // Construct the final return object exactly as specified
+      const finalStatus = quotaExceeded
+        ? "PARTIAL_DUE_TO_QUOTA"
+        : "COMPLETED_SUCCESSFULLY";
+
+      const summary = {
+        candidatesFound: candidateChannelIds.length,
+        candidatesAnalyzed: prospects.length,
+        apiCreditsUsed: this.calculateTotalCost(
+          candidateChannelIds.length,
+          prospects.length
+        ),
+        ...(quotaExceeded && {
+          message:
+            "Analysis was stopped prematurely due to YouTube API quota limits. The returned results are the best found from the portion of channels analyzed.",
+        }),
+      };
+
       return {
-        status: "COMPLETED_SUCCESSFULLY", // Hardcoded for now. Will be dynamic after implementing quota handling.
-        summary: {
-          candidatesFound: candidateChannelIds.length,
-          candidatesAnalyzed: prospects.length,
-          apiCreditsUsed: this.calculateTotalCost(
-            candidateChannelIds.length,
-            prospects.length
-          ),
-        },
+        status: finalStatus,
+        summary: summary,
         results: finalResults,
       };
     } catch (error: any) {
