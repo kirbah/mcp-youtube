@@ -41,6 +41,7 @@ interface ChannelCache {
     analyzedAt: Date;
     consistencyPercentage: number;
     sourceVideoCount: number;
+    outlierVideoCount: number;
     outlierMagnitudeUsed: "STANDARD" | "STRONG";
   };
   analysisHistory: Array<{
@@ -557,14 +558,12 @@ export class NicheAnalyzer {
             // Use existing analysis if subscriber growth is minimal
             const consistencyPercentage =
               channelData.latestAnalysis.consistencyPercentage;
+
             if (consistencyPercentage >= consistencyThreshold) {
               promisingChannels.push({
                 channelData: channelData,
                 consistencyPercentage: consistencyPercentage,
-                outlierCount:
-                  channelData.latestAnalysis.sourceVideoCount -
-                  (channelData.latestAnalysis.consistencyPercentage / 100) *
-                    channelData.latestAnalysis.sourceVideoCount, // This is a placeholder, needs to be derived from stored data or re-calculated if not stored. For now, assuming sourceVideoCount is total videos and consistency is based on non-outliers.
+                outlierCount: channelData.latestAnalysis.outlierVideoCount || 0,
               });
             }
             continue;
@@ -597,6 +596,7 @@ export class NicheAnalyzer {
             analyzedAt: now,
             consistencyPercentage,
             sourceVideoCount: topVideos.length,
+            outlierVideoCount: outlierCount,
             outlierMagnitudeUsed: options.outlierMagnitude,
           };
 
