@@ -33,6 +33,7 @@ export interface ChannelCache {
     sourceVideoCount: number;
     outlierVideoCount: number;
     outlierMagnitudeUsed: "STANDARD" | "STRONG";
+    subscriberCountAtAnalysis: number; // Added for re-analysis trigger
   };
   analysisHistory: Array<{
     analyzedAt: Date;
@@ -43,4 +44,10 @@ export interface ChannelCache {
     videoCount: number;
     viewCount: number;
   }>;
+}
+
+export interface VideoListCache {
+  _id: string; // Channel ID
+  videos: youtube_v3.Schema$Video[]; // Array of video objects
+  fetchedAt: Date;
 }

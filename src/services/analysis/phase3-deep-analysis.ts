@@ -1,3 +1,4 @@
+import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
 import { VideoManagement } from "../../functions/videos.js";
@@ -8,8 +9,10 @@ import {
   getConsistencyThreshold,
   isQuotaError,
   calculateConsistencyPercentage,
-  shouldSkipReAnalysis,
 } from "./analysis.logic.js";
+
+// Tier 1: The "Analysis Brain" (channels_cache)
+export const REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD = 1.2; // 20% growth
 
 export async function executeDeepConsistencyAnalysis(
   prospects: string[],
@@ -25,7 +28,11 @@ export async function executeDeepConsistencyAnalysis(
   quotaExceeded: boolean;
 }> {
   try {
-    const promisingChannels: any[] = [];
+    const promisingChannels: {
+      channelData: ChannelCache;
+      consistencyPercentage: number;
+      outlierCount: number;
+    }[] = [];
     const publishedAfter = calculateChannelAgePublishedAfter(
       options.channelAge
     );
@@ -49,8 +56,17 @@ export async function executeDeepConsistencyAnalysis(
           continue;
         }
 
-        const skipAnalysis = await shouldSkipReAnalysis(channelData);
-        if (skipAnalysis && channelData.latestAnalysis) {
+        // Tier 1: The "Analysis Brain" (channels_cache) - Check Re-analysis Trigger
+        // We only trigger a new "Deep Analysis" when the channel shows significant growth.
+        // If subscriberCount has not increased by REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD (20%) or more, skip re-analysis.
+        if (
+          channelData.latestAnalysis &&
+          channelData.latestStats.subscriberCount <
+            channelData.latestAnalysis.subscriberCountAtAnalysis *
+              REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD
+        ) {
+          // If the channel has not grown enough, and we have a previous analysis,
+          // we can use the previous consistency percentage if it was promising.
           const consistencyPercentage =
             channelData.latestAnalysis.consistencyPercentage;
 
@@ -61,17 +77,29 @@ export async function executeDeepConsistencyAnalysis(
               outlierCount: channelData.latestAnalysis.outlierVideoCount || 0,
             });
           }
-          continue;
+          continue; // Skip to the next channel
         }
 
-        const topVideos = await videoManagement.fetchChannelRecentTopVideos(
-          channelId,
-          publishedAfter
-        );
+        // Tier 2: The "Working Memory" (video_list_cache) - Check for cached video list
+        let topVideos: youtube_v3.Schema$Video[] | null = null;
+        const cachedVideoList = await cacheService.getVideoListCache(channelId);
 
-        if (topVideos.length === 0) {
+        if (cachedVideoList) {
+          topVideos = cachedVideoList.videos;
+        } else {
+          // No cached video list or it's stale, fetch new videos
+          topVideos = await videoManagement.fetchChannelRecentTopVideos(
+            channelId,
+            publishedAfter
+          );
+          if (topVideos.length > 0) {
+            await cacheService.setVideoListCache(channelId, topVideos);
+          }
+        }
+
+        if (!topVideos || topVideos.length === 0) {
           console.error(
-            `No videos found for channel ${channelId} in the specified time window`
+            `No videos found for channel ${channelId} in the specified time window or cache`
           );
           continue;
         }
@@ -90,6 +118,7 @@ export async function executeDeepConsistencyAnalysis(
           sourceVideoCount: topVideos.length,
           outlierVideoCount: outlierCount,
           outlierMagnitudeUsed: options.outlierMagnitude,
+          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount, // Save current subscriber count
         };
 
         const historyEntry = {
@@ -132,7 +161,9 @@ export async function executeDeepConsistencyAnalysis(
           break;
         } else {
           console.error(
-            `Failed to analyze channel ${channelId}: ${error.message}`
+            `Failed to analyze channel ${channelId}: ${
+              (error as Error).message
+            }`
           );
           continue;
         }

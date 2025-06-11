@@ -1,13 +1,19 @@
 import { Db, Collection, Filter } from "mongodb";
 import { createHash } from "crypto";
 import { youtube_v3 } from "googleapis";
-import { ChannelCache, SearchCache } from "./analysis/analysis.types.js";
+import {
+  ChannelCache,
+  SearchCache,
+  VideoListCache,
+} from "./analysis/analysis.types.js";
 
 export class CacheService {
   private db: Db;
   private readonly SEARCH_CACHE_COLLECTION = "search_cache";
   private readonly CHANNELS_CACHE_COLLECTION = "channels_cache";
-  private readonly CACHE_TTL_HOURS = 24;
+  private readonly VIDEO_LIST_CACHE_COLLECTION = "video_list_cache"; // New collection for video lists
+  private readonly CACHE_TTL_HOURS = 24; // This is for search_cache, not video_list_cache
+  private readonly VIDEO_LIST_CACHE_TTL_HOURS = 72; // 72 hours (3 days)
 
   constructor(db: Db) {
     this.db = db;
@@ -84,6 +90,77 @@ export class CacheService {
         console.error(`Cache storage failed: ${error.message}`);
       } else {
         console.error(`Cache storage failed: ${String(error)}`);
+      }
+    }
+  }
+
+  async getVideoListCache(channelId: string): Promise<VideoListCache | null> {
+    try {
+      const collection: Collection<VideoListCache> = this.db.collection(
+        this.VIDEO_LIST_CACHE_COLLECTION
+      );
+      const cachedResult = await collection.findOne({ _id: channelId });
+
+      if (cachedResult) {
+        const now = new Date();
+        const fetchedAt = cachedResult.fetchedAt;
+        const expiresAt = new Date(
+          fetchedAt.getTime() + this.VIDEO_LIST_CACHE_TTL_HOURS * 60 * 60 * 1000
+        );
+
+        if (now < expiresAt) {
+          return cachedResult;
+        } else {
+          // Cache is stale, remove it
+          await collection.deleteOne({ _id: channelId });
+          return null;
+        }
+      }
+      return null;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          `Video list cache retrieval failed for ${channelId}: ${error.message}`
+        );
+      } else {
+        console.error(
+          `Video list cache retrieval failed for ${channelId}: ${String(error)}`
+        );
+      }
+      return null;
+    }
+  }
+
+  async setVideoListCache(
+    channelId: string,
+    videos: youtube_v3.Schema$Video[]
+  ): Promise<void> {
+    try {
+      const collection: Collection<VideoListCache> = this.db.collection(
+        this.VIDEO_LIST_CACHE_COLLECTION
+      );
+      const now = new Date();
+
+      const cacheDocument: VideoListCache = {
+        _id: channelId,
+        videos: videos,
+        fetchedAt: now,
+      };
+
+      await collection.updateOne(
+        { _id: channelId } as Filter<VideoListCache>,
+        { $set: cacheDocument },
+        { upsert: true }
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          `Video list cache storage failed for ${channelId}: ${error.message}`
+        );
+      } else {
+        console.error(
+          `Video list cache storage failed for ${channelId}: ${String(error)}`
+        );
       }
     }
   }
