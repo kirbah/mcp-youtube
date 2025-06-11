@@ -1,9 +1,16 @@
 import { z } from "zod";
-import { NicheAnalyzer } from "../../services/nicheAnalyzer.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
-import type { FindConsistentOutlierChannelsParams } from "../../types/tools.js";
+import {
+  connectToDatabase,
+  disconnectFromDatabase,
+  getDb,
+} from "../../services/database.service.js";
+import { CacheService } from "../../services/cache.service.js";
+import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
+import { VideoManagement } from "../../functions/videos.js";
+import type { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const findConsistentOutlierChannelsSchema = z.object({
@@ -71,35 +78,31 @@ export const findConsistentOutlierChannelsConfig = {
 };
 
 export const findConsistentOutlierChannelsHandler = async (
-  params: FindConsistentOutlierChannelsParams
+  params: FindConsistentOutlierChannelsOptions
 ): Promise<CallToolResult> => {
-  const nicheAnalyzer = new NicheAnalyzer();
-
   try {
-    // Connect to MongoDB
-    await nicheAnalyzer.connect();
+    await connectToDatabase();
+    const db = getDb();
+    const cacheService = new CacheService(db);
+    const videoManagement = new VideoManagement();
+    const nicheAnalyzer = new NicheAnalyzerService(
+      cacheService,
+      videoManagement
+    );
 
     const validatedParams = findConsistentOutlierChannelsSchema.parse(params);
 
-    const searchResults = await nicheAnalyzer.findConsistentOutlierChannels({
-      query: validatedParams.query,
-      channelAge: validatedParams.channelAge,
-      consistencyLevel: validatedParams.consistencyLevel,
-      outlierMagnitude: validatedParams.outlierMagnitude,
-      videoCategoryId: validatedParams.videoCategoryId,
-      regionCode: validatedParams.regionCode,
-      maxResults: validatedParams.maxResults,
-    });
+    const searchResults = await nicheAnalyzer.findConsistentOutlierChannels(
+      validatedParams
+    );
 
     return formatSuccess(searchResults);
   } catch (error: any) {
     return formatError(error);
   } finally {
-    // Always disconnect from MongoDB
     try {
-      await nicheAnalyzer.disconnect();
+      await disconnectFromDatabase();
     } catch (disconnectError) {
-      // Log disconnect error but don't override the main error
       console.error("Failed to disconnect from MongoDB:", disconnectError);
     }
   }

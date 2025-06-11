@@ -34,6 +34,7 @@ export interface SearchOptions {
     | "pastQuarter"
     | "pastYear";
   regionCode?: string;
+  videoCategoryId?: string; // Added
 }
 
 export interface ChannelOptions {
@@ -195,6 +196,40 @@ export class VideoManagement {
     }
   }
 
+  async batchFetchChannelStatistics(
+    channelIds: string[]
+  ): Promise<Map<string, youtube_v3.Schema$Channel>> {
+    const results = new Map<string, youtube_v3.Schema$Channel>();
+
+    if (channelIds.length === 0) {
+      return results;
+    }
+
+    try {
+      const batchSize = 50;
+      for (let i = 0; i < channelIds.length; i += batchSize) {
+        const batch = channelIds.slice(i, i + batchSize);
+
+        const response = await this.youtube.channels.list({
+          part: ["snippet", "statistics"],
+          id: batch,
+        });
+
+        if (response.data.items) {
+          for (const channel of response.data.items) {
+            if (channel.id) {
+              results.set(channel.id, channel);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to fetch channel statistics: ${error.message}`);
+    }
+
+    return results;
+  }
+
   async getChannelStatistics(
     channelId: string
   ): Promise<LeanChannelStatistics> {
@@ -222,6 +257,42 @@ export class VideoManagement {
     } catch (error: any) {
       throw new Error(
         `Failed to retrieve channel statistics: ${error.message}`
+      );
+    }
+  }
+
+  async fetchChannelRecentTopVideos(
+    channelId: string,
+    publishedAfter: string
+  ): Promise<youtube_v3.Schema$Video[]> {
+    try {
+      const searchResponse = await this.youtube.search.list({
+        channelId: channelId,
+        part: ["snippet"],
+        order: "viewCount",
+        maxResults: 50,
+        publishedAfter: publishedAfter,
+        type: ["video"],
+      });
+
+      const videoIds =
+        searchResponse.data.items
+          ?.map((item) => item.id?.videoId)
+          .filter((id): id is string => id !== undefined) || [];
+
+      if (videoIds.length === 0) {
+        return [];
+      }
+
+      const videosResponse = await this.youtube.videos.list({
+        part: ["statistics"],
+        id: videoIds,
+      });
+
+      return videosResponse.data.items || [];
+    } catch (error: any) {
+      throw new Error(
+        `Failed to fetch top videos for channel ${channelId}: ${error.message}`
       );
     }
   }
