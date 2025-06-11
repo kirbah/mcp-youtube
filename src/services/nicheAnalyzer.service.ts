@@ -8,8 +8,6 @@ import { executeInitialCandidateSearch } from "./analysis/phase1-candidate-searc
 import { executeChannelPreFiltering } from "./analysis/phase2-channel-filtering.js";
 import { executeDeepConsistencyAnalysis } from "./analysis/phase3-deep-analysis.js";
 import { formatAndRankAnalysisResults } from "./analysis/phase4-ranking-formatting.js";
-import { calculateTotalCost } from "./analysis/analysis.logic.js";
-
 export class NicheAnalyzerService {
   private cacheService: CacheService;
   private videoManagement: VideoManagement;
@@ -23,6 +21,8 @@ export class NicheAnalyzerService {
     options: FindConsistentOutlierChannelsOptions
   ): Promise<NicheAnalysisOutput> {
     try {
+      // 1. Reset the counter at the very beginning of the run!
+      this.videoManagement.resetApiCreditsUsed();
       // Phase 1: Initial candidate search
       const candidateChannelIds = await executeInitialCandidateSearch(
         options,
@@ -55,12 +55,13 @@ export class NicheAnalyzerService {
       );
 
       // Update summary with actual counts and cost
+      // 3. Get the final, accurate cost at the very end.
+      const actualApiCreditsUsed = this.videoManagement.getApiCreditsUsed();
+
+      // 4. Build the final response object with the REAL number.
       finalOutput.summary.candidatesFound = candidateChannelIds.length;
-      finalOutput.summary.candidatesAnalyzed = prospects.length;
-      finalOutput.summary.apiCreditsUsed = calculateTotalCost(
-        candidateChannelIds.length,
-        prospects.length
-      );
+      finalOutput.summary.candidatesAnalyzed = analysisResults.length; // Use analysisResults.length for analyzed candidates
+      finalOutput.summary.apiCreditsUsed = actualApiCreditsUsed; // Use the accurate value
 
       return finalOutput;
     } catch (error: any) {

@@ -119,16 +119,6 @@ export function calculateConsistencyPercentage(
   return { consistencyPercentage, outlierCount };
 }
 
-export function calculateTotalCost(
-  candidateCount: number,
-  prospectCount: number
-): number {
-  const phase1Cost = 100;
-  const phase2Cost = Math.ceil(candidateCount / 50);
-  const phase3Cost = prospectCount * 101;
-  return phase1Cost + phase2Cost + phase3Cost;
-}
-
 export async function shouldSkipReAnalysis(
   channelData: ChannelCache
 ): Promise<boolean> {
