@@ -21,11 +21,19 @@ export function isQuotaError(error: any): boolean {
 export function calculateChannelAgePublishedAfter(
   channelAge: "NEW" | "ESTABLISHED"
 ): string {
-  const now = new Date();
+  const targetDate = new Date(); // Start with current date
   const monthsToSubtract = channelAge === "NEW" ? 6 : 24;
-  const millisecondsToSubtract = monthsToSubtract * 30 * 24 * 60 * 60 * 1000;
-  const targetTime = new Date(now.getTime() - millisecondsToSubtract);
-  return targetTime.toISOString();
+
+  // Subtract months
+  targetDate.setMonth(targetDate.getMonth() - monthsToSubtract);
+
+  // Normalize the date to the beginning of the day (UTC)
+  // This is crucial for caching: by setting hours, minutes, seconds, and milliseconds to 0,
+  // we ensure that the 'publishedAfter' timestamp is consistent for any given day,
+  // leading to cache hits for repeated searches within the same 24-hour period.
+  targetDate.setUTCHours(0, 0, 0, 0);
+
+  return targetDate.toISOString();
 }
 
 export function getOutlierMultiplier(
