@@ -46,7 +46,7 @@ export class CacheService {
       if (error instanceof Error) {
         console.error(`Cache retrieval failed: ${error.message}`);
       } else {
-        console.error(`Cache retrieval failed: ${error}`);
+        console.error(`Cache retrieval failed: ${String(error)}`);
       }
       return null;
     }
@@ -83,7 +83,7 @@ export class CacheService {
       if (error instanceof Error) {
         console.error(`Cache storage failed: ${error.message}`);
       } else {
-        console.error(`Cache storage failed: ${error}`);
+        console.error(`Cache storage failed: ${String(error)}`);
       }
     }
   }
@@ -101,7 +101,7 @@ export class CacheService {
       if (error instanceof Error) {
         console.error(`Failed to find channels by IDs: ${error.message}`);
       } else {
-        console.error(`Failed to find channels by IDs: ${error}`);
+        console.error(`Failed to find channels by IDs: ${String(error)}`);
       }
       throw error;
     }
@@ -127,7 +127,7 @@ export class CacheService {
         );
       } else {
         console.error(
-          `Failed to update channel cache for ${channelId}: ${error}`
+          `Failed to update channel cache for ${channelId}: ${String(error)}`
         );
       }
       throw error;
@@ -160,7 +160,9 @@ export class CacheService {
         );
       } else {
         console.error(
-          `Failed to update channel with history for ${channelId}: ${error}`
+          `Failed to update channel with history for ${channelId}: ${String(
+            error
+          )}`
         );
       }
       throw error;
