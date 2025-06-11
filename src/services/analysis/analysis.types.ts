@@ -17,6 +17,7 @@ export interface ChannelCache {
     | "candidate"
     | "archived_too_old"
     | "archived_low_potential"
+    | "archived_low_sample_size"
     | "analyzed_low_consistency"
     | "analyzed_promising"
     | "archived_too_large";

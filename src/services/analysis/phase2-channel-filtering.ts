@@ -11,6 +11,8 @@ import {
   MIN_AVG_VIEWS_THRESHOLD,
 } from "./analysis.logic.js";
 
+const MIN_VIDEOS_FOR_ANALYSIS = 10;
+
 export async function executeChannelPreFiltering(
   channelIds: string[],
   options: FindConsistentOutlierChannelsOptions,
@@ -86,6 +88,13 @@ export async function executeChannelPreFiltering(
       if (channelData.latestStats.subscriberCount > MAX_SUBSCRIBER_CAP) {
         await cacheService.updateChannel(channelId, {
           status: "archived_too_large",
+        });
+        continue;
+      }
+
+      if (channelData.latestStats.videoCount < MIN_VIDEOS_FOR_ANALYSIS) {
+        await cacheService.updateChannel(channelId, {
+          status: "archived_low_sample_size",
         });
         continue;
       }

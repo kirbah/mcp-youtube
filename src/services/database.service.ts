@@ -15,7 +15,7 @@ export async function connectToDatabase(): Promise<void> {
     mongoClient = new MongoClient(connectionString);
     await mongoClient.connect();
     db = mongoClient.db(DATABASE_NAME);
-    console.log("Connected to MongoDB");
+    // console.log("Connected to MongoDB");
   } catch (error: any) {
     throw new Error(`Failed to connect to MongoDB: ${error.message}`);
   }
@@ -26,7 +26,7 @@ export async function disconnectFromDatabase(): Promise<void> {
     if (mongoClient) {
       await mongoClient.close();
       db = null;
-      console.log("Disconnected from MongoDB");
+      // console.log("Disconnected from MongoDB");
     }
   } catch (error: any) {
     throw new Error(`Failed to disconnect from MongoDB: ${error.message}`);

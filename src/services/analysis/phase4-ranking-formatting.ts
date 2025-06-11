@@ -15,8 +15,16 @@ export function formatAndRankAnalysisResults(
 ): NicheAnalysisOutput {
   const rankedAndFormattedResults = analysisResults
     .map((result) => {
+      const impactFactor =
+        result.channelData.latestStats.videoCount > 0
+          ? result.channelData.latestStats.subscriberCount /
+            result.channelData.latestStats.videoCount
+          : 0; // Avoid division by zero
+
       const confidenceScore =
-        result.consistencyPercentage * Math.log10(result.outlierCount + 1);
+        result.consistencyPercentage *
+        Math.log10(result.outlierCount + 1) *
+        impactFactor;
 
       const now = new Date();
       const createdAt = new Date(result.channelData.createdAt);
