@@ -301,7 +301,7 @@ export class VideoManagement {
       }
 
       const videosResponse = await this.youtube.videos.list({
-        part: ["statistics"],
+        part: ["statistics", "contentDetails"],
         id: videoIds,
       });
       this.apiCreditsUsed += 1; // Add the cost after the call

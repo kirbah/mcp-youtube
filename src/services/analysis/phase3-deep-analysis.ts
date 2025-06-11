@@ -104,7 +104,7 @@ export async function executeDeepConsistencyAnalysis(
           continue;
         }
 
-        const { consistencyPercentage, outlierCount } =
+        const { consistencyPercentage, outlierCount, sourceVideoCount } =
           calculateConsistencyPercentage(
             topVideos,
             channelData.latestStats.subscriberCount,
@@ -115,7 +115,7 @@ export async function executeDeepConsistencyAnalysis(
         const newAnalysis = {
           analyzedAt: now,
           consistencyPercentage,
-          sourceVideoCount: topVideos.length,
+          sourceVideoCount: sourceVideoCount, // No longer 50, but the actual number of long-form videos
           outlierVideoCount: outlierCount,
           outlierMagnitudeUsed: options.outlierMagnitude,
           subscriberCountAtAnalysis: channelData.latestStats.subscriberCount, // Save current subscriber count

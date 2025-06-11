@@ -6,6 +6,7 @@ export const STALENESS_DAYS_ESTABLISHED = 45;
 export const MIN_AVG_VIEWS_THRESHOLD = 1000;
 export const MAX_SUBSCRIBER_CAP = 100_000;
 export const MIN_OUTLIER_VIEW_COUNT = 1000;
+export const MIN_VIDEO_DURATION_SECONDS = 180;
 
 export function isQuotaError(error: any): boolean {
   if (error && error.code === 403) {
@@ -96,29 +97,6 @@ export function isValidChannelAge(
   }
 }
 
-export function calculateConsistencyPercentage(
-  videos: youtube_v3.Schema$Video[],
-  subscriberCount: number,
-  outlierMultiplier: number
-): { consistencyPercentage: number; outlierCount: number } {
-  if (videos.length === 0) {
-    return { consistencyPercentage: 0, outlierCount: 0 };
-  }
-
-  let outlierCount = 0;
-  const threshold = subscriberCount * outlierMultiplier;
-
-  for (const video of videos) {
-    const viewCount = parseInt(video.statistics?.viewCount || "0");
-    if (viewCount > threshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
-      outlierCount++;
-    }
-  }
-
-  const consistencyPercentage = (outlierCount / videos.length) * 100;
-  return { consistencyPercentage, outlierCount };
-}
-
 export async function shouldSkipReAnalysis(
   channelData: ChannelCache
 ): Promise<boolean> {
@@ -136,4 +114,81 @@ export async function shouldSkipReAnalysis(
       previousSubscriberCount) *
     100;
   return growthPercentage < 20;
+}
+
+/**
+ * Parses an ISO 8601 duration string (e.g., "PT1M30S") into total seconds.
+ * Handles hours, minutes, and seconds.
+ * @param duration The ISO 8601 duration string.
+ * @returns The total duration in seconds.
+ */
+export function parseISO8601Duration(duration: string): number {
+  const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+  const matches = duration.match(regex);
+
+  if (!matches) {
+    return 0;
+  }
+
+  const hours = parseInt(matches[1] || "0", 10);
+  const minutes = parseInt(matches[2] || "0", 10);
+  const seconds = parseInt(matches[3] || "0", 10);
+
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+export function calculateConsistencyPercentage(
+  videos: youtube_v3.Schema$Video[],
+  subscriberCount: number,
+  outlierMultiplier: number
+): {
+  consistencyPercentage: number;
+  outlierCount: number;
+  sourceVideoCount: number;
+} {
+  if (videos.length === 0) {
+    return { consistencyPercentage: 0, outlierCount: 0, sourceVideoCount: 0 };
+  }
+
+  let longFormVideoCount = 0;
+  let outlierLongFormVideoCount = 0;
+  const threshold = subscriberCount * outlierMultiplier;
+
+  for (const video of videos) {
+    // Ensure contentDetails and duration exist before parsing
+    if (!video.contentDetails?.duration) {
+      continue; // Skip videos without duration information
+    }
+
+    const durationInSeconds = parseISO8601Duration(
+      video.contentDetails.duration
+    );
+
+    // THE NEW FILTER: If the video is a Short (or just very short), skip it entirely.
+    if (durationInSeconds < MIN_VIDEO_DURATION_SECONDS) {
+      continue; // Ignore this video, move to the next one
+    }
+
+    // This video is confirmed to be long-form.
+    longFormVideoCount++;
+
+    // Now, perform the existing outlier check on this long-form video
+    const viewCount = parseInt(video.statistics?.viewCount || "0");
+    if (viewCount > threshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
+      outlierLongFormVideoCount++;
+    }
+  }
+
+  // The new, more accurate consistency calculation:
+  // Avoid division by zero if a channel has NO long-form videos.
+  const consistencyPercentage =
+    longFormVideoCount > 0
+      ? (outlierLongFormVideoCount / longFormVideoCount) * 100
+      : 0;
+
+  return {
+    consistencyPercentage: consistencyPercentage,
+    outlierCount: outlierLongFormVideoCount,
+    sourceVideoCount: longFormVideoCount,
+  };
 }
