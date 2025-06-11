@@ -1,4 +1,4 @@
-import { Db } from "mongodb";
+import { Db, Collection, Filter } from "mongodb";
 import { createHash } from "crypto";
 import { youtube_v3 } from "googleapis";
 import { ChannelCache, SearchCache } from "./analysis/analysis.types.js";
@@ -25,33 +25,41 @@ export class CacheService {
 
   async getCachedSearchResults(
     searchParams: youtube_v3.Params$Resource$Search$List
-  ): Promise<any[] | null> {
+  ): Promise<youtube_v3.Schema$SearchResult[] | null> {
     try {
-      const collection = this.db.collection(this.SEARCH_CACHE_COLLECTION);
+      const collection: Collection<SearchCache> = this.db.collection(
+        this.SEARCH_CACHE_COLLECTION
+      );
       const searchParamsHash = this.generateSearchParamsHash(searchParams);
 
-      const cachedResult = (await collection.findOne({
+      const cachedResult = await collection.findOne({
         searchParamsHash,
         expiresAt: { $gt: new Date() },
-      })) as SearchCache | null;
+      });
 
       if (cachedResult) {
-        return cachedResult.results;
+        return cachedResult.results as youtube_v3.Schema$SearchResult[];
       }
 
       return null;
-    } catch (error: any) {
-      console.error(`Cache retrieval failed: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Cache retrieval failed: ${error.message}`);
+      } else {
+        console.error(`Cache retrieval failed: ${error}`);
+      }
       return null;
     }
   }
 
   async storeCachedSearchResults(
     searchParams: youtube_v3.Params$Resource$Search$List,
-    results: any[]
+    results: youtube_v3.Schema$SearchResult[]
   ): Promise<void> {
     try {
-      const collection = this.db.collection(this.SEARCH_CACHE_COLLECTION);
+      const collection: Collection<SearchCache> = this.db.collection(
+        this.SEARCH_CACHE_COLLECTION
+      );
       const searchParamsHash = this.generateSearchParamsHash(searchParams);
       const now = new Date();
       const expiresAt = new Date(
@@ -67,24 +75,34 @@ export class CacheService {
       };
 
       await collection.updateOne(
-        { searchParamsHash },
+        { searchParamsHash } as Filter<SearchCache>,
         { $set: cacheDocument },
         { upsert: true }
       );
-    } catch (error: any) {
-      console.error(`Cache storage failed: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Cache storage failed: ${error.message}`);
+      } else {
+        console.error(`Cache storage failed: ${error}`);
+      }
     }
   }
 
   async findChannelsByIds(ids: string[]): Promise<ChannelCache[]> {
     try {
-      const collection = this.db.collection(this.CHANNELS_CACHE_COLLECTION);
+      const collection: Collection<ChannelCache> = this.db.collection(
+        this.CHANNELS_CACHE_COLLECTION
+      );
       const cachedChannels = await collection
-        .find({ _id: { $in: ids } } as any)
+        .find({ _id: { $in: ids } } as Filter<ChannelCache>)
         .toArray();
-      return cachedChannels as unknown as ChannelCache[];
-    } catch (error: any) {
-      console.error(`Failed to find channels by IDs: ${error.message}`);
+      return cachedChannels as ChannelCache[];
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(`Failed to find channels by IDs: ${error.message}`);
+      } else {
+        console.error(`Failed to find channels by IDs: ${error}`);
+      }
       throw error;
     }
   }
@@ -94,16 +112,24 @@ export class CacheService {
     updates: Partial<ChannelCache>
   ): Promise<void> {
     try {
-      const collection = this.db.collection(this.CHANNELS_CACHE_COLLECTION);
+      const collection: Collection<ChannelCache> = this.db.collection(
+        this.CHANNELS_CACHE_COLLECTION
+      );
       await collection.updateOne(
-        { _id: channelId } as any,
+        { _id: channelId } as Filter<ChannelCache>,
         { $set: updates },
         { upsert: true }
       );
-    } catch (error: any) {
-      console.error(
-        `Failed to update channel cache for ${channelId}: ${error.message}`
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          `Failed to update channel cache for ${channelId}: ${error.message}`
+        );
+      } else {
+        console.error(
+          `Failed to update channel cache for ${channelId}: ${error}`
+        );
+      }
       throw error;
     }
   }
@@ -115,20 +141,28 @@ export class CacheService {
     historyEntry: ChannelCache["analysisHistory"][0]
   ): Promise<void> {
     try {
-      const collection = this.db.collection(this.CHANNELS_CACHE_COLLECTION);
-      await collection.updateOne({ _id: channelId } as any, {
+      const collection: Collection<ChannelCache> = this.db.collection(
+        this.CHANNELS_CACHE_COLLECTION
+      );
+      await collection.updateOne({ _id: channelId } as Filter<ChannelCache>, {
         $set: {
           latestAnalysis: latestAnalysis,
           status: status,
         },
         $push: {
           analysisHistory: historyEntry,
-        } as any,
+        },
       });
-    } catch (error: any) {
-      console.error(
-        `Failed to update channel with history for ${channelId}: ${error.message}`
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          `Failed to update channel with history for ${channelId}: ${error.message}`
+        );
+      } else {
+        console.error(
+          `Failed to update channel with history for ${channelId}: ${error}`
+        );
+      }
       throw error;
     }
   }
