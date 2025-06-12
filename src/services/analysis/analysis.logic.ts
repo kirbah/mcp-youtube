@@ -108,7 +108,11 @@ export function isValidChannelAge(
 export async function shouldSkipReAnalysis(
   channelData: ChannelCache
 ): Promise<boolean> {
-  if (!channelData.latestAnalysis || !channelData.analysisHistory.length) {
+  if (
+    !channelData.latestAnalysis ||
+    !channelData.analysisHistory ||
+    channelData.analysisHistory.length === 0
+  ) {
     return false;
   }
 
@@ -145,58 +149,83 @@ export function parseISO8601Duration(duration: string): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-export function calculateConsistencyPercentage(
+export function calculateConsistencyMetrics(
   videos: youtube_v3.Schema$Video[],
-  subscriberCount: number,
-  outlierMultiplier: number
+  subscriberCount: number
 ): {
-  consistencyPercentage: number;
-  outlierCount: number;
   sourceVideoCount: number;
+  metrics: {
+    STANDARD: {
+      outlierVideoCount: number;
+      consistencyPercentage: number;
+    };
+    STRONG: {
+      outlierVideoCount: number;
+      consistencyPercentage: number;
+    };
+  };
 } {
   if (videos.length === 0) {
-    return { consistencyPercentage: 0, outlierCount: 0, sourceVideoCount: 0 };
+    return {
+      sourceVideoCount: 0,
+      metrics: {
+        STANDARD: { outlierVideoCount: 0, consistencyPercentage: 0 },
+        STRONG: { outlierVideoCount: 0, consistencyPercentage: 0 },
+      },
+    };
   }
 
   let longFormVideoCount = 0;
-  let outlierLongFormVideoCount = 0;
-  const threshold = subscriberCount * outlierMultiplier;
+  let standardOutlierCount = 0;
+  let strongOutlierCount = 0;
+
+  const standardThreshold = subscriberCount * getOutlierMultiplier("STANDARD");
+  const strongThreshold = subscriberCount * getOutlierMultiplier("STRONG");
 
   for (const video of videos) {
-    // Ensure contentDetails and duration exist before parsing
     if (!video.contentDetails?.duration) {
-      continue; // Skip videos without duration information
+      continue;
     }
 
     const durationInSeconds = parseISO8601Duration(
       video.contentDetails.duration
     );
 
-    // THE NEW FILTER: If the video is a Short (or just very short), skip it entirely.
     if (durationInSeconds < MIN_VIDEO_DURATION_SECONDS) {
-      continue; // Ignore this video, move to the next one
+      continue;
     }
 
-    // This video is confirmed to be long-form.
     longFormVideoCount++;
-
-    // Now, perform the existing outlier check on this long-form video
     const viewCount = parseInt(video.statistics?.viewCount || "0");
-    if (viewCount > threshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
-      outlierLongFormVideoCount++;
+
+    if (viewCount > standardThreshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
+      standardOutlierCount++;
+    }
+    if (viewCount > strongThreshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
+      strongOutlierCount++;
     }
   }
 
-  // The new, more accurate consistency calculation:
-  // Avoid division by zero if a channel has NO long-form videos.
-  const consistencyPercentage =
+  const standardConsistencyPercentage =
     longFormVideoCount > 0
-      ? (outlierLongFormVideoCount / longFormVideoCount) * 100
+      ? (standardOutlierCount / longFormVideoCount) * 100
+      : 0;
+  const strongConsistencyPercentage =
+    longFormVideoCount > 0
+      ? (strongOutlierCount / longFormVideoCount) * 100
       : 0;
 
   return {
-    consistencyPercentage: consistencyPercentage,
-    outlierCount: outlierLongFormVideoCount,
     sourceVideoCount: longFormVideoCount,
+    metrics: {
+      STANDARD: {
+        outlierVideoCount: standardOutlierCount,
+        consistencyPercentage: standardConsistencyPercentage,
+      },
+      STRONG: {
+        outlierVideoCount: strongOutlierCount,
+        consistencyPercentage: strongConsistencyPercentage,
+      },
+    },
   };
 }

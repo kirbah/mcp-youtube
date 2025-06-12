@@ -5,6 +5,8 @@ import {
   ChannelCache,
   SearchCache,
   VideoListCache,
+  HistoricalAnalysisEntry,
+  LatestAnalysis,
 } from "./analysis/analysis.types.js";
 
 export class CacheService {
@@ -213,9 +215,8 @@ export class CacheService {
 
   async updateChannelWithHistory(
     channelId: string,
-    latestAnalysis: ChannelCache["latestAnalysis"],
-    status: ChannelCache["status"],
-    historyEntry: ChannelCache["analysisHistory"][0]
+    latestAnalysis: LatestAnalysis,
+    historicalEntry: HistoricalAnalysisEntry
   ): Promise<void> {
     try {
       const collection: Collection<ChannelCache> = this.db.collection(
@@ -224,10 +225,9 @@ export class CacheService {
       await collection.updateOne({ _id: channelId } as Filter<ChannelCache>, {
         $set: {
           latestAnalysis: latestAnalysis,
-          status: status,
         },
         $push: {
-          analysisHistory: historyEntry,
+          analysisHistory: historicalEntry,
         },
       });
     } catch (error: unknown) {

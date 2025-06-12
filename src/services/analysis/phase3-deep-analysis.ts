@@ -2,13 +2,17 @@ import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
 import { VideoManagement } from "../../functions/videos.js";
-import { ChannelCache } from "./analysis.types.js";
+import {
+  ChannelCache,
+  HistoricalAnalysisEntry,
+  LatestAnalysis,
+} from "./analysis.types.js";
 import {
   calculateChannelAgePublishedAfter,
   getOutlierMultiplier,
   getConsistencyThreshold,
   isQuotaError,
-  calculateConsistencyPercentage,
+  calculateConsistencyMetrics, // Changed from calculateConsistencyPercentage
 } from "./analysis.logic.js";
 
 // Tier 1: The "Analysis Brain" (channels_cache)
@@ -56,25 +60,54 @@ export async function executeDeepConsistencyAnalysis(
           continue;
         }
 
+        // Archive the Old Analysis if it exists
+        let historicalEntry: HistoricalAnalysisEntry | undefined;
+        if (channelData.latestAnalysis) {
+          historicalEntry = {
+            analyzedAt: channelData.latestAnalysis.analyzedAt,
+            subscriberCountAtAnalysis: channelData.latestStats.subscriberCount,
+            sourceVideoCount: channelData.latestAnalysis.sourceVideoCount,
+            metrics: {
+              STANDARD: {
+                consistencyPercentage:
+                  channelData.latestAnalysis.metrics.STANDARD
+                    .consistencyPercentage,
+                outlierVideoCount:
+                  channelData.latestAnalysis.metrics.STANDARD.outlierVideoCount,
+              },
+              STRONG: {
+                consistencyPercentage:
+                  channelData.latestAnalysis.metrics.STRONG
+                    .consistencyPercentage,
+                outlierVideoCount:
+                  channelData.latestAnalysis.metrics.STRONG.outlierVideoCount,
+              },
+            },
+          };
+        }
+
         // Tier 1: The "Analysis Brain" (channels_cache) - Check Re-analysis Trigger
         // We only trigger a new "Deep Analysis" when the channel shows significant growth.
         // If subscriberCount has not increased by REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD (20%) or more, skip re-analysis.
         if (
           channelData.latestAnalysis &&
           channelData.latestStats.subscriberCount <
-            channelData.latestAnalysis.subscriberCountAtAnalysis *
+            channelData.latestAnalysis.metrics.STANDARD.consistencyPercentage * // Using STANDARD consistency for re-analysis trigger
               REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD
         ) {
           // If the channel has not grown enough, and we have a previous analysis,
           // we can use the previous consistency percentage if it was promising.
           const consistencyPercentage =
-            channelData.latestAnalysis.consistencyPercentage;
+            channelData.latestAnalysis.metrics[options.outlierMagnitude]
+              .consistencyPercentage; // Reader Logic
 
           if (consistencyPercentage >= consistencyThreshold) {
             promisingChannels.push({
               channelData: channelData,
               consistencyPercentage: consistencyPercentage,
-              outlierCount: channelData.latestAnalysis.outlierVideoCount || 0,
+              outlierCount:
+                channelData.latestAnalysis.metrics[options.outlierMagnitude]
+                  .outlierVideoCount,
             });
           }
           continue; // Skip to the next channel
@@ -104,54 +137,56 @@ export async function executeDeepConsistencyAnalysis(
           continue;
         }
 
-        const { consistencyPercentage, outlierCount, sourceVideoCount } =
-          calculateConsistencyPercentage(
-            topVideos,
-            channelData.latestStats.subscriberCount,
-            outlierMultiplier
-          );
+        // Perform New Pre-Computed Analysis (Writer Logic)
+        const { sourceVideoCount, metrics } = calculateConsistencyMetrics(
+          topVideos,
+          channelData.latestStats.subscriberCount
+        );
 
         const now = new Date();
-        const newAnalysis = {
+        const newLatestAnalysis: LatestAnalysis = {
           analyzedAt: now,
-          consistencyPercentage,
-          sourceVideoCount: sourceVideoCount, // No longer 50, but the actual number of long-form videos
-          outlierVideoCount: outlierCount,
-          outlierMagnitudeUsed: options.outlierMagnitude,
-          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount, // Save current subscriber count
+          sourceVideoCount: sourceVideoCount,
+          metrics: metrics,
         };
 
-        const historyEntry = {
-          analyzedAt: now,
-          consistencyPercentage,
-          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount,
-          videoCountAtAnalysis: channelData.latestStats.videoCount,
-          subscriberCount: channelData.latestStats.subscriberCount,
-          videoCount: channelData.latestStats.videoCount,
-          viewCount: channelData.latestStats.viewCount,
-        };
+        // Update the channel cache with the new latest analysis and push old analysis to history
+        if (historicalEntry) {
+          await cacheService.updateChannelWithHistory(
+            channelId,
+            newLatestAnalysis,
+            historicalEntry
+          );
+        } else {
+          // If no historical entry, just set the latest analysis
+          await cacheService.updateChannel(channelId, {
+            latestAnalysis: newLatestAnalysis,
+          });
+        }
+
+        // Determine final status based on the requested consistency level
+        const finalConsistencyPercentage =
+          newLatestAnalysis.metrics[options.outlierMagnitude]
+            .consistencyPercentage;
+        const finalOutlierCount =
+          newLatestAnalysis.metrics[options.outlierMagnitude].outlierVideoCount;
 
         const finalStatus =
-          consistencyPercentage >= consistencyThreshold
+          finalConsistencyPercentage >= consistencyThreshold
             ? "analyzed_promising"
             : "analyzed_low_consistency";
 
-        await cacheService.updateChannelWithHistory(
-          channelId,
-          newAnalysis,
-          finalStatus,
-          historyEntry
-        );
+        await cacheService.updateChannel(channelId, { status: finalStatus });
 
-        if (consistencyPercentage >= consistencyThreshold) {
+        if (finalConsistencyPercentage >= consistencyThreshold) {
           promisingChannels.push({
             channelData: {
               ...channelData,
-              latestAnalysis: newAnalysis,
+              latestAnalysis: newLatestAnalysis,
               status: finalStatus as ChannelCache["status"],
             },
-            consistencyPercentage: consistencyPercentage,
-            outlierCount: outlierCount,
+            consistencyPercentage: finalConsistencyPercentage,
+            outlierCount: finalOutlierCount,
           });
         }
       } catch (error: any) {
