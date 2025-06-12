@@ -34,46 +34,50 @@ export const findConsistentOutlierChannelsConfig = {
       .describe(
         "Required. The core topic or niche to investigate (e.g., 'stoic philosophy', 'AI history explainers')."
       ),
+
     channelAge: z
       .enum(["NEW", "ESTABLISHED"])
       .optional()
       .describe(
-        "Filters for channels by their age, which also sets the time window for video performance analysis. 'NEW' is for emerging trends (under 6 months). 'ESTABLISHED' is for channels with a longer track record (6-24 months)."
+        "Optional. Filters by channel age. Default: 'NEW'. 'NEW' = under 6 months (emerging), 'ESTABLISHED' = 6-24 months (proven)."
       ),
+
     consistencyLevel: z
       .enum(["MODERATE", "HIGH"])
       .optional()
       .describe(
-        "Defines how consistently a channel's recent videos must outperform its subscriber count. 'MODERATE' requires 30% of videos to be outliers, 'HIGH' requires 50%."
+        "Optional. Minimum required consistency. Default: 'MODERATE'. 'MODERATE' (~30%) for broad discovery. 'HIGH' (~50%) for exceptional channels."
       ),
+
     outlierMagnitude: z
       .enum(["STANDARD", "STRONG"])
       .optional()
       .describe(
-        "Defines how strong a video's view count must be relative to the channel's subscriber count to be considered an 'outlier'. 'STANDARD' requires views > 1x subscribers. 'STRONG' requires views > 3x subscribers."
+        "Optional. Required 'viral factor' for videos. Default: 'STANDARD'. 'STANDARD' (views>subs) for regular content. 'STRONG' (views>3x subs) for viral channels."
       ),
+
     videoCategoryId: z
       .string()
       .optional()
       .describe(
-        "Optional. A YouTube video category ID to focus the search (e.g., '27' for Education, '20' for Gaming). This greatly improves the relevance of the search."
+        "Optional. YouTube video category ID to narrow search (e.g., '27' for Education). Improves relevance."
       ),
+
     regionCode: z
       .string()
       .length(2)
       .optional()
       .describe(
-        "Optional. A 2-letter country code (e.g., 'US', 'DE') to focus the search on a specific regional audience."
+        "Optional. ISO 2-letter country code (e.g., 'US', 'DE') to target a regional audience."
       ),
+
     maxResults: z
       .number()
       .int()
       .min(1)
       .max(50)
       .optional()
-      .describe(
-        "The maximum number of top-performing channels to return in the final, sorted list. Defaults to 10."
-      ),
+      .describe("Optional. Max number of channels to return. Default: 10."),
   },
 };
 
