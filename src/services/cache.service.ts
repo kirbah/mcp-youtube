@@ -1,4 +1,4 @@
-import { Db, Collection, Filter } from "mongodb";
+import { Db, Collection, Filter, UpdateFilter } from "mongodb";
 import { createHash } from "crypto";
 import { youtube_v3 } from "googleapis";
 import {
@@ -188,7 +188,7 @@ export class CacheService {
 
   async updateChannel(
     channelId: string,
-    updates: Partial<ChannelCache>
+    updates: UpdateFilter<ChannelCache>
   ): Promise<void> {
     try {
       const collection: Collection<ChannelCache> = this.db.collection(
@@ -196,7 +196,7 @@ export class CacheService {
       );
       await collection.updateOne(
         { _id: channelId } as Filter<ChannelCache>,
-        { $set: updates },
+        updates, // Directly pass the update object
         { upsert: true }
       );
     } catch (error: unknown) {
@@ -207,39 +207,6 @@ export class CacheService {
       } else {
         console.error(
           `Failed to update channel cache for ${channelId}: ${String(error)}`
-        );
-      }
-      throw error;
-    }
-  }
-
-  async updateChannelWithHistory(
-    channelId: string,
-    latestAnalysis: LatestAnalysis,
-    historicalEntry: HistoricalAnalysisEntry
-  ): Promise<void> {
-    try {
-      const collection: Collection<ChannelCache> = this.db.collection(
-        this.CHANNELS_CACHE_COLLECTION
-      );
-      await collection.updateOne({ _id: channelId } as Filter<ChannelCache>, {
-        $set: {
-          latestAnalysis: latestAnalysis,
-        },
-        $push: {
-          analysisHistory: historicalEntry,
-        },
-      });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(
-          `Failed to update channel with history for ${channelId}: ${error.message}`
-        );
-      } else {
-        console.error(
-          `Failed to update channel with history for ${channelId}: ${String(
-            error
-          )}`
         );
       }
       throw error;

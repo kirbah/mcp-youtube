@@ -2,6 +2,7 @@ import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
 import { VideoManagement } from "../../functions/videos.js";
+import { UpdateFilter } from "mongodb"; // Import UpdateFilter
 import {
   ChannelCache,
   HistoricalAnalysisEntry,
@@ -9,7 +10,6 @@ import {
 } from "./analysis.types.js";
 import {
   calculateChannelAgePublishedAfter,
-  getOutlierMultiplier,
   getConsistencyThreshold,
   isQuotaError,
   calculateConsistencyMetrics, // Changed from calculateConsistencyPercentage
@@ -127,18 +127,21 @@ export async function executeDeepConsistencyAnalysis(
             ? "analyzed_promising"
             : "analyzed_low_consistency";
 
-        if (historicalEntry) {
-          await cacheService.updateChannelWithHistory(
-            channelId,
-            newLatestAnalysis,
-            historicalEntry
-          );
-        } else {
-          await cacheService.updateChannel(channelId, {
+        // 1. Start building the update payload with the things that ALWAYS change.
+        const updatePayload: UpdateFilter<ChannelCache> = {
+          $set: {
             latestAnalysis: newLatestAnalysis,
             status: finalStatus,
-          });
+          },
+        };
+
+        // 2. Conditionally add the $push operation if there is history to archive.
+        if (historicalEntry) {
+          updatePayload.$push = { analysisHistory: historicalEntry };
         }
+
+        // 3. Make ONE single, atomic call to the database with the complete payload.
+        await cacheService.updateChannel(channelId, updatePayload);
 
         if (finalConsistencyPercentage >= consistencyThreshold) {
           promisingChannels.push({
