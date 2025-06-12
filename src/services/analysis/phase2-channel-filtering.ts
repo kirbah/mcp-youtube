@@ -77,7 +77,7 @@ export async function executeChannelPreFiltering(
           analysisHistory: channelData?.analysisHistory || [],
         };
 
-        await cacheService.updateChannel(channelId, updatedChannel);
+        await cacheService.updateChannel(channelId, { $set: updatedChannel });
         channelData = updatedChannel as ChannelCache;
       }
 
@@ -87,14 +87,14 @@ export async function executeChannelPreFiltering(
 
       if (channelData.latestStats.subscriberCount > MAX_SUBSCRIBER_CAP) {
         await cacheService.updateChannel(channelId, {
-          status: "archived_too_large",
+          $set: { status: "archived_too_large" },
         });
         continue;
       }
 
       if (channelData.latestStats.videoCount < MIN_VIDEOS_FOR_ANALYSIS) {
         await cacheService.updateChannel(channelId, {
-          status: "archived_low_sample_size",
+          $set: { status: "archived_low_sample_size" },
         });
         continue;
       }
@@ -104,7 +104,7 @@ export async function executeChannelPreFiltering(
 
       if (!isValidAge) {
         await cacheService.updateChannel(channelId, {
-          status: "archived_too_old",
+          $set: { status: "archived_too_old" },
         });
         continue;
       }
@@ -115,7 +115,7 @@ export async function executeChannelPreFiltering(
 
       if (!hasGoodPotential) {
         await cacheService.updateChannel(channelId, {
-          status: "archived_low_potential",
+          $set: { status: "archived_low_potential" },
         });
         continue;
       }
