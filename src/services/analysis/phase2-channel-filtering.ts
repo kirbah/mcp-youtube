@@ -109,9 +109,7 @@ export async function executeChannelPreFiltering(
         continue;
       }
 
-      const metrics = calculateDerivedMetrics({
-        statistics: channelData.latestStats,
-      });
+      const metrics = calculateDerivedMetrics(channelData);
       const hasGoodPotential =
         metrics.historicalAvgViewsPerVideo >= MIN_AVG_VIEWS_THRESHOLD;
 

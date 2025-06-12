@@ -1,6 +1,15 @@
 import { youtube_v3 } from "googleapis";
 import { ChannelCache } from "./analysis.types.js";
 
+interface GoogleApiError {
+  code?: number;
+  errors?: Array<{
+    domain?: string;
+    reason?: string;
+    message?: string;
+  }>;
+}
+
 export const STALENESS_DAYS_NEW = 14;
 export const STALENESS_DAYS_ESTABLISHED = 45;
 export const MIN_AVG_VIEWS_THRESHOLD = 1000;
@@ -8,12 +17,17 @@ export const MAX_SUBSCRIBER_CAP = 100_000;
 export const MIN_OUTLIER_VIEW_COUNT = 1000;
 export const MIN_VIDEO_DURATION_SECONDS = 180;
 
-export function isQuotaError(error: any): boolean {
-  if (error && error.code === 403) {
+export function isQuotaError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+  const err = error as Record<string, any>; // Cast to a record for property access
+
+  if (err.code === 403) {
     return true;
   }
-  if (error && error.errors && Array.isArray(error.errors)) {
-    return error.errors.some((err: any) => err.reason === "quotaExceeded");
+  if (err.errors && Array.isArray(err.errors)) {
+    return err.errors.some((e: any) => e.reason === "quotaExceeded");
   }
   return false;
 }
@@ -66,20 +80,18 @@ export function applyStalnessHeuristic(
   return analysisAge > staleThreshold;
 }
 
-export function calculateDerivedMetrics(channel: any): {
+export function calculateDerivedMetrics(channel: ChannelCache): {
   historicalAvgViewsPerVideo: number;
   libraryEngagementRatio: number;
 } {
   const avgViews =
-    channel.statistics?.videoCount > 0
-      ? parseInt(channel.statistics.viewCount) /
-        parseInt(channel.statistics.videoCount)
+    channel.latestStats?.videoCount > 0
+      ? channel.latestStats.viewCount / channel.latestStats.videoCount
       : 0;
 
   const engagementRatio =
-    channel.statistics?.subscriberCount > 0
-      ? parseInt(channel.statistics.viewCount) /
-        parseInt(channel.statistics.subscriberCount)
+    channel.latestStats?.subscriberCount > 0
+      ? channel.latestStats.viewCount / channel.latestStats.subscriberCount
       : 0;
 
   return {
@@ -105,9 +117,7 @@ export function isValidChannelAge(
   }
 }
 
-export async function shouldSkipReAnalysis(
-  channelData: ChannelCache
-): Promise<boolean> {
+export function shouldSkipReAnalysis(channelData: ChannelCache): boolean {
   if (
     !channelData.latestAnalysis ||
     !channelData.analysisHistory ||
