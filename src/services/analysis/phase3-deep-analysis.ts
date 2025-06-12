@@ -29,7 +29,6 @@ export async function executeDeepConsistencyAnalysis(
     const publishedAfter = calculateChannelAgePublishedAfter(
       options.channelAge
     );
-    const outlierMultiplier = getOutlierMultiplier(options.outlierMagnitude);
     const consistencyThreshold = getConsistencyThreshold(
       options.consistencyLevel
     );
@@ -123,27 +122,23 @@ export async function executeDeepConsistencyAnalysis(
         const finalConsistencyPercentage =
           newLatestAnalysis.metrics[options.outlierMagnitude]
             .consistencyPercentage;
-        const finalOutlierCount =
-          newLatestAnalysis.metrics[options.outlierMagnitude].outlierVideoCount;
-
         const finalStatus =
           finalConsistencyPercentage >= consistencyThreshold
             ? "analyzed_promising"
             : "analyzed_low_consistency";
 
-        // Consolidate database updates into a single operation
-        const updatePayload: any = {
-          $set: {
+        if (historicalEntry) {
+          await cacheService.updateChannelWithHistory(
+            channelId,
+            newLatestAnalysis,
+            historicalEntry
+          );
+        } else {
+          await cacheService.updateChannel(channelId, {
             latestAnalysis: newLatestAnalysis,
             status: finalStatus,
-          },
-        };
-
-        if (historicalEntry) {
-          updatePayload.$push = { analysisHistory: historicalEntry };
+          });
         }
-
-        await cacheService.updateChannel(channelId, updatePayload);
 
         if (finalConsistencyPercentage >= consistencyThreshold) {
           promisingChannels.push({
@@ -152,7 +147,7 @@ export async function executeDeepConsistencyAnalysis(
             status: finalStatus as ChannelCache["status"], // Set the new status
           });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (isQuotaError(error)) {
           console.error("YouTube API quota exceeded. Stopping analysis.");
           quotaExceeded = true;
@@ -160,7 +155,7 @@ export async function executeDeepConsistencyAnalysis(
         } else {
           console.error(
             `Failed to analyze channel ${channelId}: ${
-              (error as Error).message
+              error instanceof Error ? error.message : String(error)
             }`
           );
           continue;
@@ -172,7 +167,11 @@ export async function executeDeepConsistencyAnalysis(
       results: promisingChannels,
       quotaExceeded: quotaExceeded,
     };
-  } catch (error: any) {
-    throw new Error(`Phase 3 failed: ${error.message}`);
+  } catch (error: unknown) {
+    throw new Error(
+      `Phase 3 failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
