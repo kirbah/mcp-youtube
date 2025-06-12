@@ -1,19 +1,29 @@
 import {
   AnalysisResult,
   NicheAnalysisOutput,
+  FindConsistentOutlierChannelsOptions, // Added this import
 } from "../../types/analyzer.types.js";
 import { ChannelCache } from "./analysis.types.js";
 
 export function formatAndRankAnalysisResults(
-  analysisResults: Array<{
-    channelData: ChannelCache;
-    consistencyPercentage: number;
-    outlierCount: number;
-  }>,
-  maxResults: number,
-  quotaExceeded: boolean // Added quotaExceeded parameter
+  analysisResults: ChannelCache[], // <-- NEW, SIMPLER INPUT
+  options: FindConsistentOutlierChannelsOptions, // <-- NEED THIS FOR OUTLIER MAGNITUDE
+  quotaExceeded: boolean
 ): NicheAnalysisOutput {
-  const rankedAndFormattedResults = analysisResults
+  // STEP 1: Perform the transformation INTERNALLY
+  const transformedAnalysisResults = analysisResults.map((channelData) => ({
+    channelData: channelData,
+    // Extract the correct metric based on the options
+    consistencyPercentage:
+      channelData.latestAnalysis!.metrics[options.outlierMagnitude]
+        .consistencyPercentage,
+    outlierCount:
+      channelData.latestAnalysis!.metrics[options.outlierMagnitude]
+        .outlierVideoCount,
+  }));
+
+  // STEP 2: The rest of the function operates on the transformed data
+  const rankedAndFormattedResults = transformedAnalysisResults
     .map((result) => {
       const impactFactor =
         result.channelData.latestStats.videoCount > 0
@@ -45,7 +55,7 @@ export function formatAndRankAnalysisResults(
       };
     })
     .sort((a, b) => b._confidenceScore - a._confidenceScore)
-    .slice(0, maxResults);
+    .slice(0, options.maxResults); // Use options.maxResults
 
   const finalResults: AnalysisResult[] = rankedAndFormattedResults.map(
     ({ _confidenceScore, ...rest }) => rest

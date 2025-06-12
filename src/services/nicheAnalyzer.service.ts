@@ -49,8 +49,8 @@ export class NicheAnalyzerService {
 
       // Phase 4: Filter, Sort, Slice & Format
       const finalOutput = formatAndRankAnalysisResults(
-        analysisResults,
-        options.maxResults,
+        analysisResults, // Pass the raw ChannelCache[] directly
+        options, // Pass the full options object
         quotaExceeded
       );
 

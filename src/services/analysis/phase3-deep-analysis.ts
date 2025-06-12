@@ -23,20 +23,9 @@ export async function executeDeepConsistencyAnalysis(
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
   videoManagement: VideoManagement
-): Promise<{
-  results: Array<{
-    channelData: ChannelCache;
-    consistencyPercentage: number;
-    outlierCount: number;
-  }>;
-  quotaExceeded: boolean;
-}> {
+): Promise<{ results: ChannelCache[]; quotaExceeded: boolean }> {
   try {
-    const promisingChannels: {
-      channelData: ChannelCache;
-      consistencyPercentage: number;
-      outlierCount: number;
-    }[] = [];
+    const promisingChannels: ChannelCache[] = [];
     const publishedAfter = calculateChannelAgePublishedAfter(
       options.channelAge
     );
@@ -63,27 +52,8 @@ export async function executeDeepConsistencyAnalysis(
         // Archive the Old Analysis if it exists
         let historicalEntry: HistoricalAnalysisEntry | undefined;
         if (channelData.latestAnalysis) {
-          historicalEntry = {
-            analyzedAt: channelData.latestAnalysis.analyzedAt,
-            subscriberCountAtAnalysis: channelData.latestStats.subscriberCount,
-            sourceVideoCount: channelData.latestAnalysis.sourceVideoCount,
-            metrics: {
-              STANDARD: {
-                consistencyPercentage:
-                  channelData.latestAnalysis.metrics.STANDARD
-                    .consistencyPercentage,
-                outlierVideoCount:
-                  channelData.latestAnalysis.metrics.STANDARD.outlierVideoCount,
-              },
-              STRONG: {
-                consistencyPercentage:
-                  channelData.latestAnalysis.metrics.STRONG
-                    .consistencyPercentage,
-                outlierVideoCount:
-                  channelData.latestAnalysis.metrics.STRONG.outlierVideoCount,
-              },
-            },
-          };
+          // Simply spread the entire existing object. It already has the right shape.
+          historicalEntry = { ...channelData.latestAnalysis };
         }
 
         // Tier 1: The "Analysis Brain" (channels_cache) - Check Re-analysis Trigger
@@ -92,7 +62,7 @@ export async function executeDeepConsistencyAnalysis(
         if (
           channelData.latestAnalysis &&
           channelData.latestStats.subscriberCount <
-            channelData.latestAnalysis.metrics.STANDARD.consistencyPercentage * // Using STANDARD consistency for re-analysis trigger
+            channelData.latestAnalysis.subscriberCountAtAnalysis * // CORRECTED LOGIC
               REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD
         ) {
           // If the channel has not grown enough, and we have a previous analysis,
@@ -103,11 +73,9 @@ export async function executeDeepConsistencyAnalysis(
 
           if (consistencyPercentage >= consistencyThreshold) {
             promisingChannels.push({
-              channelData: channelData,
-              consistencyPercentage: consistencyPercentage,
-              outlierCount:
-                channelData.latestAnalysis.metrics[options.outlierMagnitude]
-                  .outlierVideoCount,
+              ...channelData,
+              // The analysis itself is old, but the STATUS of this finding is 'promising'.
+              status: "analyzed_promising",
             });
           }
           continue; // Skip to the next channel
@@ -146,23 +114,10 @@ export async function executeDeepConsistencyAnalysis(
         const now = new Date();
         const newLatestAnalysis: LatestAnalysis = {
           analyzedAt: now,
+          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount, // Populate the new field
           sourceVideoCount: sourceVideoCount,
           metrics: metrics,
         };
-
-        // Update the channel cache with the new latest analysis and push old analysis to history
-        if (historicalEntry) {
-          await cacheService.updateChannelWithHistory(
-            channelId,
-            newLatestAnalysis,
-            historicalEntry
-          );
-        } else {
-          // If no historical entry, just set the latest analysis
-          await cacheService.updateChannel(channelId, {
-            latestAnalysis: newLatestAnalysis,
-          });
-        }
 
         // Determine final status based on the requested consistency level
         const finalConsistencyPercentage =
@@ -176,17 +131,25 @@ export async function executeDeepConsistencyAnalysis(
             ? "analyzed_promising"
             : "analyzed_low_consistency";
 
-        await cacheService.updateChannel(channelId, { status: finalStatus });
+        // Consolidate database updates into a single operation
+        const updatePayload: any = {
+          $set: {
+            latestAnalysis: newLatestAnalysis,
+            status: finalStatus,
+          },
+        };
+
+        if (historicalEntry) {
+          updatePayload.$push = { analysisHistory: historicalEntry };
+        }
+
+        await cacheService.updateChannel(channelId, updatePayload);
 
         if (finalConsistencyPercentage >= consistencyThreshold) {
           promisingChannels.push({
-            channelData: {
-              ...channelData,
-              latestAnalysis: newLatestAnalysis,
-              status: finalStatus as ChannelCache["status"],
-            },
-            consistencyPercentage: finalConsistencyPercentage,
-            outlierCount: finalOutlierCount,
+            ...channelData, // The original channel data
+            latestAnalysis: newLatestAnalysis, // Overwrite with the brand new analysis
+            status: finalStatus as ChannelCache["status"], // Set the new status
           });
         }
       } catch (error: any) {

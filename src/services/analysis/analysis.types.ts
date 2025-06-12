@@ -22,6 +22,7 @@ export interface HistoricalAnalysisEntry {
 // A RICH object for the most recent analysis, containing all pre-computed data.
 export interface LatestAnalysis {
   analyzedAt: Date;
+  subscriberCountAtAnalysis: number; // <-- ADD THIS FIELD
   sourceVideoCount: number; // The number of long-form videos we based this on.
   metrics: {
     // Pre-calculated metrics for the "STANDARD" (views > 1x subs) rule.
