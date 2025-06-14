@@ -1,8 +1,8 @@
-import { VideoManagement, VideoOptions } from '../../videos'; // Adjust path as needed
-import { google } from 'googleapis';
+import { VideoManagement, VideoOptions } from "../../videos"; // Adjust path as needed
+import { google } from "googleapis";
 
 // Mock the googleapis library
-jest.mock('googleapis', () => ({
+jest.mock("googleapis", () => ({
   google: {
     youtube: jest.fn(() => ({
       videos: {
@@ -17,7 +17,7 @@ jest.mock('googleapis', () => ({
 // or handle its mocking if it's passed differently.
 // If the constructor directly uses process.env.YOUTUBE_API_KEY, ensure it's set for tests or mock process.env.
 
-describe('VideoManagement.getVideo', () => {
+describe("VideoManagement.getVideo", () => {
   let videoManagement: VideoManagement;
   let mockYoutubeVideosList: jest.Mock;
 
@@ -40,42 +40,45 @@ describe('VideoManagement.getVideo', () => {
   });
 
   // Tests will be added here in the next step
-  it('should retrieve video details successfully', async () => {
-    const mockVideoId = 'testVideoId';
+  it("should retrieve video details successfully", async () => {
+    const mockVideoId = "testVideoId";
     const mockVideoResponse = {
       data: {
-        items: [{ id: mockVideoId, snippet: { title: 'Test Video' } }],
+        items: [{ id: mockVideoId, snippet: { title: "Test Video" } }],
       },
     };
     mockYoutubeVideosList.mockResolvedValue(mockVideoResponse);
 
-    const videoOptions: VideoOptions = { videoId: mockVideoId, parts: ['snippet'] };
+    const videoOptions: VideoOptions = {
+      videoId: mockVideoId,
+      parts: ["snippet"],
+    };
     const result = await videoManagement.getVideo(videoOptions);
 
     expect(result).toEqual(mockVideoResponse.data.items[0]);
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
-      part: ['snippet'],
+      part: ["snippet"],
       id: [mockVideoId],
     });
   });
 
   it('should throw "Video not found" error when no items are returned', async () => {
-    const mockVideoId = 'nonExistentVideoId';
+    const mockVideoId = "nonExistentVideoId";
     mockYoutubeVideosList.mockResolvedValue({ data: { items: [] } });
 
     const videoOptions: VideoOptions = { videoId: mockVideoId };
     await expect(videoManagement.getVideo(videoOptions)).rejects.toThrow(
-      'Video not found.'
+      "Video not found."
     );
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
-      part: ['snippet'], // Default part
+      part: ["snippet"], // Default part
       id: [mockVideoId],
     });
   });
 
-  it('should throw an error if the YouTube API call fails', async () => {
-    const mockVideoId = 'testVideoId';
-    const errorMessage = 'API Error';
+  it("should throw an error if the YouTube API call fails", async () => {
+    const mockVideoId = "testVideoId";
+    const errorMessage = "API Error";
     mockYoutubeVideosList.mockRejectedValue(new Error(errorMessage));
 
     const videoOptions: VideoOptions = { videoId: mockVideoId };
@@ -84,29 +87,40 @@ describe('VideoManagement.getVideo', () => {
     );
   });
 
-  it('should request specified parts when provided', async () => {
-    const mockVideoId = 'testVideoIdWithParts';
+  it("should request specified parts when provided", async () => {
+    const mockVideoId = "testVideoIdWithParts";
     const mockVideoResponse = {
       data: {
-        items: [{ id: mockVideoId, snippet: { title: 'Test Video' }, statistics: { viewCount: '100' } }],
+        items: [
+          {
+            id: mockVideoId,
+            snippet: { title: "Test Video" },
+            statistics: { viewCount: "100" },
+          },
+        ],
       },
     };
     mockYoutubeVideosList.mockResolvedValue(mockVideoResponse);
 
-    const videoOptions: VideoOptions = { videoId: mockVideoId, parts: ['snippet', 'statistics'] };
+    const videoOptions: VideoOptions = {
+      videoId: mockVideoId,
+      parts: ["snippet", "statistics"],
+    };
     await videoManagement.getVideo(videoOptions);
 
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
-      part: ['snippet', 'statistics'],
+      part: ["snippet", "statistics"],
       id: [mockVideoId],
     });
   });
 
   it('should use default part "snippet" if no parts are specified', async () => {
-    const mockVideoId = 'testVideoIdDefaultPart';
-     const mockVideoResponse = {
+    const mockVideoId = "testVideoIdDefaultPart";
+    const mockVideoResponse = {
       data: {
-        items: [{ id: mockVideoId, snippet: { title: 'Test Video Default Part' } }],
+        items: [
+          { id: mockVideoId, snippet: { title: "Test Video Default Part" } },
+        ],
       },
     };
     mockYoutubeVideosList.mockResolvedValue(mockVideoResponse);
@@ -115,7 +129,7 @@ describe('VideoManagement.getVideo', () => {
     await videoManagement.getVideo(videoOptions);
 
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
-      part: ['snippet'], // Default part
+      part: ["snippet"], // Default part
       id: [mockVideoId],
     });
   });

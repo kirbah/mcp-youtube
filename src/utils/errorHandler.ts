@@ -6,9 +6,7 @@ export interface ErrorResponse {
   message: string; // Add message to align with common error structures
 }
 
-export const formatError = (
-  error: unknown
-): CallToolResult => {
+export const formatError = (error: unknown): CallToolResult => {
   const errorMessage = getErrorMessage(error);
   const errorResponse: ErrorResponse = {
     error: "ToolExecutionError", // Standard error type

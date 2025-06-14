@@ -8,7 +8,9 @@ import type { LeanChannelStatistics } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelStatisticsSchema = z.object({
-  channelIds: z.array(channelIdSchema).min(1, "Channel IDs array must contain at least 1 element(s)"),
+  channelIds: z
+    .array(channelIdSchema)
+    .min(1, "Channel IDs array must contain at least 1 element(s)"),
 });
 
 export const getChannelStatisticsConfig = {
@@ -33,9 +35,8 @@ export const getChannelStatisticsHandler = async (
       videoManager.getChannelStatistics(channelId)
     );
 
-    const statisticsResults: LeanChannelStatistics[] = await Promise.all(
-      statisticsPromises
-    );
+    const statisticsResults: LeanChannelStatistics[] =
+      await Promise.all(statisticsPromises);
 
     return formatSuccess(statisticsResults);
   } catch (error: any) {

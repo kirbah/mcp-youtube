@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   validateParams,
   videoIdSchema,
@@ -8,18 +8,18 @@ import {
   languageSchema,
   regionCodeSchema,
   categoryIdSchema,
-} from '../validation';
+} from "../validation";
 
-describe('validation', () => {
-  describe('validateParams', () => {
+describe("validation", () => {
+  describe("validateParams", () => {
     const testSchema = z.object({ name: z.string(), age: z.number() });
 
-    it('should return params if they are valid', () => {
+    it("should return params if they are valid", () => {
       const params = { name: "Test", age: 30 };
       expect(validateParams(params, testSchema)).toEqual(params);
     });
 
-    it('should throw a formatted Error for invalid params', () => {
+    it("should throw a formatted Error for invalid params", () => {
       const params = { name: "Test", age: "30" };
       expect(() => validateParams(params, testSchema)).toThrowError(Error);
       expect(() => validateParams(params, testSchema)).toThrowError(
@@ -27,29 +27,34 @@ describe('validation', () => {
       );
     });
 
-    it('should strip extra fields by default', () => {
+    it("should strip extra fields by default", () => {
       const params = { name: "Test", age: 30, extra: "field" };
-      expect(validateParams(params, testSchema)).toEqual({ name: "Test", age: 30 });
+      expect(validateParams(params, testSchema)).toEqual({
+        name: "Test",
+        age: 30,
+      });
     });
 
-    it('should re-throw non-ZodErrors', () => {
+    it("should re-throw non-ZodErrors", () => {
       const mockSchema = {
         parse: () => {
           throw new Error("Generic error");
         },
       } as any;
       const params = { name: "Test" };
-      expect(() => validateParams(params, mockSchema)).toThrowError("Generic error");
+      expect(() => validateParams(params, mockSchema)).toThrowError(
+        "Generic error"
+      );
     });
   });
 
-  describe('individual schemas', () => {
-    describe('videoIdSchema', () => {
-      it('should validate a correct video ID', () => {
+  describe("individual schemas", () => {
+    describe("videoIdSchema", () => {
+      it("should validate a correct video ID", () => {
         expect(videoIdSchema.parse("abcdef12345")).toBe("abcdef12345");
       });
 
-      it('should invalidate an empty video ID', () => {
+      it("should invalidate an empty video ID", () => {
         expect(() => videoIdSchema.parse("")).toThrowError(z.ZodError);
         try {
           videoIdSchema.parse("");
@@ -58,12 +63,12 @@ describe('validation', () => {
         }
       });
     });
-    describe('channelIdSchema', () => {
-      it('should validate a correct channel ID', () => {
+    describe("channelIdSchema", () => {
+      it("should validate a correct channel ID", () => {
         expect(channelIdSchema.parse("UCabcdef12345")).toBe("UCabcdef12345");
       });
 
-      it('should invalidate an empty channel ID', () => {
+      it("should invalidate an empty channel ID", () => {
         expect(() => channelIdSchema.parse("")).toThrowError(z.ZodError);
         try {
           channelIdSchema.parse("");
@@ -72,64 +77,64 @@ describe('validation', () => {
         }
       });
     });
-    describe('maxResultsSchema', () => {
-      it('should validate a correct maxResults value', () => {
+    describe("maxResultsSchema", () => {
+      it("should validate a correct maxResults value", () => {
         expect(maxResultsSchema.parse(25)).toBe(25);
       });
 
-      it('should allow undefined for maxResults (optional)', () => {
+      it("should allow undefined for maxResults (optional)", () => {
         expect(maxResultsSchema.parse(undefined)).toBeUndefined();
       });
 
-      it('should invalidate a maxResults value that is too small', () => {
+      it("should invalidate a maxResults value that is too small", () => {
         expect(() => maxResultsSchema.parse(0)).toThrowError(z.ZodError);
       });
 
-      it('should invalidate a maxResults value that is too large', () => {
+      it("should invalidate a maxResults value that is too large", () => {
         expect(() => maxResultsSchema.parse(501)).toThrowError(z.ZodError);
       });
     });
-    describe('querySchema', () => {
-      it('should validate a correct query string', () => {
+    describe("querySchema", () => {
+      it("should validate a correct query string", () => {
         expect(querySchema.parse("test query")).toBe("test query");
       });
 
-      it('should invalidate an empty query string', () => {
+      it("should invalidate an empty query string", () => {
         expect(() => querySchema.parse("")).toThrowError(z.ZodError);
       });
     });
-    describe('languageSchema', () => {
-      it('should validate a correct language code', () => {
+    describe("languageSchema", () => {
+      it("should validate a correct language code", () => {
         expect(languageSchema.parse("en")).toBe("en");
       });
 
-      it('should allow undefined for language code (optional)', () => {
+      it("should allow undefined for language code (optional)", () => {
         expect(languageSchema.parse(undefined)).toBeUndefined();
       });
     });
-    describe('regionCodeSchema', () => {
-      it('should validate a correct region code', () => {
+    describe("regionCodeSchema", () => {
+      it("should validate a correct region code", () => {
         expect(regionCodeSchema.parse("US")).toBe("US");
       });
 
-      it('should allow undefined for region code (optional)', () => {
+      it("should allow undefined for region code (optional)", () => {
         expect(regionCodeSchema.parse(undefined)).toBeUndefined();
       });
 
-      it('should invalidate a region code that is too short', () => {
+      it("should invalidate a region code that is too short", () => {
         expect(() => regionCodeSchema.parse("U")).toThrowError(z.ZodError);
       });
 
-      it('should invalidate a region code that is too long', () => {
+      it("should invalidate a region code that is too long", () => {
         expect(() => regionCodeSchema.parse("USA")).toThrowError(z.ZodError);
       });
     });
-    describe('categoryIdSchema', () => {
-      it('should validate a correct category ID', () => {
+    describe("categoryIdSchema", () => {
+      it("should validate a correct category ID", () => {
         expect(categoryIdSchema.parse("10")).toBe("10");
       });
 
-      it('should allow undefined for category ID (optional)', () => {
+      it("should allow undefined for category ID (optional)", () => {
         expect(categoryIdSchema.parse(undefined)).toBeUndefined();
       });
     });

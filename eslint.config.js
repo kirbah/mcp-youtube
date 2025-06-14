@@ -2,6 +2,7 @@
 import globals from "globals";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   // Global ignores
@@ -105,5 +106,8 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/ban-ts-comment": "off",
     },
-  }
+  },
+
+  // Prettier integration
+  prettier
 );

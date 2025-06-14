@@ -46,9 +46,8 @@ export async function executeChannelPreFiltering(
       }
     }
 
-    const freshChannelStats = await videoManagement.batchFetchChannelStatistics(
-      needsStatsFetch
-    );
+    const freshChannelStats =
+      await videoManagement.batchFetchChannelStatistics(needsStatsFetch);
 
     for (const channelId of channelIds) {
       let channelData = cachedChannelMap.get(channelId);
