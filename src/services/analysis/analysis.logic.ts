@@ -205,8 +205,13 @@ export function calculateConsistencyMetrics(
       continue;
     }
 
+    // Ensure viewCount is available before considering it a valid source video
+    if (!video.statistics?.viewCount) {
+      continue;
+    }
+
     longFormVideoCount++;
-    const viewCount = parseInt(video.statistics?.viewCount || "0");
+    const viewCount = parseInt(video.statistics.viewCount); // Already checked for existence
 
     if (viewCount > standardThreshold && viewCount > MIN_OUTLIER_VIEW_COUNT) {
       standardOutlierCount++;
