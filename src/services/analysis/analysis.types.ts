@@ -50,6 +50,7 @@ export interface SearchCache {
 export interface ChannelCache {
   _id: string; // Channel ID
   channelTitle: string;
+  manual_review_notes?: string; // Optional notes for manual review
   createdAt: Date;
   status:
     | "candidate"
@@ -58,6 +59,10 @@ export interface ChannelCache {
     | "archived_low_sample_size"
     | "analyzed_low_consistency"
     | "analyzed_promising"
+    | "analyzed_promising_prime_candidate"
+    | "analyzed_promising_monitor"
+    | "archived_unreplicable"
+    | "archived_niche_mismatch"
     | "archived_too_large";
   latestStats: {
     fetchedAt: Date;
