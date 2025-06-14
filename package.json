@@ -21,7 +21,9 @@
     "prebuild": "npm run clean",
     "lint": "eslint src/**/*.ts",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "mcp",
@@ -59,8 +61,10 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.0",
     "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
+    "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.3.4",
     "typescript": "^5.8.3",

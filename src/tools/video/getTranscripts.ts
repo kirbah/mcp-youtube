@@ -11,7 +11,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getTranscriptsSchema = z.object({
   videoIds: z.array(videoIdSchema),
-  lang: languageSchema.default('en'),
+  lang: languageSchema.default("en"),
 });
 
 export const getTranscriptsConfig = {

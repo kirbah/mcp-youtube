@@ -36,7 +36,12 @@ async function main() {
         // Check if handler expects videoManager parameter
         if (handler.length === 2) {
           // Handler expects (params, videoManager)
-          return (handler as (params: any, videoManager: VideoManagement) => Promise<any>)(params, videoManager);
+          return (
+            handler as (
+              params: any,
+              videoManager: VideoManagement
+            ) => Promise<any>
+          )(params, videoManager);
         } else {
           // Handler expects only (params)
           return (handler as (params: any) => Promise<any>)(params);

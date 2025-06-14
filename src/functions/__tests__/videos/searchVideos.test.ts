@@ -63,15 +63,21 @@ describe("VideoManagement - searchVideos", () => {
     const query = "maxResults test";
     const maxResults = 5;
     // Mock API to return more items than maxResults to ensure slicing
-    const mockItems = Array(10).fill({}).map((_, i) => ({ id: { videoId: `video${i}` } }));
-    mockSearchList.mockResolvedValueOnce({ data: { items: mockItems, nextPageToken: "nextPage" } });
+    const mockItems = Array(10)
+      .fill({})
+      .map((_, i) => ({ id: { videoId: `video${i}` } }));
+    mockSearchList.mockResolvedValueOnce({
+      data: { items: mockItems, nextPageToken: "nextPage" },
+    });
 
     const results = await videoManagement.searchVideos({ query, maxResults });
 
     expect(results.length).toBe(maxResults);
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      maxResults: maxResults,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        maxResults: maxResults,
+      })
+    );
   });
 
   it("should use calculated publishedAfter when recency is provided", async () => {
@@ -80,9 +86,9 @@ describe("VideoManagement - searchVideos", () => {
     const toleranceMilliseconds = 10000; // 10 seconds
 
     const calculatePublishedAfterSpy = jest.spyOn(
-        VideoManagement.prototype as any,
-        "calculatePublishedAfter"
-      );
+      VideoManagement.prototype as any,
+      "calculatePublishedAfter"
+    );
 
     // Calculate expected publishedAfter just before the call
     const expectedTime = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -96,25 +102,36 @@ describe("VideoManagement - searchVideos", () => {
     expect(apiCallArgs.publishedAfter).toEqual(expect.any(String));
 
     // Validate ISO string format (basic check)
-    expect(apiCallArgs.publishedAfter).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(apiCallArgs.publishedAfter).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+    );
 
     const actualPublishedAfterDate = new Date(apiCallArgs.publishedAfter);
-    const timeDifference = Math.abs(actualPublishedAfterDate.getTime() - expectedTime.getTime());
+    const timeDifference = Math.abs(
+      actualPublishedAfterDate.getTime() - expectedTime.getTime()
+    );
 
     expect(timeDifference).toBeLessThanOrEqual(toleranceMilliseconds);
     calculatePublishedAfterSpy.mockRestore();
   });
 
-
   it("should handle pagination correctly when maxResults exceeds MAX_RESULTS_PER_PAGE", async () => {
     const query = "pagination test";
     const maxResults = 60; // Assuming MAX_RESULTS_PER_PAGE is 50
-    const mockPage1Items = Array(50).fill({}).map((_, i) => ({ id: { videoId: `video_page1_${i}` } }));
-    const mockPage2Items = Array(10).fill({}).map((_, i) => ({ id: { videoId: `video_page2_${i}` } }));
+    const mockPage1Items = Array(50)
+      .fill({})
+      .map((_, i) => ({ id: { videoId: `video_page1_${i}` } }));
+    const mockPage2Items = Array(10)
+      .fill({})
+      .map((_, i) => ({ id: { videoId: `video_page2_${i}` } }));
 
     mockSearchList
-      .mockResolvedValueOnce({ data: { items: mockPage1Items, nextPageToken: "nextPageToken123" } })
-      .mockResolvedValueOnce({ data: { items: mockPage2Items, nextPageToken: null } }); // No next page token for the second call
+      .mockResolvedValueOnce({
+        data: { items: mockPage1Items, nextPageToken: "nextPageToken123" },
+      })
+      .mockResolvedValueOnce({
+        data: { items: mockPage2Items, nextPageToken: null },
+      }); // No next page token for the second call
 
     const results = await videoManagement.searchVideos({ query, maxResults });
 
@@ -133,18 +150,26 @@ describe("VideoManagement - searchVideos", () => {
 
     // Mock enough pages to satisfy ABSOLUTE_MAX_RESULTS
     for (let i = 0; i < absoluteMaxResults / 50; i++) {
-        const pageItems = Array(50).fill({}).map((_, j) => ({ id: { videoId: `video_abs_${i}_${j}`}}));
-        mockSearchList.mockResolvedValueOnce({
-            data: { items: pageItems, nextPageToken: (i < (absoluteMaxResults / 50) - 1) ? `nextPage${i}` : null }
-        });
+      const pageItems = Array(50)
+        .fill({})
+        .map((_, j) => ({ id: { videoId: `video_abs_${i}_${j}` } }));
+      mockSearchList.mockResolvedValueOnce({
+        data: {
+          items: pageItems,
+          nextPageToken:
+            i < absoluteMaxResults / 50 - 1 ? `nextPage${i}` : null,
+        },
+      });
     }
 
-    const results = await videoManagement.searchVideos({ query, maxResults: highMaxResults });
+    const results = await videoManagement.searchVideos({
+      query,
+      maxResults: highMaxResults,
+    });
     expect(results.length).toBe(absoluteMaxResults);
     // Expect 10 calls if MAX_RESULTS_PER_PAGE = 50 and ABSOLUTE_MAX_RESULTS = 500
     expect(mockSearchList).toHaveBeenCalledTimes(absoluteMaxResults / 50);
   });
-
 
   it("should throw an error if youtube.search.list fails", async () => {
     const query = "error test";
@@ -164,9 +189,11 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, order });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      order: order,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: order,
+      })
+    );
   });
 
   // Test for 'type' parameter
@@ -177,9 +204,11 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, type });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      type: [type], // API expects an array for type
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: [type], // API expects an array for type
+      })
+    );
   });
 
   // Test for 'channelId' parameter
@@ -190,9 +219,11 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, channelId });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      channelId: channelId,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channelId: channelId,
+      })
+    );
   });
 
   // Test for 'videoDuration' parameter
@@ -203,12 +234,14 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, videoDuration });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      videoDuration: videoDuration,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        videoDuration: videoDuration,
+      })
+    );
   });
 
-   // Test for 'videoDuration' parameter being 'any'
+  // Test for 'videoDuration' parameter being 'any'
   it("should not include videoDuration in API call if it's 'any'", async () => {
     const query = "videoDuration any test";
     const videoDuration = "any";
@@ -220,7 +253,6 @@ describe("VideoManagement - searchVideos", () => {
     expect(callArgs.videoDuration).toBeUndefined();
   });
 
-
   // Test for 'publishedAfter' parameter (direct)
   it("should call youtube.search.list with the specified publishedAfter date", async () => {
     const query = "publishedAfter direct test";
@@ -229,11 +261,12 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, publishedAfter });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      publishedAfter: publishedAfter,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        publishedAfter: publishedAfter,
+      })
+    );
   });
-
 
   // Test for 'regionCode' parameter
   it("should call youtube.search.list with the specified regionCode", async () => {
@@ -243,9 +276,11 @@ describe("VideoManagement - searchVideos", () => {
 
     await videoManagement.searchVideos({ query, regionCode });
 
-    expect(mockSearchList).toHaveBeenCalledWith(expect.objectContaining({
-      regionCode: regionCode,
-    }));
+    expect(mockSearchList).toHaveBeenCalledWith(
+      expect.objectContaining({
+        regionCode: regionCode,
+      })
+    );
   });
 
   // Test that publishedAfter from recency takes precedence over direct publishedAfter if both provided
@@ -257,15 +292,21 @@ describe("VideoManagement - searchVideos", () => {
     const toleranceMilliseconds = 10000; // 10 seconds
 
     const calculatePublishedAfterSpy = jest.spyOn(
-        VideoManagement.prototype as any,
-        "calculatePublishedAfter"
-      );
+      VideoManagement.prototype as any,
+      "calculatePublishedAfter"
+    );
 
     // Calculate expected publishedAfter for 'pastMonth' just before the call
-    const expectedTimeFromRecency = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const expectedTimeFromRecency = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000
+    );
 
     mockSearchList.mockResolvedValueOnce({ data: { items: [] } });
-    await videoManagement.searchVideos({ query, recency, publishedAfter: directPublishedAfter });
+    await videoManagement.searchVideos({
+      query,
+      recency,
+      publishedAfter: directPublishedAfter,
+    });
 
     expect(calculatePublishedAfterSpy).toHaveBeenCalledWith(recency);
     const apiCallArgs = mockSearchList.mock.calls[0][0];
@@ -274,15 +315,20 @@ describe("VideoManagement - searchVideos", () => {
     expect(apiCallArgs.publishedAfter).not.toBe(directPublishedAfter);
 
     // Validate ISO string format (basic check)
-    expect(apiCallArgs.publishedAfter).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(apiCallArgs.publishedAfter).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+    );
 
     const actualPublishedAfterDate = new Date(apiCallArgs.publishedAfter);
-    const timeDifference = Math.abs(actualPublishedAfterDate.getTime() - expectedTimeFromRecency.getTime());
+    const timeDifference = Math.abs(
+      actualPublishedAfterDate.getTime() - expectedTimeFromRecency.getTime()
+    );
 
     expect(timeDifference).toBeLessThanOrEqual(toleranceMilliseconds);
-    expect(actualPublishedAfterDate.getTime()).toBeGreaterThan(new Date(directPublishedAfter).getTime());
+    expect(actualPublishedAfterDate.getTime()).toBeGreaterThan(
+      new Date(directPublishedAfter).getTime()
+    );
 
     calculatePublishedAfterSpy.mockRestore();
   });
-
 });

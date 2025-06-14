@@ -1,4 +1,4 @@
-declare module 'youtube-transcript-api' {
+declare module "youtube-transcript-api" {
   interface TranscriptItem {
     text: string;
     start: number;
@@ -8,4 +8,4 @@ declare module 'youtube-transcript-api' {
   export class YoutubeTranscript {
     getTranscript(videoId: string): Promise<TranscriptItem[]>;
   }
-} 
+}

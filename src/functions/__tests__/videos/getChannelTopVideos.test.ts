@@ -529,8 +529,8 @@ describe("VideoManagement.getChannelTopVideos", () => {
       const requestedIds = Array.isArray(params.id)
         ? params.id
         : params.id
-        ? [params.id]
-        : [];
+          ? [params.id]
+          : [];
       const itemsToReturn = mockVideoDetails.filter((detail) =>
         requestedIds.includes(detail.id)
       );

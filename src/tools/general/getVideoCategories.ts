@@ -7,7 +7,7 @@ import type { VideoCategoriesParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getVideoCategoriesSchema = z.object({
-  regionCode: regionCodeSchema.default('US'),
+  regionCode: regionCodeSchema.default("US"),
 });
 
 export const getVideoCategoriesConfig = {

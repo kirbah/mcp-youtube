@@ -11,7 +11,7 @@ import type { TrendingParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getTrendingVideosSchema = z.object({
-  regionCode: regionCodeSchema.default('US'),
+  regionCode: regionCodeSchema.default("US"),
   categoryId: categoryIdSchema, // categoryId is optional and has no default
   maxResults: maxResultsSchema.default(10),
 });

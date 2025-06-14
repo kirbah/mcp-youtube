@@ -96,9 +96,8 @@ export const findConsistentOutlierChannelsHandler = async (
 
     const validatedParams = findConsistentOutlierChannelsSchema.parse(params);
 
-    const searchResults = await nicheAnalyzer.findConsistentOutlierChannels(
-      validatedParams
-    );
+    const searchResults =
+      await nicheAnalyzer.findConsistentOutlierChannels(validatedParams);
 
     return formatSuccess(searchResults);
   } catch (error: any) {
