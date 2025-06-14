@@ -1,11 +1,8 @@
 import { CacheService } from "../cache.service"; // Import the class
 // Import types from their actual source if they are not re-exported by CacheService module
-import {
-  VideoListCache,
-  ChannelCache,
-} from "../analysis/analysis.types.js";
+import { VideoListCache, ChannelCache } from "../analysis/analysis.types.js";
 import { ObjectId } from "mongodb";
-import { getDb } from '../database.service'; // This is already mocked
+import { getDb } from "../database.service"; // This is already mocked
 
 // Mock cache.service and use requireActual to get the real implementations
 // This can help with issues related to ES module interop in Jest
@@ -22,7 +19,7 @@ let actualMockFindOne: jest.Mock;
 let actualMockDeleteOne: jest.Mock;
 let actualMockFind: jest.Mock;
 
-jest.mock('../database.service', () => {
+jest.mock("../database.service", () => {
   // Create the mocks within the factory scope
   const factoryMockUpdateOne = jest.fn();
   const factoryMockFindOne = jest.fn();
@@ -76,10 +73,8 @@ describe("CacheService", () => {
     // getDb().collection is also a mock function from our factory
     (mockDb.collection as jest.Mock).mockClear();
 
-
     cacheServiceInstance = new CacheService(mockDb);
   });
-
 
   describe("storeCachedSearchResults and getCachedSearchResults", () => {
     it("should store and retrieve a valid search result", async () => {
@@ -88,7 +83,10 @@ describe("CacheService", () => {
 
       // actualMockUpdateOne, actualMockFindOne are cleared in beforeEach
 
-      await cacheServiceInstance.storeCachedSearchResults(searchParams, results);
+      await cacheServiceInstance.storeCachedSearchResults(
+        searchParams,
+        results
+      );
 
       expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
       const filterQuery = actualMockUpdateOne.mock.calls[0][0];
@@ -165,13 +163,15 @@ describe("CacheService", () => {
 
       // actualMockUpdateOne is cleared in beforeEach
 
-      await cacheServiceInstance.updateChannel(channelId, { $set: channelData }); // Ensure $set is used as per CacheService method signature
+      await cacheServiceInstance.updateChannel(channelId, {
+        $set: channelData,
+      }); // Ensure $set is used as per CacheService method signature
 
       expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
       expect(actualMockUpdateOne).toHaveBeenCalledWith(
         { _id: channelId }, // Corrected filter query to use _id
         { $set: channelData },
-        { upsert: true },
+        { upsert: true }
       );
     });
   });
