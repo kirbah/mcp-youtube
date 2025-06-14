@@ -48,3 +48,13 @@ export interface TrendingParams {
 export interface VideoCategoriesParams {
   regionCode?: string;
 }
+
+export interface FindConsistentOutlierChannelsParams {
+  query: string;
+  channelAge?: "NEW" | "ESTABLISHED";
+  consistencyLevel?: "MODERATE" | "HIGH";
+  outlierMagnitude?: "STANDARD" | "STRONG";
+  videoCategoryId?: string;
+  regionCode?: string;
+  maxResults?: number;
+}

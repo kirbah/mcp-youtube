@@ -34,6 +34,7 @@ export interface SearchOptions {
     | "pastQuarter"
     | "pastYear";
   regionCode?: string;
+  videoCategoryId?: string; // Added
 }
 
 export interface ChannelOptions {
@@ -53,12 +54,23 @@ export class VideoManagement {
   private youtube: youtube_v3.Youtube;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly ABSOLUTE_MAX_RESULTS = 500;
+  private apiCreditsUsed: number = 0; // The new internal counter
 
   constructor() {
     this.youtube = google.youtube({
       version: "v3",
       auth: process.env.YOUTUBE_API_KEY,
     });
+  }
+
+  // New Method: A public getter for the orchestrator to call
+  public getApiCreditsUsed(): number {
+    return this.apiCreditsUsed;
+  }
+
+  // New Method: Resets the counter for a fresh run
+  public resetApiCreditsUsed(): void {
+    this.apiCreditsUsed = 0;
   }
 
   private calculatePublishedAfter(recency: string): string {
@@ -98,6 +110,7 @@ export class VideoManagement {
         part: parts,
         id: [videoId],
       });
+      this.apiCreditsUsed += 1; // Add the cost after the call
 
       if (!response.data.items?.length) {
         throw new Error("Video not found.");
@@ -164,6 +177,7 @@ export class VideoManagement {
         const response: youtube_v3.Schema$SearchListResponse = (
           await this.youtube.search.list(searchParams)
         ).data;
+        this.apiCreditsUsed += 100; // Add the cost after the call
 
         if (!response.items?.length) {
           break;
@@ -195,6 +209,41 @@ export class VideoManagement {
     }
   }
 
+  async batchFetchChannelStatistics(
+    channelIds: string[]
+  ): Promise<Map<string, youtube_v3.Schema$Channel>> {
+    const results = new Map<string, youtube_v3.Schema$Channel>();
+
+    if (channelIds.length === 0) {
+      return results;
+    }
+
+    try {
+      const batchSize = 50;
+      for (let i = 0; i < channelIds.length; i += batchSize) {
+        const batch = channelIds.slice(i, i + batchSize);
+
+        const response = await this.youtube.channels.list({
+          part: ["snippet", "statistics"],
+          id: batch,
+        });
+        this.apiCreditsUsed += 1; // Add the cost after the call
+
+        if (response.data.items) {
+          for (const channel of response.data.items) {
+            if (channel.id) {
+              results.set(channel.id, channel);
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to fetch channel statistics: ${error.message}`);
+    }
+
+    return results;
+  }
+
   async getChannelStatistics(
     channelId: string
   ): Promise<LeanChannelStatistics> {
@@ -203,6 +252,7 @@ export class VideoManagement {
         part: ["snippet", "statistics"],
         id: [channelId],
       });
+      this.apiCreditsUsed += 1; // Add the cost after the call
 
       if (!response.data.items?.length) {
         throw new Error("Channel not found.");
@@ -222,6 +272,44 @@ export class VideoManagement {
     } catch (error: any) {
       throw new Error(
         `Failed to retrieve channel statistics: ${error.message}`
+      );
+    }
+  }
+
+  async fetchChannelRecentTopVideos(
+    channelId: string,
+    publishedAfter: string
+  ): Promise<youtube_v3.Schema$Video[]> {
+    try {
+      const searchResponse = await this.youtube.search.list({
+        channelId: channelId,
+        part: ["snippet"],
+        order: "viewCount",
+        maxResults: 50,
+        publishedAfter: publishedAfter,
+        type: ["video"],
+      });
+      this.apiCreditsUsed += 100; // Add the cost after the call
+
+      const videoIds =
+        searchResponse.data.items
+          ?.map((item) => item.id?.videoId)
+          .filter((id): id is string => id !== undefined) || [];
+
+      if (videoIds.length === 0) {
+        return [];
+      }
+
+      const videosResponse = await this.youtube.videos.list({
+        part: ["statistics", "contentDetails"],
+        id: videoIds,
+      });
+      this.apiCreditsUsed += 1; // Add the cost after the call
+
+      return videosResponse.data.items || [];
+    } catch (error: any) {
+      throw new Error(
+        `Failed to fetch top videos for channel ${channelId}: ${error.message}`
       );
     }
   }
@@ -251,6 +339,7 @@ export class VideoManagement {
             pageToken: nextPageToken,
           })
         ).data;
+        this.apiCreditsUsed += 100; // Add the cost after the call
 
         if (!searchResponse.items?.length) {
           break;
@@ -280,6 +369,7 @@ export class VideoManagement {
           part: ["snippet", "statistics", "contentDetails"],
           id: batch,
         });
+        this.apiCreditsUsed += 1; // Add the cost after the call
 
         if (videosResponse.data.items) {
           videoDetails.push(...videosResponse.data.items);
@@ -348,6 +438,7 @@ export class VideoManagement {
       }
 
       const response = await this.youtube.videos.list(params);
+      this.apiCreditsUsed += 1; // Add the cost after the call
 
       return (
         response.data.items?.map((video) => {
@@ -386,6 +477,7 @@ export class VideoManagement {
         part: ["snippet"],
         regionCode: regionCode,
       });
+      this.apiCreditsUsed += 1; // Add the cost after the call
 
       const categories = response.data.items?.map((category) => ({
         id: category.id,
