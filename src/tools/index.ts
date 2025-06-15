@@ -65,7 +65,8 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     },
     {
       config: searchVideosConfig,
-      handler: (params: any) => searchVideosHandler(params, youtubeService),
+      handler: (params: any) =>
+        searchVideosHandler(params, youtubeService, cacheService),
     },
     {
       config: getTranscriptsConfig,
