@@ -1,25 +1,12 @@
 import { describe, it, expect } from "@jest/globals";
 import { formatAndRankAnalysisResults } from "../phase4-ranking-formatting";
 import {
-  ChannelCache,
-  LatestAnalysis,
   NicheAnalysisOutput,
   FindConsistentOutlierChannelsOptions,
 } from "../../../types/analyzer.types";
 
 describe("Phase 4 Ranking and Formatting", () => {
-  const commonLatestAnalysisMetricsStandard = {
-    averageViews: 1000,
-    medianViews: 900,
-    viewsStdDev: 200,
-    viewsCoeffOfVar: 0.2,
-    viewCountMovingAverage: [950, 1000, 1050],
-    latestOutlierVideo: {
-      videoId: "vid1",
-      views: 5000,
-      publishedAt: new Date(),
-    },
-  };
+  const commonLatestAnalysisMetricsStandard = {};
 
   const commonLatestAnalysisOptions = {
     outlierMagnitude: "STANDARD" as const, // Ensure this is treated as a literal type
@@ -50,10 +37,9 @@ describe("Phase 4 Ranking and Formatting", () => {
           videoCount: 100,
         },
         latestAnalysis: {
-          analysisDate: new Date(), // Use analyzedAt for clarity if that's what LatestAnalysis expects
+          analyzedAt: new Date(),
           subscriberCountAtAnalysis: 1000,
           sourceVideoCount: 100,
-          options: commonLatestAnalysisOptions,
           metrics: {
             STANDARD: {
               ...commonLatestAnalysisMetricsStandard,
@@ -75,10 +61,9 @@ describe("Phase 4 Ranking and Formatting", () => {
           videoCount: 50,
         },
         latestAnalysis: {
-          analysisDate: new Date(),
+          analyzedAt: new Date(),
           subscriberCountAtAnalysis: 2000,
           sourceVideoCount: 50,
-          options: commonLatestAnalysisOptions,
           metrics: {
             STANDARD: {
               ...commonLatestAnalysisMetricsStandard,
@@ -100,10 +85,9 @@ describe("Phase 4 Ranking and Formatting", () => {
           videoCount: 200,
         },
         latestAnalysis: {
-          analysisDate: new Date(),
+          analyzedAt: new Date(),
           subscriberCountAtAnalysis: 500,
           sourceVideoCount: 200,
-          options: commonLatestAnalysisOptions,
           metrics: {
             STANDARD: {
               ...commonLatestAnalysisMetricsStandard,
@@ -116,18 +100,8 @@ describe("Phase 4 Ranking and Formatting", () => {
     ];
 
     const options: FindConsistentOutlierChannelsOptions = {
-      // query: '', // Not used by formatAndRankAnalysisResults directly
-      // channelAge: "NEW", // Not used by formatAndRankAnalysisResults directly
-      // consistencyLevel: "MODERATE", // Not used by formatAndRankAnalysisResults directly
       outlierMagnitude: "STANDARD",
       maxResults: 3,
-      // minSubscribers: 0, // Not used by formatAndRankAnalysisResults directly
-      // minTotalViews: 0, // Not used by formatAndRankAnalysisResults directly
-      // minConsistencyPercentage: 0, // Not used by formatAndRankAnalysisResults directly
-      // minOutlierVideoCount: 0, // Not used by formatAndRankAnalysisResults directly
-      // minAverageViews: 0, // Not used by formatAndRankAnalysisResults directly
-      // maxChannelAgeDays: 0, // Not used by formatAndRankAnalysisResults directly
-      // minChannelAgeDays: 0 // Not used by formatAndRankAnalysisResults directly
     };
 
     const result = formatAndRankAnalysisResults(mockChannels, options, false);
@@ -169,10 +143,9 @@ describe("Phase 4 Ranking and Formatting", () => {
           videoCount: 10 + i,
         },
         latestAnalysis: {
-          analysisDate: new Date(),
+          analyzedAt: new Date(),
           subscriberCountAtAnalysis: 100 * (i + 1),
           sourceVideoCount: 10 + i,
-          options: commonLatestAnalysisOptions,
           metrics: {
             STANDARD: {
               ...commonLatestAnalysisMetricsStandard,
@@ -208,10 +181,9 @@ describe("Phase 4 Ranking and Formatting", () => {
           videoCount: 100,
         },
         latestAnalysis: {
-          analysisDate: new Date(),
+          analyzedAt: new Date(),
           subscriberCountAtAnalysis: 1000,
           sourceVideoCount: 100,
-          options: commonLatestAnalysisOptions,
           metrics: {
             STANDARD: {
               ...commonLatestAnalysisMetricsStandard,
