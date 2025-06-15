@@ -38,6 +38,7 @@ import {
 import { isEnabled } from "../utils/featureFlags.js";
 
 import type { YoutubeService } from "../services/youtube.service.js";
+import type { CacheService } from "../services/cache.service.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { IServiceContainer } from "../container.js";
 
@@ -53,13 +54,14 @@ export interface ToolDefinition {
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  const { youtubeService } = container;
+  const { youtubeService, cacheService } = container;
 
   const toolDefinitions: ToolDefinition[] = [
     // Video tools
     {
       config: getVideoDetailsConfig,
-      handler: (params: any) => getVideoDetailsHandler(params, youtubeService),
+      handler: (params: any) =>
+        getVideoDetailsHandler(params, youtubeService, cacheService),
     },
     {
       config: searchVideosConfig,

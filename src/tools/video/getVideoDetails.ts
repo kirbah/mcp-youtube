@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
+import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
@@ -48,26 +49,15 @@ export const getVideoDetailsConfig = {
 
 export const getVideoDetailsHandler = async (
   params: VideoDetailsParams,
-  videoManager: YoutubeService
+  youtubeService: YoutubeService,
+  cacheService?: CacheService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoDetailsSchema.parse(params);
 
     const videoPromises = validatedParams.videoIds.map(async (videoId) => {
-      try {
-        const fullVideoDetails: youtube_v3.Schema$Video | null = // Allow null
-          await videoManager.getVideo({
-            videoId,
-            parts: ["snippet", "statistics", "contentDetails"],
-          });
-
-        if (!fullVideoDetails) {
-          console.error(
-            `Video details not found for ID: ${videoId}`,
-            "Returned null from videoManager.getVideo"
-          );
-          return { [videoId]: null };
-        }
+      const transform = (fullVideoDetails: youtube_v3.Schema$Video | null) => {
+        if (!fullVideoDetails) return { [videoId]: null };
 
         const viewCount = parseYouTubeNumber(
           fullVideoDetails.statistics?.viewCount
@@ -103,7 +93,6 @@ export const getVideoDetailsHandler = async (
           defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
         };
 
-        // Conditionally add description if not NONE
         const detailsWithDescription =
           formattedDescription !== undefined
             ? { ...baseLeanDetails, description: formattedDescription }
@@ -117,13 +106,30 @@ export const getVideoDetailsHandler = async (
           : detailsWithDescription;
 
         return { [videoId]: leanDetails };
-      } catch (error: any) {
-        console.error(
-          `Video details not found for ID: ${videoId}`,
-          error.message
-        );
-        return { [videoId]: null };
+      };
+
+      if (!cacheService) {
+        const fullDetails = await youtubeService.getVideo({
+          videoId,
+          parts: ["snippet", "statistics", "contentDetails"],
+        });
+        return transform(fullDetails);
       }
+
+      const operation = () =>
+        youtubeService.getVideo({
+          videoId,
+          parts: ["snippet", "statistics", "contentDetails"],
+        });
+
+      const fullDetails = await cacheService.getOrSet(
+        videoId,
+        operation,
+        24 * 60 * 60,
+        "video_details"
+      );
+
+      return transform(fullDetails);
     });
 
     const results = await Promise.all(videoPromises);
@@ -131,7 +137,6 @@ export const getVideoDetailsHandler = async (
       (acc, current) => ({ ...acc, ...current }),
       {} as Record<string, LeanVideoDetails | null>
     );
-
     return formatSuccess(finalOutput);
   } catch (error: any) {
     return formatError(error);
