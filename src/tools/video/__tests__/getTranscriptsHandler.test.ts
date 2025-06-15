@@ -1,5 +1,5 @@
 import { getTranscriptsHandler, getTranscriptsSchema } from "../getTranscripts";
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { formatError } from "../../../utils/errorHandler";
 import {
   formatSuccess,
@@ -7,16 +7,14 @@ import {
 } from "../../../utils/responseFormatter";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
 
-jest.mock("../../../functions/videos");
+jest.mock("../../../services/youtube.service");
 
 describe("getTranscriptsHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
     // Initialize VideoManagement mock
-    mockVideoManager = new VideoManagement(
-      {} as any
-    ) as jest.Mocked<VideoManagement>;
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
 
     // Mock specific methods
     mockVideoManager.getTranscript = jest.fn();
@@ -115,9 +113,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      // Type guard for TS
-      expect(result.error.error).toBe("ToolExecutionError");
-      expect(result.error.message).toBe(
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError");
+      expect(errorResult.message).toBe(
         "Failed to fetch transcript for testVideoId2"
       );
     }
@@ -191,8 +189,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Expected array, received string");
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
@@ -206,8 +205,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Expected string, received number"); // Zod message for array element
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
@@ -222,8 +222,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Expected string, received number");
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
@@ -237,8 +238,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Expected string, received number"); // For lang
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
@@ -279,15 +281,18 @@ describe("getTranscriptsHandler", () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
-    if (result.error && result.error.message) {
-      expect(result.error.error).toBe("ToolExecutionError");
-      const parsedMessage = JSON.parse(result.error.message);
-      expect(parsedMessage[0].message).toBe("Video ID cannot be empty");
-    } else {
-      // Fail the test if error or error.message is not defined when it's expected
-      throw new Error(
-        "Expected error message for empty videoId was not defined."
-      );
+    if (result.error) {
+      const errorResult = result.error as CallToolResult["error"];
+      if (errorResult.message) {
+        expect(errorResult.error).toBe("ToolExecutionError");
+        const parsedMessage = JSON.parse(errorResult.message);
+        expect(parsedMessage[0].message).toBe("Video ID cannot be empty");
+      } else {
+        // Fail the test if error or error.message is not defined when it's expected
+        throw new Error(
+          "Expected error message for empty videoId was not defined."
+        );
+      }
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Assuming Zod errors are logged
@@ -301,8 +306,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError");
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError");
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Video ID cannot be empty");
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
@@ -317,8 +323,9 @@ describe("getTranscriptsHandler", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
     if (result.error) {
-      expect(result.error.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
-      const parsedMessage = JSON.parse(result.error.message);
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
+      const parsedMessage = JSON.parse(errorResult.message);
       expect(parsedMessage[0].message).toBe("Required");
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();

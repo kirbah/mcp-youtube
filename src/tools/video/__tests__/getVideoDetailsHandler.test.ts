@@ -1,12 +1,12 @@
 import { getVideoDetailsHandler } from "../getVideoDetails";
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
 } from "../../../utils/engagementCalculator";
 import { parseYouTubeNumber } from "../../../utils/numberParser";
 
-jest.mock("../../../functions/videos");
+jest.mock("../../../services/youtube.service");
 jest.mock("../../../utils/engagementCalculator", () => ({
   calculateLikeToViewRatio: jest.fn(),
   calculateCommentToViewRatio: jest.fn(),
@@ -14,12 +14,10 @@ jest.mock("../../../utils/engagementCalculator", () => ({
 jest.mock("../../../utils/numberParser");
 
 describe("getVideoDetailsHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
-    mockVideoManager = new VideoManagement(
-      {} as any
-    ) as jest.Mocked<VideoManagement>;
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
 
     // Mock specific methods
     mockVideoManager.getVideo = jest.fn();
@@ -176,7 +174,7 @@ describe("getVideoDetailsHandler", () => {
       expect(result.success).toBe(true);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
 
       const expectedTransformedVideo = {
         testVideoId1: {
@@ -215,7 +213,7 @@ describe("getVideoDetailsHandler", () => {
       expect(result.success).toBe(true);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
 
       const expectedData = {
         testVideoId1: {
@@ -257,7 +255,7 @@ describe("getVideoDetailsHandler", () => {
       expect(result.success).toBe(true);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
 
       const expectedTransformedVideo = {
         testVideoId3MissingFields: {
@@ -290,7 +288,7 @@ describe("getVideoDetailsHandler", () => {
       const result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
       const videoResult = returnedData["specificStatsVideo"];
 
       expect(videoResult.viewCount).toBe(11110);
@@ -316,7 +314,7 @@ describe("getVideoDetailsHandler", () => {
       const result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
       const videoResult = returnedData["veryLongDescVideo"];
 
       expect(videoResult.description.length).toBe(500 + 3);
@@ -336,7 +334,7 @@ describe("getVideoDetailsHandler", () => {
       let result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      let returnedData = JSON.parse(result.content[0].text);
+      let returnedData = JSON.parse(result.content[0].text as string);
       let videoResult = returnedData["shortDescVideo"];
       expect(videoResult.description).toBe("Short and sweet.");
     });
@@ -351,7 +349,7 @@ describe("getVideoDetailsHandler", () => {
       let result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      let returnedData = JSON.parse(result.content[0].text);
+      let returnedData = JSON.parse(result.content[0].text as string);
       let videoResult = returnedData["nullDescVideo"];
       expect(videoResult.description).toBeUndefined();
 
@@ -362,7 +360,7 @@ describe("getVideoDetailsHandler", () => {
       result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      returnedData = JSON.parse(result.content[0].text);
+      returnedData = JSON.parse(result.content[0].text as string);
       videoResult = returnedData["undefinedDescVideo"];
       expect(videoResult.description).toBeUndefined();
     });

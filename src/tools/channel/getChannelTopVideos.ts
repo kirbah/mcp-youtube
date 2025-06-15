@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema, maxResultsSchema } from "../../utils/validation.js";
@@ -45,7 +45,7 @@ export const getChannelTopVideosConfig = {
 
 export const getChannelTopVideosHandler = async (
   params: ChannelParams,
-  videoManager: VideoManagement
+  videoManager: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getChannelTopVideosSchema.parse(params);

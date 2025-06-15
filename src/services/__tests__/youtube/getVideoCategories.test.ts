@@ -1,4 +1,4 @@
-import { VideoManagement } from "../../videos"; // Adjust path as needed
+import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
 
 // Mock the googleapis library
@@ -12,8 +12,8 @@ jest.mock("googleapis", () => ({
   },
 }));
 
-describe("VideoManagement.getVideoCategories", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService.getVideoCategories", () => {
+  let videoManagement: YoutubeService;
   let mockYoutubeVideoCategoriesList: jest.Mock;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe("VideoManagement.getVideoCategories", () => {
         list: mockYoutubeVideoCategoriesList,
       },
     });
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
     // Ensure process.env.YOUTUBE_API_KEY is mocked or set if your VideoManagement constructor relies on it directly.
     // For instance: process.env.YOUTUBE_API_KEY = 'test-api-key';
   });

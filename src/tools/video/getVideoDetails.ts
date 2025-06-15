@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
@@ -48,7 +48,7 @@ export const getVideoDetailsConfig = {
 
 export const getVideoDetailsHandler = async (
   params: VideoDetailsParams,
-  videoManager: VideoManagement
+  videoManager: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoDetailsSchema.parse(params);

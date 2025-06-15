@@ -1,4 +1,4 @@
-import { VideoManagement, SearchOptions } from "../../videos"; // Adjust path as needed
+import { YoutubeService, SearchOptions } from "../../youtube.service";
 import { google } from "googleapis";
 
 // Mock the googleapis library
@@ -20,13 +20,13 @@ jest.mock("googleapis", () => {
 // Mock environment variables if your class uses them (e.g., API key)
 // process.env.YOUTUBE_API_KEY = "test_api_key"; // Set this if needed by the constructor
 
-describe("VideoManagement - searchVideos", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService - searchVideos", () => {
+  let videoManagement: YoutubeService;
   // Access the mockSearchList from the mocked googleapis module
   let mockSearchList: jest.Mock;
 
   beforeEach(() => {
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
     // Dynamically import the mockSearchList from the mocked module
     // and assign it to the mockSearchList variable
     mockSearchList = require("googleapis").mockSearchList;
@@ -86,7 +86,7 @@ describe("VideoManagement - searchVideos", () => {
     const toleranceMilliseconds = 10000; // 10 seconds
 
     const calculatePublishedAfterSpy = jest.spyOn(
-      VideoManagement.prototype as any,
+      YoutubeService.prototype as any,
       "calculatePublishedAfter"
     );
 
@@ -292,7 +292,7 @@ describe("VideoManagement - searchVideos", () => {
     const toleranceMilliseconds = 10000; // 10 seconds
 
     const calculatePublishedAfterSpy = jest.spyOn(
-      VideoManagement.prototype as any,
+      YoutubeService.prototype as any,
       "calculatePublishedAfter"
     );
 

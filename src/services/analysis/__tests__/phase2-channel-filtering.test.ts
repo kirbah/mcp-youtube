@@ -1,6 +1,6 @@
 import { executeChannelPreFiltering } from "../phase2-channel-filtering";
 import { CacheService } from "../../cache.service";
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { ChannelCache, LatestAnalysis } from "../analysis.types";
 import { MAX_SUBSCRIBER_CAP } from "../analysis.logic";
@@ -19,8 +19,8 @@ jest.mock("../../cache.service", () => ({
   })),
 }));
 
-jest.mock("../../../functions/videos", () => ({
-  VideoManagement: jest.fn().mockImplementation(() => ({
+jest.mock("../../../services/youtube.service", () => ({
+  YoutubeService: jest.fn().mockImplementation(() => ({
     batchFetchChannelStatistics: mockBatchFetchStats,
   })),
 }));
@@ -28,7 +28,7 @@ jest.mock("../../../functions/videos", () => ({
 
 describe("executeChannelPreFiltering", () => {
   const cacheService = new CacheService({} as any);
-  const videoManagement = new VideoManagement();
+  const videoManagement = new YoutubeService();
 
   beforeEach(() => {
     jest.clearAllMocks();

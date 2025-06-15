@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import "dotenv/config";
-import { VideoManagement } from "./functions/videos.js";
+import { YoutubeService } from "./services/youtube.service.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { allTools } from "./tools/index.js";
@@ -18,7 +18,7 @@ if (!process.env.YOUTUBE_API_KEY) {
 }
 
 async function main() {
-  const videoManager = new VideoManagement();
+  const youtubeService = new YoutubeService();
 
   // Create MCP server
   const server = new McpServer({
@@ -35,13 +35,13 @@ async function main() {
       (params: any) => {
         // Check if handler expects videoManager parameter
         if (handler.length === 2) {
-          // Handler expects (params, videoManager)
+          // Handler expects (params, youtubeService)
           return (
             handler as (
               params: any,
-              videoManager: VideoManagement
+              youtubeService: YoutubeService
             ) => Promise<any>
-          )(params, videoManager);
+          )(params, youtubeService);
         } else {
           // Handler expects only (params)
           return (handler as (params: any) => Promise<any>)(params);

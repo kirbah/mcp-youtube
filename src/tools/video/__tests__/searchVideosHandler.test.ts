@@ -1,6 +1,6 @@
 import { searchVideosHandler } from "../searchVideos";
 import * as searchVideosModule from "../searchVideos"; // Import the whole module for spy
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { formatError } from "../../../utils/errorHandler";
 import { formatSuccess } from "../../../utils/responseFormatter";
 import type { youtube_v3 } from "googleapis";
@@ -9,19 +9,17 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
 
 // NOTE: jest.mock for '../searchVideos' related to schema is removed to use jest.spyOn
 
-jest.mock("../../../functions/videos"); // Mocks VideoManagement class
+jest.mock("../../../services/youtube.service"); // Mocks YoutubeService class
 jest.mock("../../../utils/errorHandler");
 jest.mock("../../../utils/responseFormatter");
 
 describe("searchVideosHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockVideoManager: jest.Mocked<YoutubeService>;
   let parseSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockVideoManager = new VideoManagement(
-      null as any
-    ) as jest.Mocked<VideoManagement>;
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
     mockVideoManager.searchVideos = jest.fn();
 
     // Spy on the 'parse' method of the actual searchVideosSchema from the imported module
@@ -95,7 +93,7 @@ describe("searchVideosHandler", () => {
         },
       },
       {
-        id: { kind: "youtube#searchResult", etag: "etag" },
+        id: { kind: "youtube#searchResult" },
         snippet: { title: "No Video ID here" },
       },
     ];

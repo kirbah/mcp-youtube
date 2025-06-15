@@ -3,7 +3,7 @@
 import { getChannelTopVideosHandler } from "../getChannelTopVideos";
 import { formatSuccess } from "../../../utils/responseFormatter";
 import { formatError } from "../../../utils/errorHandler";
-import type { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 
 // Mock utility functions
 jest.mock("../../../utils/responseFormatter", () => ({
@@ -30,8 +30,8 @@ jest.mock("../../../utils/errorHandler", () => ({
 }));
 
 // Mock VideoManagement
-jest.mock("../../../functions/videos", () => ({
-  VideoManagement: jest.fn().mockImplementation(() => ({
+jest.mock("../../../services/youtube.service", () => ({
+  YoutubeService: jest.fn().mockImplementation(() => ({
     getChannelTopVideos: jest.fn(),
     getChannelStatistics: jest.fn(),
     getVideo: jest.fn(),
@@ -43,18 +43,18 @@ jest.mock("../../../functions/videos", () => ({
 }));
 
 describe("getChannelTopVideosHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
-    mockVideoManager = {
-      getChannelTopVideos: jest.fn(),
-      getChannelStatistics: jest.fn(),
-      getVideo: jest.fn(),
-      searchVideos: jest.fn(),
-      getTranscript: jest.fn(),
-      getTrendingVideos: jest.fn(),
-      getVideoCategories: jest.fn(),
-    } as jest.Mocked<VideoManagement>;
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    // Clear mocks for specific methods used in this test suite
+    mockVideoManager.getChannelTopVideos.mockClear();
+    mockVideoManager.getChannelStatistics.mockClear();
+    mockVideoManager.getVideo.mockClear();
+    mockVideoManager.searchVideos.mockClear();
+    mockVideoManager.getTranscript.mockClear();
+    mockVideoManager.getTrendingVideos.mockClear();
+    mockVideoManager.getVideoCategories.mockClear();
 
     (formatSuccess as jest.Mock).mockClear();
     (formatError as jest.Mock).mockClear();
@@ -62,8 +62,36 @@ describe("getChannelTopVideosHandler", () => {
 
   it("should return top videos for a valid channelId and maxResults", async () => {
     const mockTopVideosResult = [
-      { videoId: "vid1", title: "Top Video 1", viewCount: 1000 },
-      { videoId: "vid2", title: "Top Video 2", viewCount: 900 },
+      {
+        id: "vid1",
+        title: "Top Video 1",
+        description: null,
+        publishedAt: "2023-01-01T00:00:00Z",
+        duration: "PT1M0S",
+        viewCount: 1000,
+        likeCount: 100,
+        commentCount: 10,
+        likeToViewRatio: 0.1,
+        commentToViewRatio: 0.01,
+        tags: [],
+        categoryId: "10",
+        defaultLanguage: "en",
+      },
+      {
+        id: "vid2",
+        title: "Top Video 2",
+        description: null,
+        publishedAt: "2023-01-02T00:00:00Z",
+        duration: "PT2M0S",
+        viewCount: 900,
+        likeCount: 90,
+        commentCount: 9,
+        likeToViewRatio: 0.1,
+        commentToViewRatio: 0.01,
+        tags: [],
+        categoryId: "10",
+        defaultLanguage: "en",
+      },
     ];
     mockVideoManager.getChannelTopVideos.mockResolvedValue(mockTopVideosResult);
 
@@ -78,12 +106,26 @@ describe("getChannelTopVideosHandler", () => {
     });
     expect(formatSuccess).toHaveBeenCalledWith(mockTopVideosResult);
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toEqual(mockTopVideosResult);
+    expect(JSON.parse(result.body as string)).toEqual(mockTopVideosResult);
   });
 
   it("should use default maxResults when not provided", async () => {
     const mockTopVideosResult = [
-      { videoId: "vid1", title: "Top Video 1", viewCount: 1000 },
+      {
+        id: "vid1",
+        title: "Top Video 1",
+        description: null,
+        publishedAt: "2023-01-01T00:00:00Z",
+        duration: "PT1M0S",
+        viewCount: 1000,
+        likeCount: 100,
+        commentCount: 10,
+        likeToViewRatio: 0.1,
+        commentToViewRatio: 0.01,
+        tags: [],
+        categoryId: "10",
+        defaultLanguage: "en",
+      },
     ];
     mockVideoManager.getChannelTopVideos.mockResolvedValue(mockTopVideosResult);
 
@@ -108,7 +150,7 @@ describe("getChannelTopVideosHandler", () => {
       expect.objectContaining({ name: "ZodError" })
     );
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toBeDefined();
+    expect(JSON.parse(result.body as string).message).toBeDefined();
   });
 
   it("should return a 400 error if maxResults is less than 1", async () => {
@@ -120,7 +162,7 @@ describe("getChannelTopVideosHandler", () => {
       expect.objectContaining({ name: "ZodError" })
     );
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toBeDefined();
+    expect(JSON.parse(result.body as string).message).toBeDefined();
   });
 
   it("should return a 400 error if maxResults is greater than 500", async () => {
@@ -132,7 +174,7 @@ describe("getChannelTopVideosHandler", () => {
       expect.objectContaining({ name: "ZodError" })
     );
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body).message).toBeDefined();
+    expect(JSON.parse(result.body as string).message).toBeDefined();
   });
 
   it("should return a 500 error if videoManager.getChannelTopVideos throws an error", async () => {
@@ -152,6 +194,6 @@ describe("getChannelTopVideosHandler", () => {
     });
     expect(formatError).toHaveBeenCalledWith(new Error(errorMessage));
     expect(result.statusCode).toBe(500);
-    expect(JSON.parse(result.body).message).toBe(errorMessage);
+    expect(JSON.parse(result.body as string).message).toBe(errorMessage);
   });
 });

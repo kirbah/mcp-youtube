@@ -1,6 +1,6 @@
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import { ChannelCache } from "./analysis.types.js";
 import { youtube_v3 } from "googleapis";
 import {
@@ -18,7 +18,7 @@ export async function executeChannelPreFiltering(
   channelIds: string[],
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
-  videoManagement: VideoManagement
+  youtubeService: YoutubeService
 ): Promise<string[]> {
   try {
     const prospectsForPhase3: string[] = [];
@@ -50,7 +50,7 @@ export async function executeChannelPreFiltering(
     let freshChannelStats = new Map<string, youtube_v3.Schema$Channel>();
     if (needsStatsFetch.length > 0) {
       freshChannelStats =
-        await videoManagement.batchFetchChannelStatistics(needsStatsFetch);
+        await youtubeService.batchFetchChannelStatistics(needsStatsFetch);
     }
 
     for (const channelId of channelIds) {

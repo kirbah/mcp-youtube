@@ -1,4 +1,4 @@
-import { VideoManagement } from "../../videos"; // Corrected import path
+import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
 import { parseYouTubeNumber } from "../../../utils/numberParser";
 import {
@@ -62,8 +62,8 @@ const generateMockVideoDetails = (
   },
 });
 
-describe("VideoManagement.getChannelTopVideos", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService.getChannelTopVideos", () => {
+  let videoManagement: YoutubeService;
   let mockSearchList: jest.Mock;
   let mockVideosList: jest.Mock;
 
@@ -87,7 +87,7 @@ describe("VideoManagement.getChannelTopVideos", () => {
         list: jest.fn(),
       },
     }));
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
     (parseYouTubeNumber as jest.Mock).mockImplementation((val) =>
       parseInt(val || "0")
     );
@@ -861,7 +861,7 @@ describe("VideoManagement.getChannelTopVideos", () => {
 
     // Assert that the final result is sliced to targetResults
     expect(result).toHaveLength(targetResults);
-    expect(result.map((v) => v.id)).toEqual(
+    expect(result.map((v: any) => v.id)).toEqual(
       mockVideoIdsFromSearch.slice(0, targetResults)
     ); // Changed v.videoId to v.id
     expect(result[0].id).toBe("video1"); // Changed from videoId to id

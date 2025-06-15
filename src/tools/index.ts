@@ -37,7 +37,7 @@ import {
 } from "./general/findConsistentOutlierChannels.js";
 import { isEnabled } from "../utils/featureFlags.js";
 
-import type { VideoManagement } from "../functions/videos.js";
+import type { YoutubeService } from "../services/youtube.service.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export interface ToolDefinition {
@@ -47,7 +47,7 @@ export interface ToolDefinition {
     inputSchema: any;
   };
   handler:
-    | ((params: any, videoManager: VideoManagement) => Promise<CallToolResult>)
+    | ((params: any, videoManager: YoutubeService) => Promise<CallToolResult>)
     | ((params: any) => Promise<CallToolResult>);
 }
 

@@ -50,7 +50,7 @@ export interface TrendingOptions {
   maxResults?: number;
 }
 
-export class VideoManagement {
+export class YoutubeService {
   private youtube: youtube_v3.Youtube;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly ABSOLUTE_MAX_RESULTS = 500;
