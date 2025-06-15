@@ -30,11 +30,11 @@ jobs:
       - name: Build project
         run: npm run build # Verifies that the TypeScript code compiles successfully
 
-      - name: Run linter
-        run: npm run lint
-
       - name: Check formatting
         run: npm run format:check
+
+      - name: Run linter
+        run: npm run lint
 
       - name: Run tests with coverage
         run: npm run test -- --coverage # Pass --coverage flag to Jest
