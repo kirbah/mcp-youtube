@@ -80,7 +80,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getChannelTopVideosConfig,
       handler: (params: any) =>
-        getChannelTopVideosHandler(params, youtubeService),
+        getChannelTopVideosHandler(params, youtubeService, cacheService),
     },
     // General tools
     {
