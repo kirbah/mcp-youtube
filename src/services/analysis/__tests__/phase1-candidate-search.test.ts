@@ -1,17 +1,17 @@
-import { executeInitialCandidateSearch } from "./phase1-candidate-search";
-import { CacheService } from "../cache.service";
-import { VideoManagement } from "../../functions/videos";
-import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types";
+import { executeInitialCandidateSearch } from "../phase1-candidate-search";
+import { CacheService } from "../../cache.service";
+import { VideoManagement } from "../../../functions/videos";
+import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { youtube_v3 } from "googleapis";
 
 // Mock CacheService
-jest.mock("../cache.service");
+jest.mock("../../cache.service");
 const MockedCacheService = CacheService as jest.MockedClass<
   typeof CacheService
 >;
 
 // Mock VideoManagement
-jest.mock("../../functions/videos");
+jest.mock("../../../functions/videos");
 const MockedVideoManagement = VideoManagement as jest.MockedClass<
   typeof VideoManagement
 >;

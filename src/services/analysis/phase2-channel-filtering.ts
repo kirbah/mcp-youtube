@@ -2,6 +2,7 @@ import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types
 import { CacheService } from "../cache.service.js";
 import { VideoManagement } from "../../functions/videos.js";
 import { ChannelCache } from "./analysis.types.js";
+import { youtube_v3 } from "googleapis";
 import {
   applyStalnessHeuristic,
   calculateChannelAge,
@@ -11,7 +12,7 @@ import {
   MIN_AVG_VIEWS_THRESHOLD,
 } from "./analysis.logic.js";
 
-const MIN_VIDEOS_FOR_ANALYSIS = 10;
+export const MIN_VIDEOS_FOR_ANALYSIS = 10;
 
 export async function executeChannelPreFiltering(
   channelIds: string[],
@@ -46,8 +47,11 @@ export async function executeChannelPreFiltering(
       }
     }
 
-    const freshChannelStats =
-      await videoManagement.batchFetchChannelStatistics(needsStatsFetch);
+    let freshChannelStats = new Map<string, youtube_v3.Schema$Channel>();
+    if (needsStatsFetch.length > 0) {
+      freshChannelStats =
+        await videoManagement.batchFetchChannelStatistics(needsStatsFetch);
+    }
 
     for (const channelId of channelIds) {
       let channelData = cachedChannelMap.get(channelId);
