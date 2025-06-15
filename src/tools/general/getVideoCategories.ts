@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
@@ -27,13 +28,29 @@ export const getVideoCategoriesConfig = {
 
 export const getVideoCategoriesHandler = async (
   params: VideoCategoriesParams,
-  videoManager: YoutubeService
+  youtubeService: YoutubeService,
+  cacheService?: CacheService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoCategoriesSchema.parse(params);
+    const { regionCode = "US" } = validatedParams;
 
-    const categories = await videoManager.getVideoCategories(
-      validatedParams.regionCode
+    if (!cacheService) {
+      const categories = await youtubeService.getVideoCategories(regionCode);
+      return formatSuccess(categories);
+    }
+
+    // With cache:
+    const cacheKey = cacheService.createOperationKey("getVideoCategories", {
+      regionCode,
+    });
+    const operation = () => youtubeService.getVideoCategories(regionCode);
+
+    const categories = await cacheService.getOrSet(
+      cacheKey,
+      operation,
+      7 * 24 * 3600, // Cache for a full week, this data is very stable
+      "video_categories"
     );
 
     return formatSuccess(categories);

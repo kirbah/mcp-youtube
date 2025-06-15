@@ -92,7 +92,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getVideoCategoriesConfig,
       handler: (params: any) =>
-        getVideoCategoriesHandler(params, youtubeService),
+        getVideoCategoriesHandler(params, youtubeService, cacheService),
     },
   ];
 
