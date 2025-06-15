@@ -2,6 +2,7 @@ import { z } from "zod";
 import { youtube_v3 } from "googleapis";
 import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
@@ -125,8 +126,9 @@ export const getVideoDetailsHandler = async (
       const fullDetails = await cacheService.getOrSet(
         videoId,
         operation,
-        24 * 60 * 60,
-        "video_details"
+        CACHE_TTLS.STANDARD, // Use named constant for TTL
+        CACHE_COLLECTIONS.VIDEO_DETAILS, // Use named constant for collection
+        validatedParams // Pass the original parameters for storage!
       );
 
       return transform(fullDetails);

@@ -16,6 +16,7 @@ interface GenericCacheEntry<T> {
   _id: string; // The cache key (can be a direct ID like a videoId, or a hash).
   data: T;
   expiresAt: Date;
+  params?: object; // Optional: The arguments used to generate this cache entry (for hashed keys).
 }
 
 export class CacheService {
@@ -42,7 +43,8 @@ export class CacheService {
     key: string,
     operation: () => Promise<T>,
     ttlSeconds: number,
-    collectionName: string
+    collectionName: string,
+    params?: object
   ): Promise<T> {
     const collection: Collection<GenericCacheEntry<T>> = this.db.collection(
       `${this.CACHE_COLLECTION_PREFIX}${collectionName}`
@@ -64,10 +66,21 @@ export class CacheService {
     // Only store the data if it's not null or undefined to avoid caching failed operations.
     if (freshData !== null && freshData !== undefined) {
       const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+
+      // Build the cache document, including params if they were provided.
+      const cacheDocument: GenericCacheEntry<T> = {
+        _id: key,
+        data: freshData,
+        expiresAt,
+      };
+      if (params) {
+        cacheDocument.params = params;
+      }
+
       await collection.updateOne(
         { _id: key },
-        { $set: { data: freshData, expiresAt } },
-        { upsert: true } // Creates the document if it doesn't exist, updates it if it does.
+        { $set: cacheDocument },
+        { upsert: true }
       );
     }
 

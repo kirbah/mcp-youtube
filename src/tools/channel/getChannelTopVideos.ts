@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema, maxResultsSchema } from "../../utils/validation.js";
@@ -73,8 +74,9 @@ export const getChannelTopVideosHandler = async (
     const topVideos = await cacheService.getOrSet(
       cacheKey,
       operation,
-      12 * 3600, // Cache for 12 hours
-      "channel_top_videos"
+      CACHE_TTLS.SEMI_STATIC, // Use named constant for TTL
+      CACHE_COLLECTIONS.CHANNEL_TOP_VIDEOS, // Use named constant for collection
+      validatedParams // Pass the original parameters for storage!
     );
 
     return formatSuccess(topVideos);

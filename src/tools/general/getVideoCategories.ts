@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
@@ -49,8 +50,9 @@ export const getVideoCategoriesHandler = async (
     const categories = await cacheService.getOrSet(
       cacheKey,
       operation,
-      7 * 24 * 3600, // Cache for a full week, this data is very stable
-      "video_categories"
+      CACHE_TTLS.STATIC, // Use named constant for TTL
+      CACHE_COLLECTIONS.VIDEO_CATEGORIES, // Use named constant for collection
+      validatedParams // Pass the original parameters for storage!
     );
 
     return formatSuccess(categories);

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { youtube_v3 } from "googleapis";
 import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+// Import our new config constants
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { querySchema, maxResultsSchema } from "../../utils/validation.js";
@@ -131,12 +133,13 @@ export const searchVideosHandler = async (
       return transformAndFormat(rawResults);
     };
 
-    // We are caching the LeanVideoSearchResult[] object
+    // --- Enhanced Caching Path ---
     const leanResults = await cacheService.getOrSet(
       cacheKey,
       operation,
-      24 * 3600, // Cache for 24 hours
-      "video_searches"
+      CACHE_TTLS.STANDARD, // Use named constant for TTL
+      CACHE_COLLECTIONS.VIDEO_SEARCHES, // Use named constant for collection
+      validatedParams // <-- Pass the original parameters for storage!
     );
 
     return formatSuccess(leanResults);
