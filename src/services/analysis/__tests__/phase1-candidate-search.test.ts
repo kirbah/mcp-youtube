@@ -33,8 +33,10 @@ describe("executeInitialCandidateSearch", () => {
 
     defaultOptions = {
       query: "test query",
-      channelAge: 0, // Default to no age restriction
-      // Add other necessary default options if any
+      channelAge: "NEW", // Default to no age restriction
+      consistencyLevel: "MODERATE",
+      outlierMagnitude: "STANDARD",
+      maxResults: 50,
     };
   });
 
@@ -187,7 +189,7 @@ describe("executeInitialCandidateSearch", () => {
       ...defaultOptions,
       regionCode: "US",
       videoCategoryId: "10",
-      channelAge: 2, // Example to ensure publishedAfter is calculated
+      channelAge: "ESTABLISHED", // Example to ensure publishedAfter is calculated
     };
 
     mockCacheService.getCachedSearchResults.mockResolvedValue(null);
