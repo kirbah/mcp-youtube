@@ -2,19 +2,17 @@ import {
   getTrendingVideosHandler,
   getTrendingVideosSchema,
 } from "../getTrendingVideos";
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { formatError } from "../../../utils/errorHandler";
 import { formatSuccess } from "../../../utils/responseFormatter";
 import { ZodError } from "zod";
 
 // Mock dependencies
-jest.mock("../../../functions/videos");
+jest.mock("../../../services/youtube.service");
 jest.mock("../../../utils/errorHandler");
 jest.mock("../../../utils/responseFormatter");
 
-const mockVideoManager = new VideoManagement({
-  apiKey: "test-api-key",
-}) as jest.Mocked<VideoManagement>;
+const mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
 const mockFormatError = formatError as jest.Mock;
 const mockFormatSuccess = formatSuccess as jest.Mock;
 
@@ -29,7 +27,21 @@ describe("getTrendingVideosHandler", () => {
   });
 
   it("should call videoManager.getTrendingVideos with default parameters when none are provided", async () => {
-    const mockTrendingVideos = [{ id: "1", title: "Trending Video 1" }];
+    const mockTrendingVideos = [
+      {
+        id: "1",
+        title: "Trending Video 1",
+        channelId: "channel1",
+        channelTitle: "Channel One",
+        publishedAt: "2023-01-01T00:00:00Z",
+        duration: "PT10M0S",
+        viewCount: 10000,
+        likeCount: 1000,
+        commentCount: 100,
+        likeToViewRatio: 0.1,
+        commentToViewRatio: 0.01,
+      },
+    ];
     mockVideoManager.getTrendingVideos.mockResolvedValue(mockTrendingVideos);
     mockFormatSuccess.mockReturnValue({
       success: true,
@@ -49,7 +61,21 @@ describe("getTrendingVideosHandler", () => {
   });
 
   it("should call videoManager.getTrendingVideos with provided parameters", async () => {
-    const mockTrendingVideos = [{ id: "2", title: "Trending Video 2" }];
+    const mockTrendingVideos = [
+      {
+        id: "2",
+        title: "Trending Video 2",
+        channelId: "channel2",
+        channelTitle: "Channel Two",
+        publishedAt: "2023-01-02T00:00:00Z",
+        duration: "PT12M0S",
+        viewCount: 20000,
+        likeCount: 2000,
+        commentCount: 200,
+        likeToViewRatio: 0.1,
+        commentToViewRatio: 0.01,
+      },
+    ];
     const params = { regionCode: "GB", categoryId: "10", maxResults: 5 };
     mockVideoManager.getTrendingVideos.mockResolvedValue(mockTrendingVideos);
     mockFormatSuccess.mockReturnValue({

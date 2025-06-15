@@ -1,4 +1,4 @@
-import { VideoManagement } from "../../videos";
+import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
 
 jest.mock("googleapis", () => {
@@ -19,15 +19,15 @@ jest.mock("googleapis", () => {
 // Destructure the mock function for easier access in tests
 const { __mockChannelsList: mockChannelsList } = jest.requireMock("googleapis");
 
-describe("VideoManagement.getChannelStatistics", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService.getChannelStatistics", () => {
+  let youtubeService: YoutubeService;
 
   beforeEach(() => {
     // Reset the mock before each test
     mockChannelsList.mockReset();
     // Set the required environment variable
     process.env.YOUTUBE_API_KEY = "test_api_key";
-    videoManagement = new VideoManagement();
+    youtubeService = new YoutubeService();
   });
 
   afterEach(() => {
@@ -53,7 +53,7 @@ describe("VideoManagement.getChannelStatistics", () => {
     };
     mockChannelsList.mockResolvedValueOnce({ data: mockChannelData });
 
-    const stats = await videoManagement.getChannelStatistics("test_channel_id");
+    const stats = await youtubeService.getChannelStatistics("test_channel_id");
 
     expect(stats).toEqual({
       channelId: "test_channel_id",
@@ -77,7 +77,7 @@ describe("VideoManagement.getChannelStatistics", () => {
     mockChannelsList.mockResolvedValueOnce({ data: { items: [] } });
 
     await expect(
-      videoManagement.getChannelStatistics("unknown_channel_id")
+      youtubeService.getChannelStatistics("unknown_channel_id")
     ).rejects.toThrow("Channel not found.");
   });
 
@@ -85,7 +85,7 @@ describe("VideoManagement.getChannelStatistics", () => {
     mockChannelsList.mockRejectedValueOnce(new Error("API Error"));
 
     await expect(
-      videoManagement.getChannelStatistics("test_channel_id")
+      youtubeService.getChannelStatistics("test_channel_id")
     ).rejects.toThrow("Failed to retrieve channel statistics: API Error");
   });
 });

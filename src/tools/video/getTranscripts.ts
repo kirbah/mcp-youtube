@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import {
   formatSuccess,
@@ -33,7 +33,7 @@ export const getTranscriptsConfig = {
 
 export const getTranscriptsHandler = async (
   params: TranscriptsParams,
-  videoManager: VideoManagement
+  videoManager: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getTranscriptsSchema.parse(params);

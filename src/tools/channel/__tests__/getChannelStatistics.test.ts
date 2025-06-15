@@ -3,7 +3,28 @@
 import { getChannelStatisticsHandler } from "../getChannelStatistics";
 import { formatSuccess } from "../../../utils/responseFormatter"; // Corrected import path
 import { formatError } from "../../../utils/errorHandler"; // Corrected import path
-import type { VideoManagement } from "../../../functions/videos"; // Type for the mock
+import { YoutubeService } from "../../../services/youtube.service"; // Import the actual class
+
+// Mock the entire YoutubeService module
+jest.mock("../../../services/youtube.service", () => {
+  // Use a factory function to return the mocked class
+  const mockYoutubeService = {
+    getChannelStatistics: jest.fn(),
+    getVideo: jest.fn(),
+    searchVideos: jest.fn(),
+    getTranscript: jest.fn(),
+    getChannelTopVideos: jest.fn(),
+    getTrendingVideos: jest.fn(),
+    getVideoCategories: jest.fn(),
+    batchFetchChannelStatistics: jest.fn(),
+    fetchChannelRecentTopVideos: jest.fn(),
+    resetApiCreditsUsed: jest.fn(),
+    getApiCreditsUsed: jest.fn(),
+  };
+  return {
+    YoutubeService: jest.fn(() => mockYoutubeService), // Mock the constructor
+  };
+});
 
 // Mock utility functions
 jest.mock("../../../utils/responseFormatter", () => ({
@@ -31,24 +52,14 @@ jest.mock("../../../utils/errorHandler", () => ({
 }));
 
 describe("getChannelStatisticsHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  // Get the mocked instance from the module mock
+  let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
-    // Create a new mock for VideoManagement before each test
-    mockVideoManager = {
-      getChannelStatistics: jest.fn(),
-      // Actual methods from VideoManagement class
-      getVideo: jest.fn(),
-      searchVideos: jest.fn(),
-      getTranscript: jest.fn(),
-      getChannelTopVideos: jest.fn(),
-      getTrendingVideos: jest.fn(),
-      getVideoCategories: jest.fn(),
-      // calculatePublishedAfter is private, so not needed in the public interface mock
-    };
-
-    (formatSuccess as jest.Mock).mockClear();
-    (formatError as jest.Mock).mockClear();
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+    // Get the instance of the mocked YoutubeService
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
   });
 
   it("should return channel statistics for a single valid channel ID", async () => {
@@ -69,7 +80,7 @@ describe("getChannelStatisticsHandler", () => {
     // The handler calls getChannelStatistics for each ID, then collects results in an array
     expect(formatSuccess).toHaveBeenCalledWith([mockStatResult]);
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toEqual([mockStatResult]);
+    expect(JSON.parse(result.body as string)).toEqual([mockStatResult]);
   });
 
   it("should return channel statistics for multiple valid channel IDs", async () => {
@@ -103,7 +114,10 @@ describe("getChannelStatisticsHandler", () => {
       mockStatResult2,
     ]);
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toEqual([mockStatResult1, mockStatResult2]);
+    expect(JSON.parse(result.body as string)).toEqual([
+      mockStatResult1,
+      mockStatResult2,
+    ]);
   });
 
   it("should return a 400 error if channelIds array is empty", async () => {
@@ -118,7 +132,7 @@ describe("getChannelStatisticsHandler", () => {
     );
     expect(result.statusCode).toBe(400);
     // The exact message depends on Zod's formatting, check for a relevant part
-    expect(JSON.parse(result.body).message).toContain(
+    expect(JSON.parse(result.body as string).message).toContain(
       "Channel IDs array must contain at least 1 element(s)"
     );
   });
@@ -134,7 +148,7 @@ describe("getChannelStatisticsHandler", () => {
     );
     expect(result.statusCode).toBe(400);
     // Check that the Zod error message for the empty string is present
-    expect(JSON.parse(result.body).message).toContain(
+    expect(JSON.parse(result.body as string).message).toContain(
       "Channel ID cannot be empty"
     );
   });
@@ -152,6 +166,6 @@ describe("getChannelStatisticsHandler", () => {
     expect(formatError).toHaveBeenCalledWith(new Error(errorMessage));
     expect(result.statusCode).toBe(500);
     // Align with the current simple formatError mock
-    expect(JSON.parse(result.body).message).toBe(errorMessage);
+    expect(JSON.parse(result.body as string).message).toBe(errorMessage);
   });
 });

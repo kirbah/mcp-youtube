@@ -1,11 +1,11 @@
-import { VideoManagement } from "../../../functions/videos"; // Adjusted path
+import { YoutubeService } from "../../youtube.service";
 
-describe("VideoManagement calculatePublishedAfter", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService calculatePublishedAfter", () => {
+  let videoManagement: YoutubeService;
   const ALLOWED_DRIFT_MS = 5000; // 5 seconds tolerance
 
   beforeEach(() => {
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
   });
 
   it("should return an ISO string for pastHour approximately one hour ago", () => {

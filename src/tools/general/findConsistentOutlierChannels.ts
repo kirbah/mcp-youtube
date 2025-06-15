@@ -9,7 +9,7 @@ import {
 } from "../../services/database.service.js";
 import { CacheService } from "../../services/cache.service.js";
 import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import type { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
@@ -88,10 +88,10 @@ export const findConsistentOutlierChannelsHandler = async (
     await connectToDatabase();
     const db = getDb();
     const cacheService = new CacheService(db);
-    const videoManagement = new VideoManagement();
+    const youtubeService = new YoutubeService(); // Renamed from videoManagement
     const nicheAnalyzer = new NicheAnalyzerService(
       cacheService,
-      videoManagement
+      youtubeService // Use the new name here
     );
 
     const validatedParams = findConsistentOutlierChannelsSchema.parse(params);

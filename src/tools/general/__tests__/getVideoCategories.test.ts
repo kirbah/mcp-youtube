@@ -1,7 +1,8 @@
 import { getVideoCategoriesHandler } from "../getVideoCategories";
 // import { youtube } from '@googleapis/youtube'; // Removed
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { google } from "googleapis"; // To set up the mock structure
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
 
 jest.mock("googleapis", () => {
   const mockVideoCategoriesList = jest.fn();
@@ -17,7 +18,7 @@ jest.mock("googleapis", () => {
     mockVideoCategoriesList_DO_NOT_USE_DIRECTLY: mockVideoCategoriesList,
   };
 });
-jest.mock("../../../functions/videos"); // Mock VideoManagement
+jest.mock("../../../services/youtube.service"); // Mock YoutubeService
 
 // Helper to access the deeply nested mock
 const getMockVideoCategoriesList = () => {
@@ -30,13 +31,11 @@ const getMockVideoCategoriesList = () => {
 };
 
 describe("getVideoCategoriesHandler", () => {
-  let mockVideoManager: jest.Mocked<VideoManagement>;
+  let mockVideoManager: jest.Mocked<YoutubeService>;
   let mockVideoCategoriesList: jest.Mock;
 
   beforeEach(() => {
-    mockVideoManager = new VideoManagement(
-      {} as any
-    ) as jest.Mocked<VideoManagement>;
+    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
     mockVideoManager.getVideoCategories = jest.fn(); // This is the method from VideoManagement
 
     // Reset the list mock for each test
@@ -70,7 +69,7 @@ describe("getVideoCategoriesHandler", () => {
     expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
     expect(result.success).toBe(true);
     if (result.success && result.content) {
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
       expect(returnedData).toEqual(expectedCategoriesFromVideoManager);
     } else {
       throw new Error("Result was successful but content was missing");
@@ -89,7 +88,8 @@ describe("getVideoCategoriesHandler", () => {
     expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error?.message).toBe("API Error");
+      const errorResult = result.error as CallToolResult["error"];
+      expect(errorResult.message).toBe("API Error");
       expect(result.content).toEqual([]); // Expect empty content array for errors
     }
   });
@@ -107,7 +107,7 @@ describe("getVideoCategoriesHandler", () => {
     expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
     expect(result.success).toBe(true);
     if (result.success && result.content) {
-      const returnedData = JSON.parse(result.content[0].text);
+      const returnedData = JSON.parse(result.content[0].text as string);
       expect(returnedData).toEqual(mockCategories);
     } else {
       throw new Error(

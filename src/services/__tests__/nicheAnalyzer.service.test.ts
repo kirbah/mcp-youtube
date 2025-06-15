@@ -1,6 +1,6 @@
 import { NicheAnalyzerService } from "../nicheAnalyzer.service";
 import { CacheService } from "../cache.service";
-import { VideoManagement } from "../../functions/videos";
+import { YoutubeService } from "../../services/youtube.service";
 import { executeInitialCandidateSearch } from "../analysis/phase1-candidate-search";
 import { executeChannelPreFiltering } from "../analysis/phase2-channel-filtering";
 import { executeDeepConsistencyAnalysis } from "../analysis/phase3-deep-analysis";
@@ -12,7 +12,7 @@ import {
 
 // Mock dependencies
 jest.mock("../cache.service");
-jest.mock("../../functions/videos");
+jest.mock("../../services/youtube.service");
 jest.mock("../analysis/phase1-candidate-search");
 jest.mock("../analysis/phase2-channel-filtering");
 jest.mock("../analysis/phase3-deep-analysis");
@@ -21,7 +21,7 @@ jest.mock("../analysis/phase4-ranking-formatting");
 describe("NicheAnalyzerService", () => {
   let nicheAnalyzerService: NicheAnalyzerService;
   let mockCacheService: jest.Mocked<CacheService>;
-  let mockVideoManagement: jest.Mocked<VideoManagement>;
+  let mockVideoManagement: jest.Mocked<YoutubeService>;
 
   // Mocked phase functions
   const mockExecuteInitialCandidateSearch =
@@ -38,10 +38,7 @@ describe("NicheAnalyzerService", () => {
     mockCacheService = new CacheService(
       null as any
     ) as jest.Mocked<CacheService>;
-    mockVideoManagement = new VideoManagement(
-      null as any,
-      null as any
-    ) as jest.Mocked<VideoManagement>;
+    mockVideoManagement = new YoutubeService() as jest.Mocked<YoutubeService>;
 
     // Provide mock implementations for VideoManagement methods
     mockVideoManagement.resetApiCreditsUsed = jest.fn();

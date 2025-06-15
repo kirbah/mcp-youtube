@@ -1,6 +1,6 @@
 import { executeInitialCandidateSearch } from "../phase1-candidate-search";
 import { CacheService } from "../../cache.service";
-import { VideoManagement } from "../../../functions/videos";
+import { YoutubeService } from "../../../services/youtube.service";
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { youtube_v3 } from "googleapis";
 
@@ -10,26 +10,43 @@ const MockedCacheService = CacheService as jest.MockedClass<
   typeof CacheService
 >;
 
-// Mock VideoManagement
-jest.mock("../../../functions/videos");
-const MockedVideoManagement = VideoManagement as jest.MockedClass<
-  typeof VideoManagement
->;
+// Mock YoutubeService
+jest.mock("../../../services/youtube.service", () => {
+  return {
+    YoutubeService: jest.fn().mockImplementation(() => {
+      return {
+        // Mock all methods that might be called on YoutubeService
+        getApiCreditsUsed: jest.fn(),
+        resetApiCreditsUsed: jest.fn(),
+        getVideo: jest.fn(),
+        getTranscript: jest.fn(),
+        getTrendingVideos: jest.fn(),
+        getVideoCategories: jest.fn(),
+        getChannelStatistics: jest.fn(),
+        getChannelTopVideos: jest.fn(),
+        searchVideos: jest.fn(),
+        batchFetchChannelStatistics: jest.fn(),
+        fetchChannelRecentTopVideos: jest.fn(),
+      };
+    }),
+  };
+});
 
 describe("executeInitialCandidateSearch", () => {
   let mockCacheService: jest.Mocked<CacheService>;
-  let mockVideoManagement: jest.Mocked<VideoManagement>;
+  let mockVideoManagement: jest.Mocked<YoutubeService>;
   let defaultOptions: FindConsistentOutlierChannelsOptions;
 
   beforeEach(() => {
     // Reset mocks before each test
     MockedCacheService.mockClear();
-    MockedVideoManagement.mockClear();
+    // MockedVideoManagement.mockClear(); // This line will be removed as MockedVideoManagement is removed
 
     // Create new instances of mocked services for each test
-    mockCacheService = new MockedCacheService() as jest.Mocked<CacheService>;
-    mockVideoManagement =
-      new MockedVideoManagement() as jest.Mocked<VideoManagement>;
+    mockCacheService = new MockedCacheService(
+      {} as any
+    ) as jest.Mocked<CacheService>;
+    mockVideoManagement = new YoutubeService() as jest.Mocked<YoutubeService>;
 
     defaultOptions = {
       query: "test query",

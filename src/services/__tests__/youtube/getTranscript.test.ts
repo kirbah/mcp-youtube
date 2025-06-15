@@ -1,17 +1,17 @@
-import { VideoManagement } from "../../videos";
+import { YoutubeService } from "../../youtube.service";
 import { getSubtitles } from "youtube-captions-scraper";
 
 jest.mock("youtube-captions-scraper", () => ({
   getSubtitles: jest.fn(),
 }));
 
-describe("VideoManagement.getTranscript", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService.getTranscript", () => {
+  let videoManagement: YoutubeService;
   let mockGetSubtitles: jest.Mock;
 
   beforeEach(() => {
     // Initialize VideoManagement instance before each test
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
     // Reset the mock before each test
     mockGetSubtitles = getSubtitles as jest.Mock;
     mockGetSubtitles.mockClear();

@@ -3,18 +3,18 @@ import {
   NicheAnalysisOutput,
 } from "../types/analyzer.types.js";
 import { CacheService } from "./cache.service.js";
-import { VideoManagement } from "../functions/videos.js";
+import { YoutubeService } from "./youtube.service.js";
 import { executeInitialCandidateSearch } from "./analysis/phase1-candidate-search.js";
 import { executeChannelPreFiltering } from "./analysis/phase2-channel-filtering.js";
 import { executeDeepConsistencyAnalysis } from "./analysis/phase3-deep-analysis.js";
 import { formatAndRankAnalysisResults } from "./analysis/phase4-ranking-formatting.js";
 export class NicheAnalyzerService {
   private cacheService: CacheService;
-  private videoManagement: VideoManagement;
+  private youtubeService: YoutubeService;
 
-  constructor(cacheService: CacheService, videoManagement: VideoManagement) {
+  constructor(cacheService: CacheService, youtubeService: YoutubeService) {
     this.cacheService = cacheService;
-    this.videoManagement = videoManagement;
+    this.youtubeService = youtubeService;
   }
 
   async findConsistentOutlierChannels(
@@ -22,12 +22,12 @@ export class NicheAnalyzerService {
   ): Promise<NicheAnalysisOutput> {
     try {
       // 1. Reset the counter at the very beginning of the run!
-      this.videoManagement.resetApiCreditsUsed();
+      this.youtubeService.resetApiCreditsUsed();
       // Phase 1: Initial candidate search
       const candidateChannelIds = await executeInitialCandidateSearch(
         options,
         this.cacheService,
-        this.videoManagement
+        this.youtubeService
       );
 
       // Phase 2: Pre-filtering & cache logic
@@ -35,7 +35,7 @@ export class NicheAnalyzerService {
         candidateChannelIds,
         options,
         this.cacheService,
-        this.videoManagement
+        this.youtubeService
       );
 
       // Phase 3: Deep consistency analysis
@@ -44,7 +44,7 @@ export class NicheAnalyzerService {
           prospects,
           options,
           this.cacheService,
-          this.videoManagement
+          this.youtubeService
         );
 
       // Phase 4: Filter, Sort, Slice & Format
@@ -56,7 +56,7 @@ export class NicheAnalyzerService {
 
       // Update summary with actual counts and cost
       // 3. Get the final, accurate cost at the very end.
-      const actualApiCreditsUsed = this.videoManagement.getApiCreditsUsed();
+      const actualApiCreditsUsed = this.youtubeService.getApiCreditsUsed();
 
       // 4. Build the final response object with the REAL number.
       finalOutput.summary.candidatesFound = candidateChannelIds.length;

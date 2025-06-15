@@ -1,7 +1,7 @@
 // src/services/analysis/__tests__/phase3-deep-analysis.test.ts
 
 import { CacheService } from "../../cache.service"; // Adjusted path
-import { VideoManagement as VideoManagementService } from "../../../functions/videos"; // Adjusted path
+import { YoutubeService as VideoManagementService } from "../../youtube.service.js"; // Adjusted path
 import * as analysisLogic from "../analysis.logic"; // Adjusted path
 import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis"; // Adjusted path
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types"; // Adjusted path
@@ -21,7 +21,7 @@ function createMockLatestAnalysis(
     STRONG: { consistencyPercentage: 0, outlierVideoCount: 0 },
   };
 
-  const finalMetrics = {
+  const mergedMetrics = {
     STANDARD: { ...defaultMetrics.STANDARD, ...overrides.metrics?.STANDARD },
     STRONG: { ...defaultMetrics.STRONG, ...overrides.metrics?.STRONG },
   };
@@ -30,12 +30,12 @@ function createMockLatestAnalysis(
     analyzedAt: new Date(),
     subscriberCountAtAnalysis: 1000,
     sourceVideoCount: 10,
-    metrics: finalMetrics,
+    metrics: mergedMetrics, // Use mergedMetrics here
   };
   // Create a new object by spreading defaults and then overrides.
-  // For 'metrics', it's already handled by 'finalMetrics'.
+  // For 'metrics', it's already handled by 'mergedMetrics'.
   const result = { ...defaults, ...overrides };
-  result.metrics = finalMetrics; // Ensure metrics is the fully merged object.
+  result.metrics = mergedMetrics; // Ensure metrics is the fully merged object.
   return result;
 }
 
@@ -45,12 +45,8 @@ function createMockChannelCache(
 ): ChannelCache {
   const defaults: ChannelCache = {
     _id: "defaultChannelId",
-    // youtubeId is not in ChannelCache type, ensure it's added if service logic relies on it, or removed from tests.
-    // For now, assuming it was an error in previous test structure and removing it from default mock.
-    // If your service uses a 'youtubeId' field on ChannelCache, add it here.
-    title: "Default Channel Title",
+    channelTitle: "Default Channel Title",
     createdAt: new Date(),
-    updatedAt: new Date(),
     status: "candidate",
     latestStats: {
       fetchedAt: new Date(),
@@ -59,35 +55,57 @@ function createMockChannelCache(
       viewCount: 100000,
     },
     analysisHistory: [],
-    // latestAnalysis is optional
+    latestAnalysis: undefined,
   };
 
   let final = { ...defaults, ...overrides };
 
+  // Ensure latestStats is fully merged
   if (overrides.latestStats) {
     final.latestStats = { ...defaults.latestStats, ...overrides.latestStats };
   }
-  // If latestAnalysis is provided in overrides, ensure it's a complete object or null
+
+  // Handle latestAnalysis explicitly
   if (overrides.hasOwnProperty("latestAnalysis")) {
-    // Check if latestAnalysis is explicitly passed
     if (overrides.latestAnalysis === null) {
-      final.latestAnalysis = null;
+      final.latestAnalysis = undefined; // Change null to undefined
     } else if (overrides.latestAnalysis) {
       final.latestAnalysis = createMockLatestAnalysis(overrides.latestAnalysis);
+    } else {
+      final.latestAnalysis = undefined; // If explicitly set to undefined
     }
+  } else if (defaults.latestAnalysis !== undefined) {
+    final.latestAnalysis = defaults.latestAnalysis;
   }
 
   return final;
 }
 
 // Mock CacheService
-jest.mock("../../cache.service");
+jest.mock("../../cache.service", () => {
+  return {
+    CacheService: jest.fn().mockImplementation(() => ({
+      findChannelsByIds: jest.fn(),
+      getVideoListCache: jest.fn(),
+      setVideoListCache: jest.fn(),
+      updateChannel: jest.fn(),
+    })),
+  };
+});
 const MockedCacheService = CacheService as jest.MockedClass<
   typeof CacheService
 >;
 
 // Mock VideoManagementService
-jest.mock("../../../functions/videos");
+jest.mock("../../youtube.service.js", () => {
+  // Corrected path and service name
+  return {
+    YoutubeService: jest.fn().mockImplementation(() => ({
+      fetchChannelRecentTopVideos: jest.fn(),
+      // Add other methods if they are called in this test file and need mocking
+    })),
+  };
+});
 const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
   typeof VideoManagementService
 >;
@@ -96,23 +114,54 @@ const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
 jest.mock("../analysis.logic");
 const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
 
+// Mock the MongoDB Db object
+const mockDb: any = {
+  collection: jest.fn(() => ({
+    findOne: jest.fn(),
+    updateOne: jest.fn(),
+    find: jest.fn(() => ({
+      toArray: jest.fn(),
+    })),
+    deleteOne: jest.fn(),
+  })),
+};
+
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: jest.Mocked<CacheService>;
-  let videoManagementInstance: jest.Mocked<VideoManagementService>;
+  let cacheServiceInstance: jest.Mocked<CacheService> | any; // Cast to any
+  let videoManagementInstance: jest.Mocked<VideoManagementService> | any; // Cast to any
+
+  // Define variables in a broader scope
+  let publishedAfterString: string;
+  let mockSuccessVideos: youtube_v3.Schema$Video[];
+  let genericError: Error;
 
   const baseMockOptions: FindConsistentOutlierChannelsOptions = {
-    // query: 'test query', // query is not part of FindConsistentOutlierChannelsOptions used by phase3
+    query: "test query", // Added required 'query' property
     channelAge: "NEW",
     consistencyLevel: "MODERATE",
     outlierMagnitude: "STANDARD",
-    maxResults: 10, // This is part of the broader options, but not directly used by phase3 logic itself from options
-    // videoCategoryId and regionCode are optional in FindConsistentOutlierChannelsOptions
+    maxResults: 10,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    cacheServiceInstance = new MockedCacheService();
-    videoManagementInstance = new MockedVideoManagementService();
+    cacheServiceInstance = new MockedCacheService(mockDb); // Pass mockDb to constructor
+    videoManagementInstance = new MockedVideoManagementService(); // Use the mocked class
+
+    // Initialize variables for each test
+    publishedAfterString = new Date().toISOString();
+    genericError = new Error("Network Error");
+    mockSuccessVideos = [
+      {
+        id: "videoS1",
+        snippet: {
+          publishedAt: "sometime",
+          title: "t",
+          channelId: "channel1_success", // Use literal string or define const
+        },
+        statistics: { viewCount: "1" },
+      },
+    ];
 
     // Ensure the mock instance methods are set up if not automatically by jest.mock
     if (!videoManagementInstance.fetchChannelRecentTopVideos) {
@@ -122,8 +171,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
     mockedAnalysisLogic.isQuotaError.mockReturnValue(false);
     mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
-      new Date().toISOString()
-    );
+      publishedAfterString
+    ); // Use the initialized variable
     mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
     mockedAnalysisLogic.calculateConsistencyMetrics.mockReturnValue(
       // calculateConsistencyMetrics returns an object { sourceVideoCount, metrics: {...} }
@@ -150,11 +199,17 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     it("should skip re-analysis if channel growth is less than 20% and use promising historical analysis", async () => {
       const mockChannel = createMockChannelCache({
         _id: "channel1",
-        latestStats: { subscriberCount: 1190 }, // < 20% growth from 1000
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1190,
+          videoCount: 100,
+          viewCount: 100000,
+        },
         latestAnalysis: createMockLatestAnalysis({
           subscriberCountAtAnalysis: 1000,
           metrics: {
             STANDARD: { consistencyPercentage: 0.8, outlierVideoCount: 8 },
+            STRONG: { consistencyPercentage: 0, outlierVideoCount: 0 }, // Ensure STRONG is present
           },
         }),
         status: "analyzed_promising",
@@ -180,14 +235,20 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     it("should skip re-analysis if channel growth is less than 20% and skip if historical analysis is not promising", async () => {
       const mockChannel = createMockChannelCache({
         _id: "channel1",
-        latestStats: { subscriberCount: 1100 }, // < 20% growth
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1100,
+          videoCount: 100,
+          viewCount: 100000,
+        },
         latestAnalysis: createMockLatestAnalysis({
           subscriberCountAtAnalysis: 1000,
           metrics: {
             STANDARD: { consistencyPercentage: 0.6, outlierVideoCount: 6 },
-          }, // Not promising
+            STRONG: { consistencyPercentage: 0, outlierVideoCount: 0 }, // Ensure STRONG is present
+          },
         }),
-        status: "analyzed_failed",
+        status: "analyzed_low_consistency",
       });
       cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.6 < 0.7
@@ -208,13 +269,19 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     it("should use cached video list if available and channel passes growth gate", async () => {
       const mockChannel = createMockChannelCache({
         _id: "channel2",
-        latestStats: { subscriberCount: 1500 }, // >20% growth from 1000
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1500,
+          videoCount: 100,
+          viewCount: 100000,
+        },
         latestAnalysis: createMockLatestAnalysis({
           // Provide a latestAnalysis that would make it pass growth gate
           subscriberCountAtAnalysis: 1000,
           metrics: {
             STANDARD: { consistencyPercentage: 0.5, outlierVideoCount: 2 },
-          }, // Old analysis not promising
+            STRONG: { consistencyPercentage: 0, outlierVideoCount: 0 }, // Ensure STRONG is present
+          },
         }),
         status: "candidate",
       });
@@ -265,14 +332,20 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     it("should not call getVideoListCache if growth gate check fails", async () => {
       const mockChannel = createMockChannelCache({
         _id: "channel-no-growth",
-        latestStats: { subscriberCount: 1100 }, // < 20% growth from 1000
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1100,
+          videoCount: 100,
+          viewCount: 100000,
+        },
         latestAnalysis: createMockLatestAnalysis({
           subscriberCountAtAnalysis: 1000,
           metrics: {
             STANDARD: { consistencyPercentage: 0.6, outlierVideoCount: 5 },
-          }, // Not promising
+            STRONG: { consistencyPercentage: 0, outlierVideoCount: 0 }, // Ensure STRONG is present
+          },
         }),
-        status: "analyzed_failed",
+        status: "analyzed_low_consistency",
       });
       cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
@@ -301,9 +374,14 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       });
       const mockChannel = createMockChannelCache({
         _id: "channel3",
-        latestStats: { subscriberCount: 1500 }, // Significant growth (passes 20% gate over 1000)
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1500,
+          videoCount: 100,
+          viewCount: 100000,
+        },
         latestAnalysis: oldAnalysisData,
-        status: "analyzed_promising", // Initial status
+        status: "analyzed_promising",
       });
       const newMockVideos: youtube_v3.Schema$Video[] = [
         {
@@ -343,18 +421,19 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
       const updateArg = cacheServiceInstance.updateChannel.mock.calls[0][1];
-      expect(updateArg.$set).toBeDefined();
+      expect(updateArg.$set!).toBeDefined();
       expect(
-        updateArg.$set.latestAnalysis.metrics["STANDARD"].consistencyPercentage
+        updateArg.$set!.latestAnalysis!.metrics["STANDARD"]
+          .consistencyPercentage
       ).toBe(0.85);
-      expect(updateArg.$set.status).toBe("analyzed_promising");
-      expect(updateArg.$push).toBeDefined();
-      expect(updateArg.$push.analysisHistory).toEqual(oldAnalysisData);
+      expect(updateArg.$set!.status).toBe("analyzed_promising");
+      expect(updateArg.$push!).toBeDefined();
+      expect(updateArg.$push!.analysisHistory).toEqual(oldAnalysisData);
 
       expect(results).toHaveLength(1);
       expect(results[0].status).toBe("analyzed_promising");
       expect(
-        results[0].latestAnalysis.metrics.STANDARD.consistencyPercentage
+        results[0].latestAnalysis!.metrics.STANDARD.consistencyPercentage
       ).toBe(0.85);
     });
 
@@ -363,16 +442,25 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const channelId2 = "channel2_fail_quota";
       const channel1Data = createMockChannelCache({
         _id: channelId1,
-        youtubeId: channelId1, // youtubeId might be used by fetchChannelRecentTopVideos if it differs from _id
-        latestStats: { subscriberCount: 1000 },
-        latestAnalysis: null, // No prior analysis, passes growth gate
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1000,
+          videoCount: 100,
+          viewCount: 100000,
+        },
+        latestAnalysis: undefined, // Changed null to undefined
         status: "candidate",
       });
+      const channel2Id = "channel2_fail_quota";
       const channel2Data = createMockChannelCache({
-        _id: channelId2,
-        youtubeId: channelId2,
-        latestStats: { subscriberCount: 2000 },
-        latestAnalysis: null,
+        _id: channel2Id,
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 2000,
+          videoCount: 200,
+          viewCount: 200000,
+        },
+        latestAnalysis: undefined, // Changed null to undefined
         status: "candidate",
       });
       const quotaError = new Error("API Quota Exceeded");
@@ -382,23 +470,25 @@ describe("executeDeepConsistencyAnalysis Function", () => {
           snippet: {
             publishedAt: "sometime",
             title: "t",
-            channelId: channelId1,
+            channelId: channel1Data._id, // Use channel1Data._id
           },
           statistics: { viewCount: "1" },
         },
       ];
 
-      const publishedAfterString = new Date().toISOString();
       mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
         publishedAfterString
       );
 
-      cacheServiceInstance.findChannelsByIds.mockImplementation(async (ids) => {
-        const data = [];
-        if (ids.includes(channelId1)) data.push(channel1Data);
-        if (ids.includes(channelId2)) data.push(channel2Data);
-        return data;
-      });
+      cacheServiceInstance.findChannelsByIds.mockImplementation(
+        async (ids: string[]): Promise<ChannelCache[]> => {
+          // Explicitly type ids and return
+          const data: ChannelCache[] = [];
+          if (ids.includes(channel1Data._id)) data.push(channel1Data);
+          if (ids.includes(channel2Data._id)) data.push(channel2Data);
+          return data;
+        }
+      );
       cacheServiceInstance.getVideoListCache.mockResolvedValue(null);
 
       videoManagementInstance.fetchChannelRecentTopVideos.mockImplementation(
@@ -454,7 +544,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       );
 
       const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
-      const channel2Call = updateCalls.find((call) => call[0] === channelId2);
+      const channel2Call = updateCalls.find(
+        (call: any) => call[0] === channel2Id
+      ); // Cast to any
       expect(channel2Call).toBeUndefined();
 
       expect(
@@ -469,9 +561,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const channelId = "low_consistency_channel";
       const mockChannel = createMockChannelCache({
         _id: channelId,
-        youtubeId: channelId,
-        latestStats: { subscriberCount: 1000 },
-        latestAnalysis: null, // Ensures it passes any growth gate by having no prior analysis
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1000,
+          videoCount: 100,
+          viewCount: 100000,
+        },
+        latestAnalysis: undefined, // Changed null to undefined
         status: "candidate",
       });
 
@@ -543,18 +639,19 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         cacheServiceInstance.updateChannel.mock.calls[0];
 
       expect(updatedChannelId).toBe(channelId);
-      expect(updatePayload.$set).toBeDefined();
-      expect(updatePayload.$set.status).toBe("analyzed_low_consistency");
-      expect(updatePayload.$set.latestAnalysis).toBeDefined();
+      expect(updatePayload.$set!).toBeDefined();
+      expect(updatePayload.$set!.status).toBe("analyzed_low_consistency");
+      expect(updatePayload.$set!.latestAnalysis!).toBeDefined();
       expect(
-        updatePayload.$set.latestAnalysis.metrics.STANDARD.consistencyPercentage
+        updatePayload.$set!.latestAnalysis!.metrics.STANDARD
+          .consistencyPercentage
       ).toBe(0.5);
-      expect(updatePayload.$set.latestAnalysis.sourceVideoCount).toBe(
+      expect(updatePayload.$set!.latestAnalysis!.sourceVideoCount).toBe(
         mockFetchedVideos.length
       );
-      expect(updatePayload.$set.latestAnalysis.subscriberCountAtAnalysis).toBe(
-        mockChannel.latestStats.subscriberCount
-      );
+      expect(
+        updatePayload.$set!.latestAnalysis!.subscriberCountAtAnalysis
+      ).toBe(mockChannel.latestStats.subscriberCount);
 
       expect(results).toHaveLength(0); // Channel should not be in promising results
     });
@@ -563,8 +660,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const channelId = "empty_fetch_channel";
       const mockChannel = createMockChannelCache({
         _id: channelId,
-        youtubeId: channelId,
-        latestAnalysis: null, // Pass growth gate
+        latestAnalysis: undefined, // Changed null to undefined
         status: "candidate",
       });
 
@@ -612,8 +708,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const channelId = "empty_cache_channel";
       const mockChannel = createMockChannelCache({
         _id: channelId,
-        youtubeId: channelId,
-        latestAnalysis: null, // Pass growth gate
+        latestAnalysis: undefined, // Changed null to undefined
         status: "candidate",
       });
 
@@ -658,44 +753,41 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       const channel1Data = createMockChannelCache({
         _id: successChannelId,
-        youtubeId: successChannelId,
-        latestAnalysis: null,
-        latestStats: { subscriberCount: 1200 }, // Ensure it's different for clarity if needed
+        latestAnalysis: undefined, // Changed null to undefined
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1200,
+          videoCount: 120,
+          viewCount: 120000,
+        },
       });
       const channel2Data = createMockChannelCache({
         _id: failChannelId,
-        youtubeId: failChannelId,
-        latestAnalysis: null,
+        latestAnalysis: undefined, // Changed null to undefined
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 1000,
+          videoCount: 100,
+          viewCount: 100000,
+        },
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([
-        channel1Data,
-        channel2Data,
-      ]);
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Trigger fetch for both
-
-      const genericError = new Error("Network Error");
-      const mockSuccessVideos: youtube_v3.Schema$Video[] = [
-        {
-          id: "videoS1",
-          snippet: {
-            publishedAt: new Date().toISOString(),
-            title: "vS1",
-            channelId: successChannelId,
-          },
-          statistics: { viewCount: "1000" },
-        },
-      ];
-
-      const publishedAfterString = new Date().toISOString();
-      mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
-        publishedAfterString
+      cacheServiceInstance.findChannelsByIds.mockImplementation(
+        async (ids: string[]): Promise<ChannelCache[]> => {
+          // Explicitly type ids and return
+          const data: ChannelCache[] = [];
+          if (ids.includes(channel1Data._id)) data.push(channel1Data);
+          if (ids.includes(channel2Data._id)) data.push(channel2Data);
+          return data;
+        }
       );
+      cacheServiceInstance.getVideoListCache.mockResolvedValue(null);
 
       videoManagementInstance.fetchChannelRecentTopVideos.mockImplementation(
         async (chId, pubAfter) => {
-          expect(pubAfter).toBe(publishedAfterString);
-          if (chId === successChannelId) return mockSuccessVideos;
+          // Correct signature
+          expect(pubAfter).toBe(publishedAfterString); // Verify publishedAfter is passed
+          if (chId === channel1Data._id) return mockSuccessVideos; // Use _id for comparison
           if (chId === failChannelId) throw genericError;
           return [];
         }
@@ -763,8 +855,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
       const failChannelUpdateCall = updateCalls.find(
-        (call) => call[0] === failChannelId
-      );
+        (call: any) => call[0] === failChannelId
+      ); // Cast to any
       expect(failChannelUpdateCall).toBeUndefined();
 
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);

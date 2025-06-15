@@ -1,7 +1,7 @@
 import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import { UpdateFilter } from "mongodb"; // Import UpdateFilter
 import {
   ChannelCache,
@@ -22,7 +22,7 @@ export async function executeDeepConsistencyAnalysis(
   prospects: string[],
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
-  videoManagement: VideoManagement
+  youtubeService: YoutubeService
 ): Promise<{ results: ChannelCache[]; quotaExceeded: boolean }> {
   try {
     const promisingChannels: ChannelCache[] = [];
@@ -88,7 +88,7 @@ export async function executeDeepConsistencyAnalysis(
           topVideos = cachedVideoList.videos;
         } else {
           // No cached video list or it's stale, fetch new videos
-          topVideos = await videoManagement.fetchChannelRecentTopVideos(
+          topVideos = await youtubeService.fetchChannelRecentTopVideos(
             channelId,
             publishedAfter
           );
@@ -106,7 +106,7 @@ export async function executeDeepConsistencyAnalysis(
 
         // Perform New Pre-Computed Analysis (Writer Logic)
         const { sourceVideoCount, metrics } = calculateConsistencyMetrics(
-          topVideos,
+          topVideos as youtube_v3.Schema$Video[], // Cast to non-nullable array after check
           channelData.latestStats.subscriberCount
         );
 

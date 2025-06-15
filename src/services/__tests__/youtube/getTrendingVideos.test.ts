@@ -1,7 +1,5 @@
-import { VideoManagement } from "../../videos";
+import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
-
-import { google } from "googleapis"; // Import the actual google
 
 // Mock googleapis
 jest.mock("googleapis", () => {
@@ -19,15 +17,15 @@ jest.mock("googleapis", () => {
 });
 
 // Test suite for VideoManagement.getTrendingVideos method
-describe("VideoManagement.getTrendingVideos", () => {
-  let videoManagement: VideoManagement;
+describe("YoutubeService.getTrendingVideos", () => {
+  let videoManagement: YoutubeService;
   let mockVideosList: jest.Mock; // Declare type for the mock
 
   beforeEach(() => {
-    videoManagement = new VideoManagement();
+    videoManagement = new YoutubeService();
     // Access the mock directly from the mocked module
     // The google.youtube() call here will use the mocked implementation.
-    mockVideosList = google.youtube({}).videos.list as jest.Mock;
+    mockVideosList = google.youtube({ version: "v3" }).videos.list as jest.Mock;
     mockVideosList.mockClear();
     // Reset YOUTUBE_API_KEY if it was changed by a test
     process.env.YOUTUBE_API_KEY = "test_api_key";
@@ -200,13 +198,13 @@ describe("VideoManagement.getTrendingVideos", () => {
       return { data: { items: [] } };
     });
     // Re-initialize with no API key
-    expect(() => new VideoManagement()).not.toThrow(); // Constructor itself might not throw if API key check is lazy
+    expect(() => new YoutubeService()).not.toThrow(); // Constructor itself might not throw if API key check is lazy
 
     // Simulate that a call to youtube.videos.list would fail if auth (API key) is missing.
     mockVideosList.mockRejectedValue(new Error("Missing API key"));
     delete process.env.YOUTUBE_API_KEY; // Ensure API key is not set for this specific test scenario
 
-    const freshVideoManagement = new VideoManagement(); // Create a new instance that would use the missing API key
+    const freshVideoManagement = new YoutubeService(); // Create a new instance that would use the missing API key
     await expect(freshVideoManagement.getTrendingVideos({})).rejects.toThrow(
       "Failed to retrieve trending videos: Missing API key"
     );

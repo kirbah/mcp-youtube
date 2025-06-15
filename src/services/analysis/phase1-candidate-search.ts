@@ -1,7 +1,7 @@
 import { youtube_v3 } from "googleapis";
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { CacheService } from "../cache.service.js";
-import { VideoManagement } from "../../functions/videos.js";
+import { YoutubeService } from "../../services/youtube.service.js";
 import {
   calculateChannelAgePublishedAfter,
   isQuotaError,
@@ -10,7 +10,7 @@ import {
 export async function executeInitialCandidateSearch(
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
-  videoManagement: VideoManagement
+  youtubeService: YoutubeService
 ): Promise<string[]> {
   try {
     const publishedAfter = calculateChannelAgePublishedAfter(
@@ -37,7 +37,7 @@ export async function executeInitialCandidateSearch(
     let results = await cacheService.getCachedSearchResults(searchParams);
 
     if (!results) {
-      const initialSearchResults = await videoManagement.searchVideos({
+      const initialSearchResults = await youtubeService.searchVideos({
         query: options.query, // Add the required query
         publishedAfter: searchParams.publishedAfter,
         type: searchParams.type?.[0] as "video" | "channel", // Cast to expected type
@@ -51,7 +51,8 @@ export async function executeInitialCandidateSearch(
     }
 
     const channelIds = new Set<string>();
-    for (const video of results) {
+    for (const video of results as youtube_v3.Schema$SearchResult[]) {
+      // Cast to non-nullable array after check
       if (video.snippet?.channelId) {
         channelIds.add(video.snippet.channelId);
       }
