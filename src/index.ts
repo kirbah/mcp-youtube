@@ -5,6 +5,7 @@ import { YoutubeService } from "./services/youtube.service.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { allTools } from "./tools/index.js";
+import { initializeContainer } from "./container.js";
 
 // --- Import package.json ---
 // For ES Modules, you need to use an assertion for JSON modules
@@ -18,7 +19,8 @@ if (!process.env.YOUTUBE_API_KEY) {
 }
 
 async function main() {
-  const youtubeService = new YoutubeService();
+  const container = await initializeContainer();
+  const { youtubeService } = container; // Destructure youtubeService
 
   // Create MCP server
   const server = new McpServer({
@@ -27,7 +29,7 @@ async function main() {
   });
 
   // Register all tools
-  allTools.forEach(({ config, handler }) => {
+  allTools(container).forEach(({ config, handler }) => {
     server.tool(
       config.name,
       config.description,

@@ -39,6 +39,7 @@ import { isEnabled } from "../utils/featureFlags.js";
 
 import type { YoutubeService } from "../services/youtube.service.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type { IServiceContainer } from "../container.js";
 
 export interface ToolDefinition {
   config: {
@@ -51,51 +52,54 @@ export interface ToolDefinition {
     | ((params: any) => Promise<CallToolResult>);
 }
 
-export function getAllTools(): ToolDefinition[] {
-  const baseTools: ToolDefinition[] = [
+export function allTools(container: IServiceContainer): ToolDefinition[] {
+  const { youtubeService } = container;
+
+  const toolDefinitions: ToolDefinition[] = [
     // Video tools
     {
       config: getVideoDetailsConfig,
-      handler: getVideoDetailsHandler,
+      handler: (params: any) => getVideoDetailsHandler(params, youtubeService),
     },
     {
       config: searchVideosConfig,
-      handler: searchVideosHandler,
+      handler: (params: any) => searchVideosHandler(params, youtubeService),
     },
     {
       config: getTranscriptsConfig,
-      handler: getTranscriptsHandler,
+      handler: (params: any) => getTranscriptsHandler(params, youtubeService),
     },
     // Channel tools
     {
       config: getChannelStatisticsConfig,
-      handler: getChannelStatisticsHandler,
+      handler: (params: any) =>
+        getChannelStatisticsHandler(params, youtubeService),
     },
     {
       config: getChannelTopVideosConfig,
-      handler: getChannelTopVideosHandler,
+      handler: (params: any) =>
+        getChannelTopVideosHandler(params, youtubeService),
     },
     // General tools
     {
       config: getTrendingVideosConfig,
-      handler: getTrendingVideosHandler,
+      handler: (params: any) =>
+        getTrendingVideosHandler(params, youtubeService),
     },
     {
       config: getVideoCategoriesConfig,
-      handler: getVideoCategoriesHandler,
+      handler: (params: any) =>
+        getVideoCategoriesHandler(params, youtubeService),
     },
   ];
 
   // Add feature-flagged tools conditionally
   if (isEnabled("toolFindConsistentOutlierChannels")) {
-    baseTools.push({
+    toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
       handler: findConsistentOutlierChannelsHandler,
     });
   }
 
-  return baseTools;
+  return toolDefinitions;
 }
-
-// For backward compatibility, export the tools as a getter
-export const allTools: ToolDefinition[] = getAllTools();
