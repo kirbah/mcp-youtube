@@ -18,10 +18,6 @@ export const searchVideosSchema = z.object({
   type: z.enum(["video", "channel"]).optional(),
   channelId: z.string().optional(),
   videoDuration: z.enum(["any", "short", "medium", "long"]).optional(),
-  publishedAfter: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
-    .optional(),
   recency: z
     .enum([
       "any",
@@ -66,11 +62,6 @@ export const searchVideosConfig = {
       .describe(
         "Filter by video duration. 'any' (default): no duration filter. 'short': videos less than 4 minutes. 'medium': videos 4 to 20 minutes. 'long': videos longer than 20 minutes."
       ),
-    publishedAfter: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
-      .optional()
-      .describe("Filter content published after this date (ISO 8601 format)"),
     recency: z
       .enum([
         "any",
@@ -82,7 +73,7 @@ export const searchVideosConfig = {
         "pastYear",
       ])
       .optional()
-      .describe("Filter by recency (overrides publishedAfter if set)"),
+      .describe("Filter by recency"),
     regionCode: z
       .string()
       .length(2)

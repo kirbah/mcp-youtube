@@ -101,6 +101,12 @@ export class YoutubeService {
     }
 
     const targetTime = new Date(now.getTime() - millisecondsToSubtract);
+
+    // If recency is pastMonth, pastQuarter, or pastYear, set the day of the month to the 1st
+    if (["pastMonth", "pastQuarter", "pastYear"].includes(recency)) {
+      targetTime.setDate(1);
+    }
+
     return targetTime.toISOString();
   }
 

@@ -11,7 +11,6 @@ export interface SearchParams {
   type?: "video" | "channel";
   channelId?: string;
   videoDuration?: "any" | "short" | "medium" | "long";
-  publishedAfter?: string;
   recency?:
     | "any"
     | "pastHour"
