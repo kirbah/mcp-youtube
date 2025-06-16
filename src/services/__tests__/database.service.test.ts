@@ -50,46 +50,26 @@ describe("DatabaseService Connection Lifecycle", () => {
     expect(mockClose).toHaveBeenCalledTimes(1);
 
     // 4. Verify Db is null or getDb throws error
-    try {
-      getDb();
-      // If getDb() does not throw, this line will fail the test
-      expect(true).toBe(false);
-    } catch (error: any) {
-      expect(error.message).toBe(
-        "MongoDB connection not established. Call connectToDatabase() first."
-      );
-    }
+    expect(() => getDb()).toThrow(
+      "MongoDB connection not established. Call connectToDatabase() first."
+    );
   });
 
   it("should throw an error if MDB_MCP_CONNECTION_STRING is not set", async () => {
     const originalConnectionString = process.env.MDB_MCP_CONNECTION_STRING;
     delete process.env.MDB_MCP_CONNECTION_STRING; // Or set to undefined
 
-    try {
-      await connectToDatabase();
-      // If connectToDatabase does not throw, this line will fail the test
-      expect(true).toBe(false);
-    } catch (error: any) {
-      expect(error).toBeInstanceOf(Error);
-      expect(error.message).toBe(
-        "Failed to connect to MongoDB: MDB_MCP_CONNECTION_STRING environment variable is required"
-      );
-    } finally {
-      // Restore the original environment variable
-      process.env.MDB_MCP_CONNECTION_STRING = originalConnectionString;
-    }
+    await expect(connectToDatabase()).rejects.toThrow(
+      "Failed to connect to MongoDB: MDB_MCP_CONNECTION_STRING environment variable is required"
+    );
+
+    // Restore the original environment variable
+    process.env.MDB_MCP_CONNECTION_STRING = originalConnectionString;
   });
 
   it("should throw an error when getDb is called before connectToDatabase", () => {
-    try {
-      getDb();
-      // If getDb() does not throw, this line will fail the test
-      expect(true).toBe(false);
-    } catch (error: any) {
-      expect(error).toBeInstanceOf(Error);
-      expect(error.message).toBe(
-        "MongoDB connection not established. Call connectToDatabase() first."
-      );
-    }
+    expect(() => getDb()).toThrow(
+      "MongoDB connection not established. Call connectToDatabase() first."
+    );
   });
 });

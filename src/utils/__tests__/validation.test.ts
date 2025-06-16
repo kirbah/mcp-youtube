@@ -21,8 +21,8 @@ describe("validation", () => {
 
     it("should throw a formatted Error for invalid params", () => {
       const params = { name: "Test", age: "30" };
-      expect(() => validateParams(params, testSchema)).toThrowError(Error);
-      expect(() => validateParams(params, testSchema)).toThrowError(
+      expect(() => validateParams(params, testSchema)).toThrow(Error);
+      expect(() => validateParams(params, testSchema)).toThrow(
         "Validation error: Expected number, received string"
       );
     });
@@ -42,9 +42,7 @@ describe("validation", () => {
         },
       } as any;
       const params = { name: "Test" };
-      expect(() => validateParams(params, mockSchema)).toThrowError(
-        "Generic error"
-      );
+      expect(() => validateParams(params, mockSchema)).toThrow("Generic error");
     });
   });
 
@@ -55,7 +53,7 @@ describe("validation", () => {
       });
 
       it("should invalidate an empty video ID", () => {
-        expect(() => videoIdSchema.parse("")).toThrowError(z.ZodError);
+        expect(() => videoIdSchema.parse("")).toThrow(z.ZodError);
         try {
           videoIdSchema.parse("");
         } catch (e: any) {
@@ -69,7 +67,7 @@ describe("validation", () => {
       });
 
       it("should invalidate an empty channel ID", () => {
-        expect(() => channelIdSchema.parse("")).toThrowError(z.ZodError);
+        expect(() => channelIdSchema.parse("")).toThrow(z.ZodError);
         try {
           channelIdSchema.parse("");
         } catch (e: any) {
@@ -87,11 +85,11 @@ describe("validation", () => {
       });
 
       it("should invalidate a maxResults value that is too small", () => {
-        expect(() => maxResultsSchema.parse(0)).toThrowError(z.ZodError);
+        expect(() => maxResultsSchema.parse(0)).toThrow(z.ZodError);
       });
 
       it("should invalidate a maxResults value that is too large", () => {
-        expect(() => maxResultsSchema.parse(501)).toThrowError(z.ZodError);
+        expect(() => maxResultsSchema.parse(501)).toThrow(z.ZodError);
       });
     });
     describe("querySchema", () => {
@@ -100,7 +98,7 @@ describe("validation", () => {
       });
 
       it("should invalidate an empty query string", () => {
-        expect(() => querySchema.parse("")).toThrowError(z.ZodError);
+        expect(() => querySchema.parse("")).toThrow(z.ZodError);
       });
     });
     describe("languageSchema", () => {
@@ -122,11 +120,11 @@ describe("validation", () => {
       });
 
       it("should invalidate a region code that is too short", () => {
-        expect(() => regionCodeSchema.parse("U")).toThrowError(z.ZodError);
+        expect(() => regionCodeSchema.parse("U")).toThrow(z.ZodError);
       });
 
       it("should invalidate a region code that is too long", () => {
-        expect(() => regionCodeSchema.parse("USA")).toThrowError(z.ZodError);
+        expect(() => regionCodeSchema.parse("USA")).toThrow(z.ZodError);
       });
     });
     describe("categoryIdSchema", () => {
