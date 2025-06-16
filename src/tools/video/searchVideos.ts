@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
+import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+// Import our new config constants
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { querySchema, maxResultsSchema } from "../../utils/validation.js";
@@ -90,32 +93,53 @@ export const searchVideosConfig = {
 
 export const searchVideosHandler = async (
   params: SearchParams,
-  videoManager: YoutubeService
+  youtubeService: YoutubeService,
+  cacheService?: CacheService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = searchVideosSchema.parse(params);
 
-    const searchResults = await videoManager.searchVideos({
-      query: validatedParams.query,
-      maxResults: validatedParams.maxResults,
-      order: validatedParams.order,
-      type: validatedParams.type,
-      channelId: validatedParams.channelId,
-      videoDuration: validatedParams.videoDuration,
-      publishedAfter: validatedParams.publishedAfter,
-      recency: validatedParams.recency,
-      regionCode: validatedParams.regionCode,
-    });
+    const transformAndFormat = (
+      searchResults: youtube_v3.Schema$SearchResult[]
+    ) => {
+      const leanResults: LeanVideoSearchResult[] = searchResults.map(
+        (result: youtube_v3.Schema$SearchResult) => ({
+          videoId: result.id?.videoId ?? null,
+          title: result.snippet?.title ?? null,
+          descriptionSnippet: result.snippet?.description ?? null,
+          channelId: result.snippet?.channelId ?? null,
+          channelTitle: result.snippet?.channelTitle ?? null,
+          publishedAt: result.snippet?.publishedAt ?? null,
+        })
+      );
+      return leanResults;
+    };
 
-    const leanResults: LeanVideoSearchResult[] = searchResults.map(
-      (result: youtube_v3.Schema$SearchResult) => ({
-        videoId: result.id?.videoId ?? null,
-        title: result.snippet?.title ?? null,
-        descriptionSnippet: result.snippet?.description ?? null,
-        channelId: result.snippet?.channelId ?? null,
-        channelTitle: result.snippet?.channelTitle ?? null,
-        publishedAt: result.snippet?.publishedAt ?? null,
-      })
+    if (!cacheService) {
+      const rawResults = await youtubeService.searchVideos(validatedParams);
+      const leanResults = transformAndFormat(rawResults);
+      return formatSuccess(leanResults);
+    }
+
+    // With cache:
+    const cacheKey = cacheService.createOperationKey(
+      "searchVideos",
+      validatedParams
+    );
+
+    const operation = async () => {
+      // Operation fetches raw data and transforms it
+      const rawResults = await youtubeService.searchVideos(validatedParams);
+      return transformAndFormat(rawResults);
+    };
+
+    // --- Enhanced Caching Path ---
+    const leanResults = await cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STANDARD, // Use named constant for TTL
+      CACHE_COLLECTIONS.VIDEO_SEARCHES, // Use named constant for collection
+      validatedParams // <-- Pass the original parameters for storage!
     );
 
     return formatSuccess(leanResults);

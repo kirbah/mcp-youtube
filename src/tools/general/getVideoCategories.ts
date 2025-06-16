@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
@@ -27,13 +29,30 @@ export const getVideoCategoriesConfig = {
 
 export const getVideoCategoriesHandler = async (
   params: VideoCategoriesParams,
-  videoManager: YoutubeService
+  youtubeService: YoutubeService,
+  cacheService?: CacheService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoCategoriesSchema.parse(params);
+    const { regionCode = "US" } = validatedParams;
 
-    const categories = await videoManager.getVideoCategories(
-      validatedParams.regionCode
+    if (!cacheService) {
+      const categories = await youtubeService.getVideoCategories(regionCode);
+      return formatSuccess(categories);
+    }
+
+    // With cache:
+    const cacheKey = cacheService.createOperationKey("getVideoCategories", {
+      regionCode,
+    });
+    const operation = () => youtubeService.getVideoCategories(regionCode);
+
+    const categories = await cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STATIC, // Use named constant for TTL
+      CACHE_COLLECTIONS.VIDEO_CATEGORIES, // Use named constant for collection
+      validatedParams // Pass the original parameters for storage!
     );
 
     return formatSuccess(categories);

@@ -5,6 +5,8 @@ import {
   calculateCommentToViewRatio,
 } from "../../../utils/engagementCalculator";
 import { parseYouTubeNumber } from "../../../utils/numberParser";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type { ErrorResponse } from "../../../utils/errorHandler.js";
 
 jest.mock("../../../services/youtube.service");
 jest.mock("../../../utils/engagementCalculator", () => ({
@@ -159,6 +161,9 @@ describe("getVideoDetailsHandler", () => {
     beforeEach(() => {
       mockVideoManager.getVideo.mockImplementation(
         async (params: { videoId: string }) => {
+          if (params.videoId === "testVideoId2Error") {
+            throw new Error("Video not found.");
+          }
           return mockVideoDetailsData[params.videoId] || null;
         }
       );
@@ -196,49 +201,19 @@ describe("getVideoDetailsHandler", () => {
       expect(returnedData).toEqual(expectedTransformedVideo);
     });
 
-    it("should handle errors gracefully and log them when a video is not found", async () => {
-      // For testVideoId1 part of this test
-      (calculateLikeToViewRatio as jest.Mock).mockImplementation(
-        (viewCount, likeCount) =>
-          Number(viewCount) > 0 ? Number(likeCount) / Number(viewCount) : 0
-      );
-      (calculateCommentToViewRatio as jest.Mock).mockImplementation(
-        (viewCount, commentCount) =>
-          Number(viewCount) > 0 ? Number(commentCount) / Number(viewCount) : 0
+    it("should return a failed result when youtubeService.getVideo throws an error for a video", async () => {
+      const params = { videoIds: ["testVideoId2Error"] };
+      const result: CallToolResult = await getVideoDetailsHandler(
+        params,
+        mockVideoManager
       );
 
-      const params = { videoIds: ["testVideoId1", "testVideoId2Error"] };
-      const result = await getVideoDetailsHandler(params, mockVideoManager);
-
-      expect(result.success).toBe(true);
-      if (!result.success || !result.content)
-        throw new Error("Test failed: success true but no content");
-      const returnedData = JSON.parse(result.content[0].text as string);
-
-      const expectedData = {
-        testVideoId1: {
-          id: "testVideoId1",
-          title: "Test Video Title 1",
-          channelId: "testChannelId1",
-          channelTitle: "Test Channel Title 1",
-          publishedAt: "2023-01-01T00:00:00Z",
-          duration: "PT1M30S",
-          viewCount: 1000,
-          likeCount: 100,
-          commentCount: 10,
-          likeToViewRatio: 0.1, // From calculation: 100/1000
-          commentToViewRatio: 0.01, // From calculation: 10/1000
-          categoryId: "10",
-          defaultLanguage: "en",
-        },
-        testVideoId2Error: null,
-      };
-      expect(returnedData).toEqual(expectedData);
-      expect(console.error).toHaveBeenCalledTimes(1);
-      expect(console.error).toHaveBeenCalledWith(
-        "Video details not found for ID: testVideoId2Error",
-        "Returned null from videoManager.getVideo"
-      );
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+      const errorResult = result.error as ErrorResponse;
+      expect(errorResult.message).toBeDefined();
+      expect(errorResult.message).toContain("Video not found.");
+      expect(console.error).not.toHaveBeenCalled(); // No console.error from handler
     });
 
     it("should handle missing optional fields gracefully", async () => {
