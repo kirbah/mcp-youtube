@@ -37,4 +37,5 @@ export const CACHE_COLLECTIONS = {
   VIDEO_CATEGORIES: "video_categories",
   TRANSCRIPTS: "transcripts",
   CHANNEL_STATS: "channel_stats",
+  TRENDING_VIDEOS: "trending_videos",
 };

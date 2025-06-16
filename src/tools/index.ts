@@ -108,7 +108,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getTrendingVideosConfig,
       handler: (params: TrendingParams) =>
-        getTrendingVideosHandler(params, youtubeService),
+        getTrendingVideosHandler(params, youtubeService, cacheService),
     } as ToolDefinition<TrendingParams>,
     {
       config: getVideoCategoriesConfig,
