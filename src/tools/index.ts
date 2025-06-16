@@ -91,7 +91,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getTranscriptsConfig,
       handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, youtubeService),
+        getTranscriptsHandler(params, youtubeService, cacheService),
     } as ToolDefinition<TranscriptsParams>,
     // Channel tools
     {

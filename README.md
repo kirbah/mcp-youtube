@@ -53,8 +53,7 @@ The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client ap
           "command": "npx",
           "args": ["-y", "@kirbah/mcp-youtube"],
           "env": {
-            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
-            "YOUTUBE_TRANSCRIPT_LANG": "en"
+            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE"
           }
         }
       }
@@ -137,7 +136,6 @@ If you wish to contribute, modify the server, or run it locally outside of an MC
     Then, edit `.env` to add your `YOUTUBE_API_KEY`:
     ```
     YOUTUBE_API_KEY=your_youtube_api_key_here
-    YOUTUBE_TRANSCRIPT_LANG=en # Optional
     ```
 
 ### Development Scripts

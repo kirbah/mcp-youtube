@@ -22,10 +22,8 @@ startCommand:
       command: 'node',
       args: ['dist/index.js'],
       env: {
-        YOUTUBE_API_KEY: config.youtubeApiKey,
-        YOUTUBE_TRANSCRIPT_LANG: config.youtubeTranscriptLang || 'en'
+        YOUTUBE_API_KEY: config.youtubeApiKey
       }
     })
   exampleConfig:
     youtubeApiKey: YOUR_YOUTUBE_API_KEY_HERE
-    youtubeTranscriptLang: en

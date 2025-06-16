@@ -201,7 +201,7 @@ export class YoutubeService {
     try {
       const transcript = await getSubtitles({
         videoID: videoId,
-        lang: lang || process.env.YOUTUBE_TRANSCRIPT_LANG || "en",
+        lang: lang || "en",
       });
       return transcript;
     } catch (error: any) {
