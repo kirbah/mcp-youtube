@@ -97,7 +97,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getChannelStatisticsConfig,
       handler: (params: ChannelStatisticsParams) =>
-        getChannelStatisticsHandler(params, youtubeService),
+        getChannelStatisticsHandler(params, youtubeService, cacheService),
     } as ToolDefinition<ChannelStatisticsParams>,
     {
       config: getChannelTopVideosConfig,

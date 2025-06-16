@@ -36,4 +36,5 @@ export const CACHE_COLLECTIONS = {
   VIDEO_SEARCHES: "video_searches",
   VIDEO_CATEGORIES: "video_categories",
   TRANSCRIPTS: "transcripts",
+  CHANNEL_STATS: "channel_stats",
 };
