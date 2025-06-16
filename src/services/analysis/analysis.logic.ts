@@ -41,6 +41,9 @@ export function calculateChannelAgePublishedAfter(
   // Subtract months
   targetDate.setMonth(targetDate.getMonth() - monthsToSubtract);
 
+  // Set the date to the first day of the month
+  targetDate.setDate(1);
+
   // Normalize the date to the beginning of the day (UTC)
   // This is crucial for caching: by setting hours, minutes, seconds, and milliseconds to 0,
   // we ensure that the 'publishedAfter' timestamp is consistent for any given day,
