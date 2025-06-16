@@ -6,6 +6,7 @@ const ONE_HOUR = 3600;
 const ONE_DAY = 24 * ONE_HOUR;
 const ONE_WEEK = 7 * ONE_DAY;
 const ONE_MONTH = 30 * ONE_DAY;
+const ONE_YEAR = 365 * ONE_DAY;
 
 /**
  * Defines the Time-To-Live (TTL) for various types of cached data.
@@ -13,16 +14,16 @@ const ONE_MONTH = 30 * ONE_DAY;
  */
 export const CACHE_TTLS = {
   // For data that changes frequently, like trending videos.
-  DYNAMIC: 6 * ONE_HOUR, // 6 hours
+  DYNAMIC: ONE_DAY,
 
   // For standard entity data that can be updated, like video details or search results.
-  STANDARD: ONE_DAY, // 24 hours
+  STANDARD: ONE_WEEK,
 
   // For semi-static data that changes infrequently, like a channel's top videos.
-  SEMI_STATIC: ONE_WEEK, // 7 days
+  SEMI_STATIC: ONE_MONTH,
 
   // For truly static data that rarely or never changes, like video categories.
-  STATIC: ONE_MONTH, // 30 days
+  STATIC: ONE_YEAR,
 };
 
 /**
