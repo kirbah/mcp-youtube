@@ -18,6 +18,18 @@ import {
 // Tier 1: The "Analysis Brain" (channels_cache)
 export const REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD = 1.2; // 20% growth
 
+// Define statuses that should prevent any further analysis.
+const NO_REANALYSIS_STATUSES: ReadonlySet<ChannelCache["status"]> = new Set([
+  "archived_unreplicable",
+  "archived_niche_mismatch",
+]);
+
+// Define statuses that should be preserved during an analysis refresh, but still allow re-analysis.
+const PRESERVABLE_STATUSES: ReadonlySet<ChannelCache["status"]> = new Set([
+  "analyzed_promising_prime_candidate",
+  "analyzed_promising_monitor",
+]);
+
 export async function executeDeepConsistencyAnalysis(
   prospects: string[],
   options: FindConsistentOutlierChannelsOptions,
@@ -48,37 +60,43 @@ export async function executeDeepConsistencyAnalysis(
           continue;
         }
 
-        // Archive the Old Analysis if it exists
-        let historicalEntry: HistoricalAnalysisEntry | undefined;
-        if (channelData.latestAnalysis) {
-          // Simply spread the entire existing object. It already has the right shape.
-          historicalEntry = { ...channelData.latestAnalysis };
+        // If the channel has a status that prevents re-analysis, skip it entirely.
+        if (NO_REANALYSIS_STATUSES.has(channelData.status)) {
+          continue;
         }
 
-        // Tier 1: The "Analysis Brain" (channels_cache) - Check Re-analysis Trigger
-        // We only trigger a new "Deep Analysis" when the channel shows significant growth.
-        // If subscriberCount has not increased by REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD (20%) or more, skip re-analysis.
-        if (
-          channelData.latestAnalysis &&
-          channelData.latestStats.subscriberCount <
-            channelData.latestAnalysis.subscriberCountAtAnalysis * // CORRECTED LOGIC
-              REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD
-        ) {
-          // If the channel has not grown enough, and we have a previous analysis,
-          // we can use the previous consistency percentage if it was promising.
-          const consistencyPercentage =
-            channelData.latestAnalysis.metrics[options.outlierMagnitude]
-              .consistencyPercentage; // Reader Logic
+        // STEP 1: Determine the status to be used at the end of the process
+        let finalStatusToPersist = channelData.status;
+        const isPreservableStatus = PRESERVABLE_STATUSES.has(
+          channelData.status
+        );
 
+        // STEP 2: Check Re-analysis Trigger
+        const needsReanalysis =
+          !channelData.latestAnalysis || // Always analyze if no previous analysis exists
+          channelData.latestStats.subscriberCount >=
+            channelData.latestAnalysis.subscriberCountAtAnalysis *
+              REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD;
+
+        if (!needsReanalysis) {
+          // If no re-analysis is needed, check if it's a promising candidate based on old data
+          // and add it to the results if it is.
+          const consistencyPercentage =
+            channelData.latestAnalysis!.metrics[options.outlierMagnitude]
+              .consistencyPercentage;
           if (consistencyPercentage >= consistencyThreshold) {
-            promisingChannels.push({
-              ...channelData,
-              // The analysis itself is old, but the STATUS of this finding is 'promising'.
-              status: "analyzed_promising",
-            });
+            promisingChannels.push(channelData);
           }
           continue; // Skip to the next channel
         }
+
+        // PROCEED WITH RE-ANALYSIS
+
+        // Archive the Old Analysis if it exists
+        const historicalEntry: HistoricalAnalysisEntry | undefined =
+          channelData.latestAnalysis
+            ? { ...channelData.latestAnalysis }
+            : undefined;
 
         // Tier 2: The "Working Memory" (video_list_cache) - Check for cached video list
         let topVideos: youtube_v3.Schema$Video[] | null = null;
@@ -113,41 +131,50 @@ export async function executeDeepConsistencyAnalysis(
         const now = new Date();
         const newLatestAnalysis: LatestAnalysis = {
           analyzedAt: now,
-          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount, // Populate the new field
+          subscriberCountAtAnalysis: channelData.latestStats.subscriberCount,
           sourceVideoCount: sourceVideoCount,
           metrics: metrics,
         };
 
-        // Determine final status based on the requested consistency level
+        // STEP 3: Determine the NEW automatic status, but DON'T assign it yet
         const finalConsistencyPercentage =
           newLatestAnalysis.metrics[options.outlierMagnitude]
             .consistencyPercentage;
-        const finalStatus =
+        const newAutomaticStatus =
           finalConsistencyPercentage >= consistencyThreshold
             ? "analyzed_promising"
             : "analyzed_low_consistency";
 
-        // 1. Start building the update payload with the things that ALWAYS change.
+        // STEP 4: Decide which status to persist in the database
+        if (!isPreservableStatus) {
+          // If the original status was NOT a special one, overwrite it with the new automatic status.
+          finalStatusToPersist = newAutomaticStatus;
+        }
+        // If the original status WAS a special one, finalStatusToPersist retains its original value.
+
+        // STEP 5: Build and execute the database update
         const updatePayload: UpdateFilter<ChannelCache> = {
           $set: {
             latestAnalysis: newLatestAnalysis,
-            status: finalStatus,
+            status: finalStatusToPersist, // Use the carefully determined status
           },
         };
 
-        // 2. Conditionally add the $push operation if there is history to archive.
         if (historicalEntry) {
           updatePayload.$push = { analysisHistory: historicalEntry };
         }
 
-        // 3. Make ONE single, atomic call to the database with the complete payload.
         await cacheService.updateChannel(channelId, updatePayload);
 
+        // STEP 6: Add the updated channel to the results if it's promising
         if (finalConsistencyPercentage >= consistencyThreshold) {
           promisingChannels.push({
-            ...channelData, // The original channel data
-            latestAnalysis: newLatestAnalysis, // Overwrite with the brand new analysis
-            status: finalStatus as ChannelCache["status"], // Set the new status
+            ...channelData, // Start with the original data
+            latestAnalysis: newLatestAnalysis, // Add the new analysis data
+            status: finalStatusToPersist, // Reflect the final persisted status
+            analysisHistory: historicalEntry
+              ? [...channelData.analysisHistory, historicalEntry]
+              : channelData.analysisHistory, // Reflect the updated history
           });
         }
       } catch (error: unknown) {
