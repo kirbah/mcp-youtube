@@ -9,6 +9,8 @@ import {
 } from "../../utils/validation.js";
 import type { TrendingParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { CacheService } from "../../services/cache.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 
 export const getTrendingVideosSchema = z.object({
   regionCode: regionCodeSchema.default("US"),
@@ -47,16 +49,31 @@ export const getTrendingVideosConfig = {
 
 export const getTrendingVideosHandler = async (
   params: TrendingParams,
-  videoManager: YoutubeService
+  youtubeService: YoutubeService,
+  cacheService?: CacheService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getTrendingVideosSchema.parse(params);
 
-    const trendingVideos = await videoManager.getTrendingVideos({
-      regionCode: validatedParams.regionCode,
-      categoryId: validatedParams.categoryId,
-      maxResults: validatedParams.maxResults,
-    });
+    if (!cacheService) {
+      const trendingVideos =
+        await youtubeService.getTrendingVideos(validatedParams);
+      return formatSuccess(trendingVideos);
+    }
+
+    const cacheKey = cacheService.createOperationKey(
+      "getTrendingVideos",
+      validatedParams
+    );
+    const operation = () => youtubeService.getTrendingVideos(validatedParams);
+
+    const trendingVideos = await cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.DYNAMIC,
+      CACHE_COLLECTIONS.TRENDING_VIDEOS,
+      validatedParams
+    );
 
     return formatSuccess(trendingVideos);
   } catch (error: any) {

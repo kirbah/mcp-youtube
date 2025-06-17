@@ -35,5 +35,7 @@ export const CACHE_COLLECTIONS = {
   CHANNEL_TOP_VIDEOS: "channel_top_videos",
   VIDEO_SEARCHES: "video_searches",
   VIDEO_CATEGORIES: "video_categories",
-  // Add new collection names here as you cache more things
+  TRANSCRIPTS: "transcripts",
+  CHANNEL_STATS: "channel_stats",
+  TRENDING_VIDEOS: "trending_videos",
 };

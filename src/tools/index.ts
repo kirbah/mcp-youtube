@@ -91,13 +91,13 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getTranscriptsConfig,
       handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, youtubeService),
+        getTranscriptsHandler(params, youtubeService, cacheService),
     } as ToolDefinition<TranscriptsParams>,
     // Channel tools
     {
       config: getChannelStatisticsConfig,
       handler: (params: ChannelStatisticsParams) =>
-        getChannelStatisticsHandler(params, youtubeService),
+        getChannelStatisticsHandler(params, youtubeService, cacheService),
     } as ToolDefinition<ChannelStatisticsParams>,
     {
       config: getChannelTopVideosConfig,
@@ -108,7 +108,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getTrendingVideosConfig,
       handler: (params: TrendingParams) =>
-        getTrendingVideosHandler(params, youtubeService),
+        getTrendingVideosHandler(params, youtubeService, cacheService),
     } as ToolDefinition<TrendingParams>,
     {
       config: getVideoCategoriesConfig,

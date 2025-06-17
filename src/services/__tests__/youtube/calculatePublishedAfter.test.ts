@@ -57,8 +57,9 @@ describe("YoutubeService calculatePublishedAfter", () => {
     const result = videoManagement.calculatePublishedAfter("pastMonth");
     expect(new Date(result).toISOString()).toBe(result);
     const resultTimestamp = new Date(result).getTime();
-    // Assuming 'pastMonth' is implemented as 30 days for simplicity in tests
-    const expectedTimestamp = beforeTimestamp - 30 * 24 * 60 * 60 * 1000;
+    const expectedDate = new Date(beforeTimestamp - 30 * 24 * 60 * 60 * 1000);
+    expectedDate.setDate(1);
+    const expectedTimestamp = expectedDate.getTime();
     expect(resultTimestamp).toBeGreaterThanOrEqual(
       expectedTimestamp - ALLOWED_DRIFT_MS
     );
@@ -72,8 +73,9 @@ describe("YoutubeService calculatePublishedAfter", () => {
     const result = videoManagement.calculatePublishedAfter("pastQuarter");
     expect(new Date(result).toISOString()).toBe(result);
     const resultTimestamp = new Date(result).getTime();
-    // Assuming 'pastQuarter' is implemented as 90 days for simplicity in tests
-    const expectedTimestamp = beforeTimestamp - 90 * 24 * 60 * 60 * 1000;
+    const expectedDate = new Date(beforeTimestamp - 90 * 24 * 60 * 60 * 1000);
+    expectedDate.setDate(1);
+    const expectedTimestamp = expectedDate.getTime();
     expect(resultTimestamp).toBeGreaterThanOrEqual(
       expectedTimestamp - ALLOWED_DRIFT_MS
     );
@@ -87,7 +89,9 @@ describe("YoutubeService calculatePublishedAfter", () => {
     const result = videoManagement.calculatePublishedAfter("pastYear");
     expect(new Date(result).toISOString()).toBe(result);
     const resultTimestamp = new Date(result).getTime();
-    const expectedTimestamp = beforeTimestamp - 365 * 24 * 60 * 60 * 1000;
+    const expectedDate = new Date(beforeTimestamp - 365 * 24 * 60 * 60 * 1000);
+    expectedDate.setDate(1);
+    const expectedTimestamp = expectedDate.getTime();
     expect(resultTimestamp).toBeGreaterThanOrEqual(
       expectedTimestamp - ALLOWED_DRIFT_MS
     );

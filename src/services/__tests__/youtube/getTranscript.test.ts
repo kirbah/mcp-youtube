@@ -29,13 +29,10 @@ describe("YoutubeService.getTranscript", () => {
     expect(result).toEqual(mockTranscript);
   });
 
-  it('should use default language "en" when lang is not provided and YOUTUBE_TRANSCRIPT_LANG is not set', async () => {
+  it('should use default language "en" when lang is not provided', async () => {
     const videoId = "testVideoIdEn";
     const mockTranscript = [{ text: "Hello world" }];
     mockGetSubtitles.mockResolvedValue(mockTranscript);
-    // Ensure YOUTUBE_TRANSCRIPT_LANG is not set for this test
-    delete process.env.YOUTUBE_TRANSCRIPT_LANG;
-
     const result = await videoManagement.getTranscript(videoId);
 
     expect(mockGetSubtitles).toHaveBeenCalledWith({
@@ -43,25 +40,6 @@ describe("YoutubeService.getTranscript", () => {
       lang: "en",
     });
     expect(result).toEqual(mockTranscript);
-  });
-
-  it("should use YOUTUBE_TRANSCRIPT_LANG when lang is not provided and YOUTUBE_TRANSCRIPT_LANG is set", async () => {
-    const videoId = "testVideoIdEnvLang";
-    const envLang = "fr";
-    process.env.YOUTUBE_TRANSCRIPT_LANG = envLang;
-    const mockTranscript = [{ text: "Bonjour le monde" }];
-    mockGetSubtitles.mockResolvedValue(mockTranscript);
-
-    const result = await videoManagement.getTranscript(videoId);
-
-    expect(mockGetSubtitles).toHaveBeenCalledWith({
-      videoID: videoId,
-      lang: envLang,
-    });
-    expect(result).toEqual(mockTranscript);
-
-    // Clean up the environment variable
-    delete process.env.YOUTUBE_TRANSCRIPT_LANG;
   });
 
   it("should throw an error if getSubtitles fails", async () => {

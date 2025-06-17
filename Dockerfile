@@ -21,7 +21,6 @@ RUN chmod +x dist/index.js
 
 # Set environment variables for Docker (actual values should be provided at runtime)
 ENV YOUTUBE_API_KEY=""
-ENV YOUTUBE_TRANSCRIPT_LANG="en"
 
 # Command to run the MCP server
 CMD ["node", "dist/index.js"]

@@ -44,7 +44,6 @@ jobs:
           # Create a GitHub secret named YOUTUBE_API_KEY_TEST with a dummy or test-specific key.
           # If all API calls are mocked, a dummy value is fine.
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY_TEST || 'dummy_api_key_for_ci' }}
-          # YOUTUBE_TRANSCRIPT_LANG is already defaulted in your code or can be set here if needed
           CI: true
 
       - name: Upload coverage to Codecov

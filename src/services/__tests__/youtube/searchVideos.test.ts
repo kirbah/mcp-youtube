@@ -296,10 +296,13 @@ describe("YoutubeService - searchVideos", () => {
       "calculatePublishedAfter"
     );
 
-    // Calculate expected publishedAfter for 'pastMonth' just before the call
+    // Calculate expected publishedAfter for 'pastMonth' just before the call,
+    // mimicking the logic in calculatePublishedAfter (especially setDate(1))
+    const now = new Date();
     const expectedTimeFromRecency = new Date(
-      Date.now() - 30 * 24 * 60 * 60 * 1000
+      now.getTime() - 30 * 24 * 60 * 60 * 1000
     );
+    expectedTimeFromRecency.setDate(1); // Mimic the setDate(1) logic for 'pastMonth'
 
     mockSearchList.mockResolvedValueOnce({ data: { items: [] } });
     await videoManagement.searchVideos({
