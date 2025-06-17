@@ -4,6 +4,7 @@ import {
 } from "../types/analyzer.types.js";
 import { CacheService } from "./cache.service.js";
 import { YoutubeService } from "./youtube.service.js";
+import { NicheRepository } from "./analysis/niche.repository.js";
 import { executeInitialCandidateSearch } from "./analysis/phase1-candidate-search.js";
 import { executeChannelPreFiltering } from "./analysis/phase2-channel-filtering.js";
 import { executeDeepConsistencyAnalysis } from "./analysis/phase3-deep-analysis.js";
@@ -11,10 +12,16 @@ import { formatAndRankAnalysisResults } from "./analysis/phase4-ranking-formatti
 export class NicheAnalyzerService {
   private cacheService: CacheService;
   private youtubeService: YoutubeService;
+  private nicheRepository: NicheRepository;
 
-  constructor(cacheService: CacheService, youtubeService: YoutubeService) {
+  constructor(
+    cacheService: CacheService,
+    youtubeService: YoutubeService,
+    nicheRepository: NicheRepository
+  ) {
     this.cacheService = cacheService;
     this.youtubeService = youtubeService;
+    this.nicheRepository = nicheRepository;
   }
 
   async findConsistentOutlierChannels(
@@ -35,7 +42,8 @@ export class NicheAnalyzerService {
         candidateChannelIds,
         options,
         this.cacheService,
-        this.youtubeService
+        this.youtubeService,
+        this.nicheRepository
       );
 
       // Phase 3: Deep consistency analysis
@@ -44,7 +52,8 @@ export class NicheAnalyzerService {
           prospects,
           options,
           this.cacheService,
-          this.youtubeService
+          this.youtubeService,
+          this.nicheRepository
         );
 
       // Phase 4: Filter, Sort, Slice & Format

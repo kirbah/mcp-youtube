@@ -1,6 +1,7 @@
 import { NicheAnalyzerService } from "../nicheAnalyzer.service";
 import { CacheService } from "../cache.service";
 import { YoutubeService } from "../../services/youtube.service";
+import { NicheRepository } from "../analysis/niche.repository"; // Import NicheRepository
 import { executeInitialCandidateSearch } from "../analysis/phase1-candidate-search";
 import { executeChannelPreFiltering } from "../analysis/phase2-channel-filtering";
 import { executeDeepConsistencyAnalysis } from "../analysis/phase3-deep-analysis";
@@ -13,6 +14,7 @@ import {
 // Mock dependencies
 jest.mock("../cache.service");
 jest.mock("../../services/youtube.service");
+jest.mock("../analysis/niche.repository"); // Mock NicheRepository
 jest.mock("../analysis/phase1-candidate-search");
 jest.mock("../analysis/phase2-channel-filtering");
 jest.mock("../analysis/phase3-deep-analysis");
@@ -22,6 +24,7 @@ describe("NicheAnalyzerService", () => {
   let nicheAnalyzerService: NicheAnalyzerService;
   let mockCacheService: jest.Mocked<CacheService>;
   let mockVideoManagement: jest.Mocked<YoutubeService>;
+  let mockNicheRepository: jest.Mocked<NicheRepository>; // Declare mockNicheRepository
 
   // Mocked phase functions
   const mockExecuteInitialCandidateSearch =
@@ -47,9 +50,14 @@ describe("NicheAnalyzerService", () => {
     mockVideoManagement.batchFetchChannelStatistics = jest.fn();
     mockVideoManagement.fetchChannelRecentTopVideos = jest.fn();
 
+    mockNicheRepository = new NicheRepository(
+      null as any
+    ) as jest.Mocked<NicheRepository>; // Initialize mockNicheRepository
+
     nicheAnalyzerService = new NicheAnalyzerService(
       mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository // Pass mockNicheRepository to the service
     );
 
     // Reset phase function mocks
@@ -103,13 +111,15 @@ describe("NicheAnalyzerService", () => {
       phase1Output,
       options,
       mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository // Add mockNicheRepository
     );
     expect(mockExecuteDeepConsistencyAnalysis).toHaveBeenCalledWith(
       phase2Output,
       options,
       mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository // Add mockNicheRepository
     );
     expect(mockFormatAndRankAnalysisResults).toHaveBeenCalledWith(
       phase3Output.results,
@@ -213,7 +223,8 @@ describe("NicheAnalyzerService", () => {
       ["channel1", "channel2"],
       options,
       mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository // Add mockNicheRepository
     );
 
     // Ensure subsequent phases were NOT called

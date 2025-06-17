@@ -1,4 +1,5 @@
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
+import { NicheRepository } from "./niche.repository.js";
 import { CacheService } from "../cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { ChannelCache } from "./analysis.types.js";
@@ -18,13 +19,14 @@ export async function executeChannelPreFiltering(
   channelIds: string[],
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
-  youtubeService: YoutubeService
+  youtubeService: YoutubeService,
+  nicheRepository: NicheRepository
 ): Promise<string[]> {
   try {
     const prospectsForPhase3: string[] = [];
     const needsStatsFetch: string[] = [];
 
-    const cachedChannels = await cacheService.findChannelsByIds(channelIds);
+    const cachedChannels = await nicheRepository.findChannelsByIds(channelIds);
 
     const cachedChannelMap = new Map<string, ChannelCache>();
     for (const channel of cachedChannels) {
@@ -80,7 +82,9 @@ export async function executeChannelPreFiltering(
           analysisHistory: channelData?.analysisHistory || [],
         };
 
-        await cacheService.updateChannel(channelId, { $set: updatedChannel });
+        await nicheRepository.updateChannel(channelId, {
+          $set: updatedChannel,
+        });
         channelData = updatedChannel as ChannelCache;
       }
 
@@ -89,14 +93,14 @@ export async function executeChannelPreFiltering(
       }
 
       if (channelData.latestStats.subscriberCount > MAX_SUBSCRIBER_CAP) {
-        await cacheService.updateChannel(channelId, {
+        await nicheRepository.updateChannel(channelId, {
           $set: { status: "archived_too_large" },
         });
         continue;
       }
 
       if (channelData.latestStats.videoCount < MIN_VIDEOS_FOR_ANALYSIS) {
-        await cacheService.updateChannel(channelId, {
+        await nicheRepository.updateChannel(channelId, {
           $set: { status: "archived_low_sample_size" },
         });
         continue;
@@ -106,7 +110,7 @@ export async function executeChannelPreFiltering(
       const isValidAge = isValidChannelAge(channelAge, options.channelAge);
 
       if (!isValidAge) {
-        await cacheService.updateChannel(channelId, {
+        await nicheRepository.updateChannel(channelId, {
           $set: { status: "archived_too_old" },
         });
         continue;
@@ -117,7 +121,7 @@ export async function executeChannelPreFiltering(
         metrics.historicalAvgViewsPerVideo >= MIN_AVG_VIEWS_THRESHOLD;
 
       if (!hasGoodPotential) {
-        await cacheService.updateChannel(channelId, {
+        await nicheRepository.updateChannel(channelId, {
           $set: { status: "archived_low_potential" },
         });
         continue;

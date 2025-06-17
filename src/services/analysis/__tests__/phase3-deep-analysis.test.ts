@@ -2,6 +2,7 @@
 
 import { CacheService } from "../../cache.service"; // Adjusted path
 import { YoutubeService as VideoManagementService } from "../../youtube.service.js"; // Adjusted path
+import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import * as analysisLogic from "../analysis.logic"; // Adjusted path
 import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis"; // Adjusted path
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types"; // Adjusted path
@@ -85,15 +86,26 @@ function createMockChannelCache(
 jest.mock("../../cache.service", () => {
   return {
     CacheService: jest.fn().mockImplementation(() => ({
-      findChannelsByIds: jest.fn(),
       getVideoListCache: jest.fn(),
       setVideoListCache: jest.fn(),
-      updateChannel: jest.fn(),
     })),
   };
 });
 const MockedCacheService = CacheService as jest.MockedClass<
   typeof CacheService
+>;
+
+// Mock NicheRepository
+jest.mock("../niche.repository", () => {
+  return {
+    NicheRepository: jest.fn().mockImplementation(() => ({
+      findChannelsByIds: jest.fn(),
+      updateChannel: jest.fn(),
+    })),
+  };
+});
+const MockedNicheRepository = NicheRepository as jest.MockedClass<
+  typeof NicheRepository
 >;
 
 // Mock VideoManagementService
@@ -127,8 +139,9 @@ const mockDb: any = {
 };
 
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: jest.Mocked<CacheService> | any; // Cast to any
-  let videoManagementInstance: jest.Mocked<VideoManagementService> | any; // Cast to any
+  let cacheServiceInstance: jest.Mocked<CacheService> | any;
+  let videoManagementInstance: jest.Mocked<VideoManagementService> | any;
+  let nicheRepositoryInstance: jest.Mocked<NicheRepository> | any;
 
   // Define variables in a broader scope
   let publishedAfterString: string;
@@ -145,8 +158,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    cacheServiceInstance = new MockedCacheService(mockDb); // Pass mockDb to constructor
-    videoManagementInstance = new MockedVideoManagementService(); // Use the mocked class
+    cacheServiceInstance = new MockedCacheService(mockDb);
+    videoManagementInstance = new MockedVideoManagementService({} as any); // YoutubeService now takes CacheService
+    nicheRepositoryInstance = new MockedNicheRepository(mockDb);
 
     // Initialize variables for each test
     publishedAfterString = new Date().toISOString();
@@ -184,13 +198,14 @@ describe("executeDeepConsistencyAnalysis Function", () => {
   });
 
   it("should attempt to run without throwing an error with empty inputs", async () => {
-    cacheServiceInstance.findChannelsByIds.mockResolvedValue([]);
+    nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([]);
     await expect(
       executeDeepConsistencyAnalysis(
         [],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       )
     ).resolves.toEqual({ results: [], quotaExceeded: false });
   });
@@ -214,20 +229,23 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_promising",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.8 > 0.7
 
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel1"],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(1);
       expect(results[0].status).toBe("analyzed_promising");
     });
@@ -250,19 +268,22 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_low_consistency",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.6 < 0.7
 
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel1"],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
     });
 
@@ -297,7 +318,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       ];
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       cacheServiceInstance.getVideoListCache.mockResolvedValue({
         _id: "channel2",
         videos: mockVideos,
@@ -316,14 +339,15 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         ["channel2"],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
       expect(cacheServiceInstance.setVideoListCache).not.toHaveBeenCalled(); // Because it used the cache
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalled();
       expect(results).toHaveLength(1);
       expect(results[0]._id).toBe("channel2");
       expect(results[0].status).toBe("analyzed_promising");
@@ -347,14 +371,17 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_low_consistency",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
 
       await executeDeepConsistencyAnalysis(
         ["channel-no-growth"],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
       expect(cacheServiceInstance.getVideoListCache).not.toHaveBeenCalled();
       expect(
@@ -402,7 +429,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       };
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Force fetch
       videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue(
         newMockVideos
@@ -416,11 +445,12 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         ["channel3"],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      const updateArg = cacheServiceInstance.updateChannel.mock.calls[0][1];
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      const updateArg = nicheRepositoryInstance.updateChannel.mock.calls[0][1];
       expect(updateArg.$set!).toBeDefined();
       expect(
         updateArg.$set!.latestAnalysis!.metrics["STANDARD"]
@@ -480,7 +510,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         publishedAfterString
       );
 
-      cacheServiceInstance.findChannelsByIds.mockImplementation(
+      nicheRepositoryInstance.findChannelsByIds.mockImplementation(
         async (ids: string[]): Promise<ChannelCache[]> => {
           // Explicitly type ids and return
           const data: ChannelCache[] = [];
@@ -530,20 +560,21 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         [channelId1, channelId2], // These are the _id values
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(quotaExceeded).toBe(true);
       expect(results).toHaveLength(1);
       expect(results[0]._id).toBe(channelId1);
       expect(results[0].status).toBe("analyzed_promising");
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledWith(
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledWith(
         channelId1,
         expect.anything()
       );
 
-      const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
+      const updateCalls = nicheRepositoryInstance.updateChannel.mock.calls;
       const channel2Call = updateCalls.find(
         (call: any) => call[0] === channel2Id
       ); // Cast to any
@@ -571,7 +602,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Trigger new fetch
 
       const mockFetchedVideos: youtube_v3.Schema$Video[] = [
@@ -620,7 +653,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // Standard threshold
 
       cacheServiceInstance.setVideoListCache.mockResolvedValue(undefined); // Mock a successful void promise
-      cacheServiceInstance.updateChannel.mockResolvedValue(undefined); // Mock a successful void promise
+      nicheRepositoryInstance.updateChannel.mockResolvedValue(undefined); // Mock a successful void promise
 
       const publishedAfterString = new Date().toISOString();
       mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
@@ -631,12 +664,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         [channelId],
         baseMockOptions, // Uses 'STANDARD' and consistencyLevel 'MODERATE' (threshold 0.7)
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
       const [updatedChannelId, updatePayload] =
-        cacheServiceInstance.updateChannel.mock.calls[0];
+        nicheRepositoryInstance.updateChannel.mock.calls[0];
 
       expect(updatedChannelId).toBe(channelId);
       expect(updatePayload.$set!).toBeDefined();
@@ -664,7 +698,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Trigger fetch
       videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue([]); // Simulate empty fetch
 
@@ -681,7 +717,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         [channelId],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(
@@ -695,7 +732,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       expect(
         mockedAnalysisLogic.calculateConsistencyMetrics
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         `No videos found for channel ${channelId} in the specified time window or cache`
@@ -712,7 +749,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       // Simulate cache hit with an empty video list
       cacheServiceInstance.getVideoListCache.mockResolvedValue({
         _id: channelId,
@@ -728,7 +767,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         [channelId],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(cacheServiceInstance.getVideoListCache).toHaveBeenCalledTimes(1);
@@ -738,7 +778,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       expect(
         mockedAnalysisLogic.calculateConsistencyMetrics
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         `No videos found for channel ${channelId} in the specified time window or cache`
@@ -772,7 +812,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       });
 
-      cacheServiceInstance.findChannelsByIds.mockImplementation(
+      nicheRepositoryInstance.findChannelsByIds.mockImplementation(
         async (ids: string[]): Promise<ChannelCache[]> => {
           // Explicitly type ids and return
           const data: ChannelCache[] = [];
@@ -824,7 +864,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.8 > 0.7, so successChannel is promising
 
       cacheServiceInstance.setVideoListCache.mockResolvedValue(undefined);
-      cacheServiceInstance.updateChannel.mockResolvedValue(undefined);
+      nicheRepositoryInstance.updateChannel.mockResolvedValue(undefined);
 
       const consoleErrorSpy = jest
         .spyOn(console, "error")
@@ -834,7 +874,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         [successChannelId, failChannelId],
         baseMockOptions,
         cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(
@@ -847,13 +888,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         videoManagementInstance.fetchChannelRecentTopVideos
       ).toHaveBeenCalledWith(failChannelId, publishedAfterString);
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledWith(
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledWith(
         successChannelId,
         expect.anything()
       );
 
-      const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
+      const updateCalls = nicheRepositoryInstance.updateChannel.mock.calls;
       const failChannelUpdateCall = updateCalls.find(
         (call: any) => call[0] === failChannelId
       ); // Cast to any

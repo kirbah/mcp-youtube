@@ -1,5 +1,6 @@
 import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
+import { NicheRepository } from "./niche.repository.js";
 import { CacheService } from "../cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { UpdateFilter } from "mongodb"; // Import UpdateFilter
@@ -34,7 +35,8 @@ export async function executeDeepConsistencyAnalysis(
   prospects: string[],
   options: FindConsistentOutlierChannelsOptions,
   cacheService: CacheService,
-  youtubeService: YoutubeService
+  youtubeService: YoutubeService,
+  nicheRepository: NicheRepository
 ): Promise<{ results: ChannelCache[]; quotaExceeded: boolean }> {
   try {
     const promisingChannels: ChannelCache[] = [];
@@ -50,7 +52,7 @@ export async function executeDeepConsistencyAnalysis(
     for (const channelId of prospects) {
       try {
         const channelData = (
-          await cacheService.findChannelsByIds([channelId])
+          await nicheRepository.findChannelsByIds([channelId])
         )[0];
 
         if (!channelData) {
@@ -124,7 +126,7 @@ export async function executeDeepConsistencyAnalysis(
 
         // Perform New Pre-Computed Analysis (Writer Logic)
         const { sourceVideoCount, metrics } = calculateConsistencyMetrics(
-          topVideos as youtube_v3.Schema$Video[], // Cast to non-nullable array after check
+          topVideos, // Cast to non-nullable array after check
           channelData.latestStats.subscriberCount
         );
 
@@ -164,7 +166,7 @@ export async function executeDeepConsistencyAnalysis(
           updatePayload.$push = { analysisHistory: historicalEntry };
         }
 
-        await cacheService.updateChannel(channelId, updatePayload);
+        await nicheRepository.updateChannel(channelId, updatePayload);
 
         // STEP 6: Add the updated channel to the results if it's promising
         if (finalConsistencyPercentage >= consistencyThreshold) {

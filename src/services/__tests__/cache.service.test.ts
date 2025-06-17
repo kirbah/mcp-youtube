@@ -1,8 +1,8 @@
 import { CacheService } from "../cache.service"; // Import the class
 // Import types from their actual source if they are not re-exported by CacheService module
 import { VideoListCache, ChannelCache } from "../analysis/analysis.types.js";
-import { ObjectId } from "mongodb";
 import { getDb } from "../database.service"; // This is already mocked
+import { youtube_v3 } from "googleapis"; // Import youtube_v3
 
 // Mock cache.service and use requireActual to get the real implementations
 // This can help with issues related to ES module interop in Jest
@@ -51,7 +51,7 @@ describe("CacheService", () => {
     // We need to get the actual mock functions used by the mocked getDb
     // This ensures our tests assert against the correct mock instances.
     const mockDb = getDb(); // This is the mocked getDb
-    const mockCollection = mockDb.collection(); // This is the mocked collection object
+    const mockCollection = mockDb.collection("test_collection"); // Provide a collection name
 
     actualMockUpdateOne = mockCollection.updateOne as jest.Mock;
     actualMockFindOne = mockCollection.findOne as jest.Mock;
@@ -78,8 +78,18 @@ describe("CacheService", () => {
 
   describe("storeCachedSearchResults and getCachedSearchResults", () => {
     it("should store and retrieve a valid search result", async () => {
-      const searchParams = { query: "test", options: { type: "video" } };
-      const results = [{ id: "vid1", title: "Test Video" }];
+      const searchParams: youtube_v3.Params$Resource$Search$List = {
+        q: "test",
+        part: ["snippet"],
+      };
+      const results: youtube_v3.Schema$SearchResult[] = [
+        {
+          id: { videoId: "vid1", kind: "youtube#video" },
+          snippet: {
+            title: "Test Video",
+          } as youtube_v3.Schema$SearchResultSnippet,
+        } as youtube_v3.Schema$SearchResult,
+      ];
 
       // actualMockUpdateOne, actualMockFindOne are cleared in beforeEach
 
@@ -109,7 +119,7 @@ describe("CacheService", () => {
       const { params, ...storedDoc } = filterQuery; // Use the dynamically generated hash for _id
 
       actualMockFindOne.mockResolvedValue({
-        _id: storedDoc._id, // Use the hash from the filterQuery
+        searchParamsHash: storedDoc.searchParamsHash, // Use the hash from the filterQuery
         searchParams,
         results,
         expiresAt: updateDocument.$set.expiresAt, // Use the same expiresAt from the update
@@ -121,7 +131,10 @@ describe("CacheService", () => {
     });
 
     it("should return null for an expired search result", async () => {
-      const searchParams = { query: "expired test", options: {} };
+      const searchParams: youtube_v3.Params$Resource$Search$List = {
+        q: "expired test",
+        part: ["snippet"],
+      };
       // actualMockFindOne is cleared in beforeEach
       // If the service query is { searchParamsHash, expiresAt: { $gt: new Date() } },
       // and the item IS expired, then findOne should return null.
@@ -140,9 +153,8 @@ describe("CacheService", () => {
       // actualMockFindOne, actualMockDeleteOne are cleared in beforeEach
 
       const expiredVideoList: VideoListCache = {
-        _id: new ObjectId(),
-        channelId,
-        videoIds: ["vid1", "vid2"],
+        _id: channelId,
+        videos: [{ id: "vid1" } as any, { id: "vid2" } as any], // Use 'videos' property
         fetchedAt: new Date(Date.now() - 73 * 60 * 60 * 1000), // 73 hours ago
       };
 
@@ -153,59 +165,6 @@ describe("CacheService", () => {
       expect(result).toBeNull();
       expect(actualMockDeleteOne).toHaveBeenCalledTimes(1);
       expect(actualMockDeleteOne).toHaveBeenCalledWith({ _id: channelId });
-    });
-  });
-
-  describe("updateChannel", () => {
-    it("should upsert new channel data", async () => {
-      const channelId = "UCxyz123";
-      const channelData = { title: "New Channel", subscriberCount: 1000 };
-
-      // actualMockUpdateOne is cleared in beforeEach
-
-      await cacheServiceInstance.updateChannel(channelId, {
-        $set: channelData,
-      }); // Ensure $set is used as per CacheService method signature
-
-      expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
-      expect(actualMockUpdateOne).toHaveBeenCalledWith(
-        { _id: channelId }, // Corrected filter query to use _id
-        { $set: channelData },
-        { upsert: true }
-      );
-    });
-  });
-
-  describe("findChannelsByIds", () => {
-    it("should find multiple channels by their IDs", async () => {
-      const channelIds = ["UCabc", "UCdef"];
-      const channelDocs: ChannelCache[] = [
-        {
-          _id: new ObjectId(),
-          channelId: "UCabc",
-          title: "Channel ABC",
-          lastUpdated: new Date(),
-        },
-        {
-          _id: new ObjectId(),
-          channelId: "UCdef",
-          title: "Channel DEF",
-          lastUpdated: new Date(),
-        },
-      ];
-
-      // actualMockFind is cleared in beforeEach
-      const mockToArray = jest.fn().mockResolvedValue(channelDocs);
-      actualMockFind.mockReturnValue({ toArray: mockToArray } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
-
-      const result = await cacheServiceInstance.findChannelsByIds(channelIds);
-
-      expect(actualMockFind).toHaveBeenCalledTimes(1);
-      expect(actualMockFind).toHaveBeenCalledWith({
-        _id: { $in: channelIds }, // Corrected: find by _id
-      });
-      expect(mockToArray).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(channelDocs);
     });
   });
 });

@@ -6,6 +6,7 @@ import {
 } from "../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
 import { formatDescription } from "../utils/textUtils.js";
+import { CacheService } from "./cache.service.js";
 import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
@@ -52,11 +53,13 @@ export interface TrendingOptions {
 
 export class YoutubeService {
   private youtube: youtube_v3.Youtube;
+  private cacheService: CacheService;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly ABSOLUTE_MAX_RESULTS = 500;
   private apiCreditsUsed: number = 0; // The new internal counter
 
-  constructor() {
+  constructor(cacheService: CacheService) {
+    this.cacheService = cacheService;
     this.youtube = google.youtube({
       version: "v3",
       auth: process.env.YOUTUBE_API_KEY,

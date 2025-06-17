@@ -54,6 +54,7 @@ import type {
 import type { FindConsistentOutlierChannelsOptions } from "../types/analyzer.types.js";
 import type { ZodRawShape } from "zod";
 
+import { Db } from "mongodb"; // Import Db
 export interface ToolDefinition<TParams = unknown> {
   config: {
     name: string;
@@ -61,6 +62,12 @@ export interface ToolDefinition<TParams = unknown> {
     inputSchema: ZodRawShape;
   };
   handler:
+    | ((
+        params: TParams,
+        youtubeService: YoutubeService,
+        cacheService: CacheService,
+        db: Db
+      ) => Promise<CallToolResult>)
     | ((
         params: TParams,
         youtubeService: YoutubeService,
@@ -74,7 +81,7 @@ export interface ToolDefinition<TParams = unknown> {
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  const { youtubeService, cacheService } = container;
+  const { youtubeService, cacheService, db } = container;
 
   const toolDefinitions: ToolDefinition<any>[] = [
     // Video tools
@@ -122,7 +129,12 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
       handler: (params: FindConsistentOutlierChannelsOptions) =>
-        findConsistentOutlierChannelsHandler(params),
+        findConsistentOutlierChannelsHandler(
+          params,
+          youtubeService,
+          cacheService,
+          db
+        ),
     } as ToolDefinition<FindConsistentOutlierChannelsOptions>);
   }
 
