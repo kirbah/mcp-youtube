@@ -1,5 +1,6 @@
 import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
+import { CacheService } from "../../cache.service";
 
 // Mock the googleapis library
 jest.mock("googleapis", () => ({
@@ -12,9 +13,22 @@ jest.mock("googleapis", () => ({
   },
 }));
 
+// Mock CacheService at the module level
+jest.mock("../../cache.service", () => {
+  return {
+    CacheService: jest.fn().mockImplementation(() => {
+      return {
+        getOrSet: jest.fn((key, operation, ttl, collection) => operation()),
+        createOperationKey: jest.fn(),
+      };
+    }),
+  };
+});
+
 describe("YoutubeService.getVideoCategories", () => {
   let videoManagement: YoutubeService;
   let mockYoutubeVideoCategoriesList: jest.Mock;
+  let mockCacheServiceInstance: jest.Mocked<CacheService>;
 
   beforeEach(() => {
     // Reset the mock before each test
@@ -24,7 +38,12 @@ describe("YoutubeService.getVideoCategories", () => {
         list: mockYoutubeVideoCategoriesList,
       },
     });
-    videoManagement = new YoutubeService();
+
+    mockCacheServiceInstance = new CacheService(
+      {} as any
+    ) as jest.Mocked<CacheService>;
+
+    videoManagement = new YoutubeService(mockCacheServiceInstance);
     // Ensure process.env.YOUTUBE_API_KEY is mocked or set if your VideoManagement constructor relies on it directly.
     // For instance: process.env.YOUTUBE_API_KEY = 'test-api-key';
   });

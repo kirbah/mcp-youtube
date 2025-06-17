@@ -1,5 +1,6 @@
 import { YoutubeService, VideoOptions } from "../../youtube.service";
 import { google } from "googleapis";
+import { CacheService } from "../../cache.service";
 
 // Mock the googleapis library
 jest.mock("googleapis", () => ({
@@ -12,14 +13,22 @@ jest.mock("googleapis", () => ({
   },
 }));
 
-// Mock VideoManagement constructor dependencies if any (e.g., API key)
-// For this example, assuming YOUTUBE_API_KEY is set in the environment for the constructor
-// or handle its mocking if it's passed differently.
-// If the constructor directly uses process.env.YOUTUBE_API_KEY, ensure it's set for tests or mock process.env.
+// Mock CacheService at the module level
+jest.mock("../../cache.service", () => {
+  return {
+    CacheService: jest.fn().mockImplementation(() => {
+      return {
+        getOrSet: jest.fn((key, operation, ttl, collection) => operation()),
+        createOperationKey: jest.fn(),
+      };
+    }),
+  };
+});
 
 describe("YoutubeService.getVideo", () => {
-  let videoManagement: YoutubeService;
+  let youtubeService: YoutubeService;
   let mockYoutubeVideosList: jest.Mock;
+  let mockCacheServiceInstance: jest.Mocked<CacheService>; // Use jest.Mocked for better typing
 
   beforeEach(() => {
     // Reset the mock before each test
@@ -29,17 +38,20 @@ describe("YoutubeService.getVideo", () => {
         list: mockYoutubeVideosList,
       },
     });
-    videoManagement = new YoutubeService();
-    // Ensure process.env.YOUTUBE_API_KEY is mocked or set if your VideoManagement constructor relies on it directly.
-    // For instance: process.env.YOUTUBE_API_KEY = 'test-api-key';
+
+    // Get the mocked CacheService instance
+    // The constructor of CacheService is mocked, so new CacheService() will return our mock implementation
+    mockCacheServiceInstance = new CacheService(
+      {} as any
+    ) as jest.Mocked<CacheService>; // Pass a dummy db, it won't be used by the mock
+
+    youtubeService = new YoutubeService(mockCacheServiceInstance); // Pass the mocked CacheService instance
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    // delete process.env.YOUTUBE_API_KEY; // Clean up env var if set
   });
 
-  // Tests will be added here in the next step
   it("should retrieve video details successfully", async () => {
     const mockVideoId = "testVideoId";
     const mockVideoResponse = {
@@ -53,27 +65,29 @@ describe("YoutubeService.getVideo", () => {
       videoId: mockVideoId,
       parts: ["snippet"],
     };
-    const result = await videoManagement.getVideo(videoOptions);
+    const result = await youtubeService.getVideo(videoOptions); // Use youtubeService
 
     expect(result).toEqual(mockVideoResponse.data.items[0]);
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
       part: ["snippet"],
       id: [mockVideoId],
     });
+    expect(mockCacheServiceInstance.getOrSet).toHaveBeenCalled(); // Verify cache service was called
   });
 
-  it('should throw "Video not found" error when no items are returned', async () => {
+  it("should return null when no items are returned by the API", async () => {
     const mockVideoId = "nonExistentVideoId";
     mockYoutubeVideosList.mockResolvedValue({ data: { items: [] } });
 
     const videoOptions: VideoOptions = { videoId: mockVideoId };
-    await expect(videoManagement.getVideo(videoOptions)).rejects.toThrow(
-      "Video not found."
-    );
+    const result = await youtubeService.getVideo(videoOptions); // Use youtubeService
+
+    expect(result).toBeNull(); // Expect null instead of throwing an error
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
       part: ["snippet"], // Default part
       id: [mockVideoId],
     });
+    expect(mockCacheServiceInstance.getOrSet).toHaveBeenCalled();
   });
 
   it("should throw an error if the YouTube API call fails", async () => {
@@ -82,9 +96,15 @@ describe("YoutubeService.getVideo", () => {
     mockYoutubeVideosList.mockRejectedValue(new Error(errorMessage));
 
     const videoOptions: VideoOptions = { videoId: mockVideoId };
-    await expect(videoManagement.getVideo(videoOptions)).rejects.toThrow(
+
+    await expect(youtubeService.getVideo(videoOptions)).rejects.toThrow(
       `Failed to retrieve video information: ${errorMessage}`
     );
+    expect(mockYoutubeVideosList).toHaveBeenCalledWith({
+      part: ["snippet"],
+      id: [mockVideoId],
+    });
+    expect(mockCacheServiceInstance.getOrSet).toHaveBeenCalled();
   });
 
   it("should request specified parts when provided", async () => {
@@ -106,7 +126,7 @@ describe("YoutubeService.getVideo", () => {
       videoId: mockVideoId,
       parts: ["snippet", "statistics"],
     };
-    await videoManagement.getVideo(videoOptions);
+    await youtubeService.getVideo(videoOptions);
 
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
       part: ["snippet", "statistics"],
@@ -126,7 +146,7 @@ describe("YoutubeService.getVideo", () => {
     mockYoutubeVideosList.mockResolvedValue(mockVideoResponse);
 
     const videoOptions: VideoOptions = { videoId: mockVideoId };
-    await videoManagement.getVideo(videoOptions);
+    await youtubeService.getVideo(videoOptions);
 
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
       part: ["snippet"], // Default part

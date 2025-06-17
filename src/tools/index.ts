@@ -88,39 +88,39 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getVideoDetailsConfig,
       handler: (params: VideoDetailsParams) =>
-        getVideoDetailsHandler(params, youtubeService, cacheService),
+        getVideoDetailsHandler(params, youtubeService),
     } as ToolDefinition<VideoDetailsParams>,
     {
       config: searchVideosConfig,
       handler: (params: SearchParams) =>
-        searchVideosHandler(params, youtubeService, cacheService),
+        searchVideosHandler(params, youtubeService),
     } as ToolDefinition<SearchParams>,
     {
       config: getTranscriptsConfig,
       handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, youtubeService, cacheService),
+        getTranscriptsHandler(params, youtubeService),
     } as ToolDefinition<TranscriptsParams>,
     // Channel tools
     {
       config: getChannelStatisticsConfig,
       handler: (params: ChannelStatisticsParams) =>
-        getChannelStatisticsHandler(params, youtubeService, cacheService),
+        getChannelStatisticsHandler(params, youtubeService),
     } as ToolDefinition<ChannelStatisticsParams>,
     {
       config: getChannelTopVideosConfig,
       handler: (params: ChannelParams) =>
-        getChannelTopVideosHandler(params, youtubeService, cacheService),
+        getChannelTopVideosHandler(params, youtubeService),
     } as ToolDefinition<ChannelParams>,
     // General tools
     {
       config: getTrendingVideosConfig,
       handler: (params: TrendingParams) =>
-        getTrendingVideosHandler(params, youtubeService, cacheService),
+        getTrendingVideosHandler(params, youtubeService),
     } as ToolDefinition<TrendingParams>,
     {
       config: getVideoCategoriesConfig,
       handler: (params: VideoCategoriesParams) =>
-        getVideoCategoriesHandler(params, youtubeService, cacheService),
+        getVideoCategoriesHandler(params, youtubeService),
     } as ToolDefinition<VideoCategoriesParams>,
   ];
 
