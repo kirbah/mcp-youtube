@@ -1,4 +1,4 @@
-import { formatError, ErrorResponse } from "../errorHandler"; // Assuming ErrorResponse is exported for type checking if needed
+import { formatError } from "../errorHandler"; // Assuming ErrorResponse is exported for type checking if needed
 
 describe("errorHandler", () => {
   describe("formatError", () => {
