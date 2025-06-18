@@ -4,7 +4,7 @@ export const truncateDescription = (
   description: string | null | undefined,
   maxLength: number = 1000
 ): string | null => {
-  if (!description) return null;
+  if (description === null || description === undefined) return null;
   if (description.length <= maxLength) return description;
   return description.substring(0, maxLength) + "...";
 };
@@ -14,7 +14,7 @@ export const formatDescription = (
   descriptionDetail: DescriptionDetail
 ): string | undefined => {
   if (descriptionDetail === "NONE") return undefined;
-  if (!description) return undefined;
+  if (description === null || description === undefined) return undefined;
 
   const maxLength = descriptionDetail === "SNIPPET" ? 150 : 500; // LONG = 500
 
