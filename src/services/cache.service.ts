@@ -1,5 +1,6 @@
 import { Db, Collection } from "mongodb";
 import { createHash } from "crypto";
+import { omit } from "lodash-es";
 
 /**
  * A generic structure for entries in our new caching collections.
@@ -31,14 +32,17 @@ export class CacheService {
    * @param operation An async function that returns the fresh data (type T) to be cached on a miss.
    * @param ttlSeconds The Time-To-Live for this cache entry, in seconds.
    * @param collectionName A descriptive name for the MongoDB collection where this data will be stored (e.g., "video_details").
+   * @param params Optional: Parameters used to generate the hashed keys and stored in cache as params.
+   * @param pathsToExclude Optional: An array of string paths (e.g., "snippet.thumbnails") to exclude from the cached data.
    * @returns A promise that resolves to the data, either from the cache or freshly generated.
    */
-  public async getOrSet<T>(
+  public async getOrSet<T extends object | null | undefined>( // Ensure T is an object for omit
     key: string,
     operation: () => Promise<T>,
     ttlSeconds: number,
     collectionName: string,
-    params?: object
+    params?: object,
+    pathsToExclude?: string[]
   ): Promise<T> {
     const collection: Collection<GenericCacheEntry<T>> = this.db.collection(
       `${this.CACHE_COLLECTION_PREFIX}${collectionName}`
@@ -50,35 +54,39 @@ export class CacheService {
     });
 
     if (cachedResult) {
-      // Data found in cache and it's not expired. Return it.
       return cachedResult.data;
     }
 
-    // Data not in cache or expired. Execute the operation to get fresh data.
     const freshData = await operation();
 
-    // Only store the data if it's not null or undefined to avoid caching failed operations.
-    if (freshData !== null && freshData !== undefined) {
-      const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
-
-      // Build the cache document, including params if they were provided.
-      const cacheDocument: GenericCacheEntry<T> = {
-        _id: key,
-        data: freshData,
-        expiresAt,
-      };
-      if (params) {
-        cacheDocument.params = params;
-      }
-
-      await collection.updateOne(
-        { _id: key },
-        { $set: cacheDocument },
-        { upsert: true }
-      );
+    if (freshData === null || freshData === undefined) {
+      return freshData;
     }
 
-    return freshData;
+    // If pathsToExclude is provided, use lodash.omit to create a new object
+    // without those paths. Otherwise, use the original freshData.
+    const dataToCache =
+      pathsToExclude && pathsToExclude.length > 0
+        ? (omit(freshData, pathsToExclude) as T) // Use lodash.omit
+        : freshData;
+
+    const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
+    const cacheDocument: GenericCacheEntry<T> = {
+      _id: key,
+      data: dataToCache, // This is now the potentially smaller object
+      expiresAt,
+    };
+    if (params) {
+      cacheDocument.params = params;
+    }
+
+    await collection.updateOne(
+      { _id: key },
+      { $set: cacheDocument },
+      { upsert: true }
+    );
+
+    return dataToCache;
   }
 
   /**

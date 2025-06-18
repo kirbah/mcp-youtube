@@ -169,7 +169,9 @@ export class YoutubeService {
       cacheKey,
       operation,
       CACHE_TTLS.STANDARD,
-      CACHE_COLLECTIONS.VIDEO_DETAILS
+      CACHE_COLLECTIONS.VIDEO_DETAILS,
+      options, // The 'params' argument
+      ["snippet.thumbnails"] // The new 'pathsToExclude' argument
     );
   }
 
@@ -264,8 +266,9 @@ export class YoutubeService {
       cacheKey,
       operation,
       CACHE_TTLS.STANDARD,
-      CACHE_COLLECTIONS.VIDEO_SEARCHES,
-      options
+      CACHE_COLLECTIONS.VIDEO_DETAILS,
+      options, // The 'params' argument
+      ["snippet.thumbnails"] // The new 'pathsToExclude' argument
     );
   }
 
