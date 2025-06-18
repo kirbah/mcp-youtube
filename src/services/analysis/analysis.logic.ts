@@ -1,15 +1,6 @@
 import { youtube_v3 } from "googleapis";
 import { ChannelCache } from "./analysis.types.js";
 
-interface GoogleApiError {
-  code?: number;
-  errors?: Array<{
-    domain?: string;
-    reason?: string;
-    message?: string;
-  }>;
-}
-
 export const STALENESS_DAYS_NEW = 14;
 export const STALENESS_DAYS_ESTABLISHED = 45;
 export const MIN_AVG_VIEWS_THRESHOLD = 1000;

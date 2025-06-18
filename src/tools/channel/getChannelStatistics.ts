@@ -4,7 +4,6 @@ import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema } from "../../utils/validation.js";
 import type { ChannelStatisticsParams } from "../../types/tools.js";
-import type { LeanChannelStatistics } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelStatisticsSchema = z.object({

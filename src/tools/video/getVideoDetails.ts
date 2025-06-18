@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { youtube_v3 } from "googleapis";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
