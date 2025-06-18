@@ -96,7 +96,7 @@ describe("YoutubeService.getVideo", () => {
     const videoOptions: VideoOptions = { videoId: mockVideoId };
 
     await expect(youtubeService.getVideo(videoOptions)).rejects.toThrow(
-      `Failed to retrieve video information: ${errorMessage}`
+      `YouTube API call for getVideo failed for videoId: ${mockVideoId}`
     );
     expect(mockYoutubeVideosList).toHaveBeenCalledWith({
       part: ["snippet"],

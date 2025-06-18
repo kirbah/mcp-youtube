@@ -192,7 +192,7 @@ describe("YoutubeService - batchFetchChannelStatistics", () => {
     mockChannelsList.mockRejectedValueOnce(new Error("API Error"));
     await expect(
       youtubeService.batchFetchChannelStatistics(["channel1"])
-    ).rejects.toThrow("Failed to fetch channel statistics: API Error");
+    ).rejects.toThrow("API call for batchFetchChannelStatistics failed");
     expect(youtubeService.getApiCreditsUsed()).toBe(1);
   });
 });

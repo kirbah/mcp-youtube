@@ -56,9 +56,9 @@ async function main() {
   console.error(`YouTube MCP server (v${pkg.version}) has started.`); // Optional: log version
 }
 
-main().catch((err) => {
+void main().catch((err) => {
   console.error("Error occurred during server execution:", err);
-  disconnectFromDatabase().finally(() => process.exit(1));
+  void disconnectFromDatabase().finally(() => process.exit(1));
 });
 
 // Graceful shutdown handler
@@ -69,5 +69,9 @@ const cleanup = async () => {
   process.exit(0);
 };
 
-process.on("SIGINT", cleanup); // Catches Ctrl+C
-process.on("SIGTERM", cleanup); // Catches kill signals
+process.on("SIGINT", () => {
+  void cleanup();
+}); // Catches Ctrl+C
+process.on("SIGTERM", () => {
+  void cleanup();
+}); // Catches kill signals

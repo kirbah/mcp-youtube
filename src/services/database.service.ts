@@ -15,8 +15,11 @@ export async function connectToDatabase(): Promise<void> {
     mongoClient = new MongoClient(connectionString);
     await mongoClient.connect();
     db = mongoClient.db(DATABASE_NAME);
-  } catch (error: any) {
-    throw new Error(`Failed to connect to MongoDB: ${error.message}`);
+  } catch (error) {
+    throw new Error(
+      `MDB_MCP_CONNECTION_STRING environment variable is required`,
+      { cause: error }
+    );
   }
 }
 
@@ -26,8 +29,8 @@ export async function disconnectFromDatabase(): Promise<void> {
       await mongoClient.close();
       db = null;
     }
-  } catch (error: any) {
-    throw new Error(`Failed to disconnect from MongoDB: ${error.message}`);
+  } catch (error) {
+    throw new Error(`Failed to disconnect from MongoDB`, { cause: error });
   }
 }
 

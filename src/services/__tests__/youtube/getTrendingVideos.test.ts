@@ -156,7 +156,7 @@ describe("YoutubeService.getTrendingVideos", () => {
     mockVideosList.mockRejectedValue(new Error(errorMessage));
 
     await expect(videoManagement.getTrendingVideos({})).rejects.toThrow(
-      `Failed to retrieve trending videos: ${errorMessage}`
+      `YouTube API call for getTrendingVideos failed`
     );
     expect(mockVideosList).toHaveBeenCalledTimes(1);
   });
@@ -231,7 +231,7 @@ describe("YoutubeService.getTrendingVideos", () => {
 
     const freshVideoManagement = new YoutubeService(mockCacheServiceInstance); // Create a new instance that would use the missing API key
     await expect(freshVideoManagement.getTrendingVideos({})).rejects.toThrow(
-      "Failed to retrieve trending videos: Missing API key"
+      "YouTube API call for getTrendingVideos failed"
     );
   });
 });

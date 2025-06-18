@@ -247,7 +247,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
     await expect(
       videoManagement.getChannelTopVideos({ channelId: mockChannelId })
     ).rejects.toThrow(
-      `Failed to retrieve channel's top videos: ${errorMessage}`
+      `YouTube API call for getChannelTopVideos failed for channelId: ${mockChannelId}`
     );
 
     expect(mockSearchList).toHaveBeenCalledWith({
@@ -270,7 +270,9 @@ describe("YoutubeService.getChannelTopVideos", () => {
 
     await expect(
       videoManagement.getChannelTopVideos({ channelId: mockChannelId })
-    ).rejects.toThrow("No videos found.");
+    ).rejects.toThrow(
+      `YouTube API call for getChannelTopVideos failed for channelId: ${mockChannelId}`
+    );
 
     expect(mockSearchList).toHaveBeenCalledWith({
       part: ["id"],
@@ -904,7 +906,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
     await expect(
       videoManagement.getChannelTopVideos({ channelId: mockChannelId })
     ).rejects.toThrow(
-      `Failed to retrieve channel's top videos: ${errorMessage}`
+      `YouTube API call for getChannelTopVideos failed for channelId: ${mockChannelId}`
     );
 
     // Verify search.list was called

@@ -121,7 +121,7 @@ describe("YoutubeService.getVideoCategories", () => {
     mockYoutubeVideoCategoriesList.mockRejectedValue(new Error(errorMessage));
 
     await expect(videoManagement.getVideoCategories("CA")).rejects.toThrow(
-      `Failed to retrieve video categories: ${errorMessage}`
+      `YouTube API call for getVideoCategories failed for regionCode: CA`
     );
   });
 });

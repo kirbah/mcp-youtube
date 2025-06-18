@@ -202,7 +202,7 @@ describe("YoutubeService - fetchChannelRecentTopVideos", () => {
     await expect(
       youtubeService.fetchChannelRecentTopVideos(channelId, publishedAfter)
     ).rejects.toThrow(
-      `Failed to fetch recent top videos for channel ${channelId}: Search API Error`
+      `YouTube API call for fetchChannelRecentTopVideos failed for channelId: ${channelId} and publishedAfter: ${publishedAfter}`
     );
     expect(youtubeService.getApiCreditsUsed()).toBe(100);
   });
@@ -220,7 +220,7 @@ describe("YoutubeService - fetchChannelRecentTopVideos", () => {
     await expect(
       youtubeService.fetchChannelRecentTopVideos(channelId, publishedAfter)
     ).rejects.toThrow(
-      `Failed to fetch recent top videos for channel ${channelId}: Videos API Error`
+      `YouTube API call for fetchChannelRecentTopVideos failed for channelId: ${channelId} and publishedAfter: ${publishedAfter}`
     );
     expect(youtubeService.getApiCreditsUsed()).toBe(101);
   });

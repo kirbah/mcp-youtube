@@ -60,7 +60,7 @@ describe("DatabaseService Connection Lifecycle", () => {
     delete process.env.MDB_MCP_CONNECTION_STRING; // Or set to undefined
 
     await expect(connectToDatabase()).rejects.toThrow(
-      "Failed to connect to MongoDB: MDB_MCP_CONNECTION_STRING environment variable is required"
+      "MDB_MCP_CONNECTION_STRING environment variable is required"
     );
 
     // Restore the original environment variable

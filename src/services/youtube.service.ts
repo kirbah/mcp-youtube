@@ -150,15 +150,10 @@ export class YoutubeService {
         );
         // Return the video object or null if not found
         return response.data.items?.[0] ?? null;
-      } catch (error: any) {
-        // It's good practice for the operation to handle its own specific errors
-        console.error(
-          `API call failed for getVideo (videoId: ${videoId}):`,
-          error.message
-        );
-        // Return null or re-throw depending on desired behavior for failed API calls
+      } catch (error) {
         throw new Error(
-          `Failed to retrieve video information: ${error.message}`
+          `YouTube API call for getVideo failed for videoId: ${videoId}`,
+          { cause: error }
         );
       }
     };
@@ -257,8 +252,10 @@ export class YoutubeService {
         }
 
         return results.slice(0, targetResults);
-      } catch (error: any) {
-        throw new Error(`Failed to search videos: ${error.message}`);
+      } catch (error) {
+        throw new Error(`YouTube API call for searchVideos failed`, {
+          cause: error,
+        });
       }
     };
 
@@ -285,12 +282,11 @@ export class YoutubeService {
           lang: lang || "en",
         });
         return transcript;
-      } catch (error: any) {
-        console.error(
-          `Failed to retrieve transcript for videoId ${videoId}:`,
-          error.message
+      } catch (error) {
+        throw new Error(
+          `API call for getTranscript failed for videoId: ${videoId}`,
+          { cause: error }
         );
-        throw new Error(`Failed to retrieve transcript: ${error.message}`);
       }
     };
 
@@ -333,8 +329,10 @@ export class YoutubeService {
           }
         }
       }
-    } catch (error: any) {
-      throw new Error(`Failed to fetch channel statistics: ${error.message}`);
+    } catch (error) {
+      throw new Error(`API call for batchFetchChannelStatistics failed`, {
+        cause: error,
+      });
     }
 
     return results;
@@ -371,13 +369,10 @@ export class YoutubeService {
           videoCount: parseYouTubeNumber(channel.statistics?.videoCount),
           createdAt: channel.snippet?.publishedAt,
         };
-      } catch (error: any) {
-        console.error(
-          `API call failed for getChannelStatistics (channelId: ${channelId}):`,
-          error.message
-        );
+      } catch (error) {
         throw new Error(
-          `Failed to retrieve channel statistics: ${error.message}`
+          `YouTube API call for getChannelStatistics failed for channelId: ${channelId}`,
+          { cause: error }
         );
       }
     };
@@ -433,13 +428,10 @@ export class YoutubeService {
         );
 
         return videosResponse.data.items || [];
-      } catch (error: any) {
-        console.error(
-          `API call failed for fetchChannelRecentTopVideos (channelId: ${channelId}, publishedAfter: ${publishedAfter}):`,
-          error.message
-        );
+      } catch (error) {
         throw new Error(
-          `Failed to fetch recent top videos for channel ${channelId}: ${error.message}`
+          `YouTube API call for fetchChannelRecentTopVideos failed for channelId: ${channelId} and publishedAfter: ${publishedAfter}`,
+          { cause: error }
         );
       }
     };
@@ -569,13 +561,10 @@ export class YoutubeService {
             ? { ...videoWithDescription, tags: video.snippet?.tags ?? [] }
             : videoWithDescription;
         });
-      } catch (error: any) {
-        console.error(
-          `API call failed for getChannelTopVideos (channelId: ${options.channelId}):`,
-          error.message
-        );
+      } catch (error) {
         throw new Error(
-          `Failed to retrieve channel's top videos: ${error.message}`
+          `YouTube API call for getChannelTopVideos failed for channelId: ${options.channelId}`,
+          { cause: error }
         );
       }
     };
@@ -643,9 +632,10 @@ export class YoutubeService {
             };
           }) || []
         );
-      } catch (error: any) {
-        console.error(`API call failed for getTrendingVideos:`, error.message);
-        throw new Error(`Failed to retrieve trending videos: ${error.message}`);
+      } catch (error) {
+        throw new Error(`YouTube API call for getTrendingVideos failed`, {
+          cause: error,
+        });
       }
     };
 
@@ -683,13 +673,10 @@ export class YoutubeService {
         }));
 
         return categories || [];
-      } catch (error: any) {
-        console.error(
-          `API call failed for getVideoCategories (regionCode: ${regionCode}):`,
-          error.message
-        );
+      } catch (error) {
         throw new Error(
-          `Failed to retrieve video categories: ${error.message}`
+          `YouTube API call for getVideoCategories failed for regionCode: ${regionCode}`,
+          { cause: error }
         );
       }
     };

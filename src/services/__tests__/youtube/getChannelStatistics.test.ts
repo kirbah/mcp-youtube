@@ -103,7 +103,9 @@ describe("YoutubeService.getChannelStatistics", () => {
 
     await expect(
       youtubeService.getChannelStatistics("unknown_channel_id")
-    ).rejects.toThrow("Channel not found.");
+    ).rejects.toThrow(
+      "YouTube API call for getChannelStatistics failed for channelId: unknown_channel_id"
+    );
   });
 
   it("should throw an error if API call fails", async () => {
@@ -111,6 +113,8 @@ describe("YoutubeService.getChannelStatistics", () => {
 
     await expect(
       youtubeService.getChannelStatistics("test_channel_id")
-    ).rejects.toThrow("Failed to retrieve channel statistics: API Error");
+    ).rejects.toThrow(
+      "YouTube API call for getChannelStatistics failed for channelId: test_channel_id"
+    );
   });
 });
