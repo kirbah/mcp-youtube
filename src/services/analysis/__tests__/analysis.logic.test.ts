@@ -5,10 +5,9 @@ import {
   STALENESS_DAYS_ESTABLISHED,
   calculateDerivedMetrics,
   calculateConsistencyMetrics,
-  MIN_VIDEO_DURATION_SECONDS,
   parseISO8601Duration,
 } from "../analysis.logic";
-import { ChannelCache } from "../analysis.types";
+import type { ChannelCache } from "../../../types/niche.types";
 import { youtube_v3 } from "googleapis";
 
 describe("isQuotaError", () => {

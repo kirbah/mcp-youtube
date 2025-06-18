@@ -3,7 +3,7 @@ import {
   NicheAnalysisOutput,
   FindConsistentOutlierChannelsOptions, // Added this import
 } from "../../types/analyzer.types.js";
-import { ChannelCache } from "./analysis.types.js";
+import type { ChannelCache } from "../../types/niche.types.js";
 
 export function formatAndRankAnalysisResults(
   analysisResults: ChannelCache[], // <-- NEW, SIMPLER INPUT

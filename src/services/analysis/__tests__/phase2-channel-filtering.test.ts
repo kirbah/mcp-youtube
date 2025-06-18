@@ -3,7 +3,7 @@ import { CacheService } from "../../cache.service";
 import { YoutubeService } from "../../../services/youtube.service";
 import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
-import { ChannelCache, LatestAnalysis } from "../analysis.types";
+import type { ChannelCache } from "../../../types/niche.types";
 import { MAX_SUBSCRIBER_CAP } from "../analysis.logic";
 import { MIN_VIDEOS_FOR_ANALYSIS } from "../phase2-channel-filtering";
 import { youtube_v3 } from "googleapis";

@@ -7,7 +7,7 @@ import {
   ChannelCache,
   HistoricalAnalysisEntry,
   LatestAnalysis,
-} from "./analysis.types.js";
+} from "../../types/niche.types.js";
 import {
   calculateChannelAgePublishedAfter,
   getConsistencyThreshold,

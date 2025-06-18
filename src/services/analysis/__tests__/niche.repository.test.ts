@@ -1,6 +1,5 @@
 import { NicheRepository } from "../niche.repository";
-import { ChannelCache } from "../analysis.types.js";
-import { ObjectId } from "mongodb";
+import type { ChannelCache } from "../../../types/niche.types";
 import { getDb } from "../../database.service";
 
 // These will hold the mock functions retrieved from the mocked getDb instance

@@ -1,5 +1,5 @@
 import { Db, Collection, Filter, UpdateFilter } from "mongodb";
-import { ChannelCache } from "./analysis.types.js";
+import type { ChannelCache } from "../../types/niche.types.js";
 
 export class NicheRepository {
   private db: Db;
