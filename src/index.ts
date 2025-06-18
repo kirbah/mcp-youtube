@@ -7,7 +7,7 @@ import { Db } from "mongodb";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { allTools } from "./tools/index.js";
 import { initializeContainer } from "./container.js";
-
+import { disconnectFromDatabase } from "./services/database.service.js";
 // --- Import package.json ---
 // For ES Modules, you need to use an assertion for JSON modules
 // and ensure your tsconfig allows it.
@@ -58,5 +58,16 @@ async function main() {
 
 main().catch((err) => {
   console.error("Error occurred during server execution:", err);
-  process.exit(1);
+  disconnectFromDatabase().finally(() => process.exit(1));
 });
+
+// Graceful shutdown handler
+const cleanup = async () => {
+  console.error("Shutting down server...");
+  await disconnectFromDatabase();
+  console.error("Database disconnected. Exiting.");
+  process.exit(0);
+};
+
+process.on("SIGINT", cleanup); // Catches Ctrl+C
+process.on("SIGTERM", cleanup); // Catches kill signals

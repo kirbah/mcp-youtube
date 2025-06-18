@@ -16,9 +16,6 @@ COPY . .
 # Build the project
 RUN npm run build
 
-# Ensure the main file is executable (if not already set)
-RUN chmod +x dist/index.js
-
 # Set environment variables for Docker (actual values should be provided at runtime)
 ENV YOUTUBE_API_KEY=""
 
