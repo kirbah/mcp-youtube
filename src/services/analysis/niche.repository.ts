@@ -3,7 +3,7 @@ import { ChannelCache } from "./analysis.types.js";
 
 export class NicheRepository {
   private db: Db;
-  private readonly CHANNELS_CACHE_COLLECTION = "channels_cache";
+  private readonly CHANNELS_CACHE_COLLECTION = "analysis_channels";
 
   constructor(db: Db) {
     this.db = db;

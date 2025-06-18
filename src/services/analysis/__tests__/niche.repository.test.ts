@@ -32,7 +32,7 @@ let nicheRepositoryInstance: NicheRepository;
 describe("NicheRepository", () => {
   beforeEach(() => {
     const mockDb = getDb();
-    const mockCollection = mockDb.collection("channels_cache");
+    const mockCollection = mockDb.collection("analysis_channels");
 
     actualMockUpdateOne = mockCollection.updateOne as jest.Mock;
     actualMockFindOne = mockCollection.findOne as jest.Mock;

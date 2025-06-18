@@ -15,7 +15,7 @@ const mockBatchFetchStats = jest.fn();
 
 jest.mock("../../cache.service", () => ({
   CacheService: jest.fn().mockImplementation(() => ({
-    // CacheService no longer has findChannelsByIds or updateChannel for channels_cache
+    // CacheService no longer has findChannelsByIds or updateChannel for analysis_channels
   })),
 }));
 

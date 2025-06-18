@@ -15,7 +15,7 @@ import {
   calculateConsistencyMetrics, // Changed from calculateConsistencyPercentage
 } from "./analysis.logic.js";
 
-// Tier 1: The "Analysis Brain" (channels_cache)
+// Tier 1: The "Analysis Brain" (analysis_channels)
 export const REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD = 1.2; // 20% growth
 
 // Define statuses that should prevent any further analysis.

@@ -1,4 +1,3 @@
-import { youtube_v3 } from "googleapis";
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import {
