@@ -3,7 +3,6 @@ import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
 import { Db } from "mongodb";
-import { CacheService } from "../../services/cache.service.js";
 import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { NicheRepository } from "../../services/analysis/niche.repository.js";
@@ -81,13 +80,11 @@ export const findConsistentOutlierChannelsConfig = {
 export const findConsistentOutlierChannelsHandler = async (
   params: FindConsistentOutlierChannelsOptions,
   youtubeService: YoutubeService,
-  cacheService: CacheService,
   db: Db
 ): Promise<CallToolResult> => {
   try {
     const nicheRepository = new NicheRepository(db);
     const nicheAnalyzer = new NicheAnalyzerService(
-      cacheService,
       youtubeService,
       nicheRepository
     );

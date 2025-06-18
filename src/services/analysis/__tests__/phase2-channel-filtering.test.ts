@@ -34,12 +34,15 @@ jest.mock("../../../services/youtube.service", () => ({
 // --- End Mock Setup ---
 
 describe("executeChannelPreFiltering", () => {
-  const cacheService = new CacheService({} as any);
-  const youtubeService = new YoutubeService({} as any); // YoutubeService now takes CacheService
-  const nicheRepository = new NicheRepository({} as any); // New mock instance
+  let cacheService: CacheService;
+  let youtubeService: YoutubeService;
+  let nicheRepository: NicheRepository;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    cacheService = new CacheService({} as any);
+    youtubeService = new YoutubeService({} as any);
+    nicheRepository = new NicheRepository({} as any);
   });
 
   // --- Test Data Helpers ---
@@ -161,7 +164,6 @@ describe("executeChannelPreFiltering", () => {
     const result = await executeChannelPreFiltering(
       inputChannelIds,
       options,
-      cacheService,
       youtubeService,
       nicheRepository
     );
@@ -223,7 +225,6 @@ describe("executeChannelPreFiltering", () => {
     const result = await executeChannelPreFiltering(
       ["fresh1", "fresh2"],
       options,
-      cacheService,
       youtubeService,
       nicheRepository
     );
@@ -257,7 +258,6 @@ describe("executeChannelPreFiltering", () => {
     const result = await executeChannelPreFiltering(
       ["new_channel", "established_channel"],
       options,
-      cacheService,
       youtubeService,
       nicheRepository
     );

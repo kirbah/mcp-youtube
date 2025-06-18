@@ -2,7 +2,6 @@ import {
   FindConsistentOutlierChannelsOptions,
   NicheAnalysisOutput,
 } from "../types/analyzer.types.js";
-import { CacheService } from "./cache.service.js";
 import { YoutubeService } from "./youtube.service.js";
 import { NicheRepository } from "./analysis/niche.repository.js";
 import { executeInitialCandidateSearch } from "./analysis/phase1-candidate-search.js";
@@ -10,16 +9,13 @@ import { executeChannelPreFiltering } from "./analysis/phase2-channel-filtering.
 import { executeDeepConsistencyAnalysis } from "./analysis/phase3-deep-analysis.js";
 import { formatAndRankAnalysisResults } from "./analysis/phase4-ranking-formatting.js";
 export class NicheAnalyzerService {
-  private cacheService: CacheService;
   private youtubeService: YoutubeService;
   private nicheRepository: NicheRepository;
 
   constructor(
-    cacheService: CacheService,
     youtubeService: YoutubeService,
     nicheRepository: NicheRepository
   ) {
-    this.cacheService = cacheService;
     this.youtubeService = youtubeService;
     this.nicheRepository = nicheRepository;
   }
@@ -33,7 +29,6 @@ export class NicheAnalyzerService {
       // Phase 1: Initial candidate search
       const candidateChannelIds = await executeInitialCandidateSearch(
         options,
-        this.cacheService,
         this.youtubeService
       );
 
@@ -41,7 +36,6 @@ export class NicheAnalyzerService {
       const prospects = await executeChannelPreFiltering(
         candidateChannelIds,
         options,
-        this.cacheService,
         this.youtubeService,
         this.nicheRepository
       );
@@ -51,7 +45,6 @@ export class NicheAnalyzerService {
         await executeDeepConsistencyAnalysis(
           prospects,
           options,
-          this.cacheService,
           this.youtubeService,
           this.nicheRepository
         );

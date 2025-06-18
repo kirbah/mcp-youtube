@@ -1,7 +1,6 @@
 import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { NicheRepository } from "./niche.repository.js";
-import { CacheService } from "../cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { UpdateFilter } from "mongodb"; // Import UpdateFilter
 import {
@@ -34,7 +33,6 @@ const PRESERVABLE_STATUSES: ReadonlySet<ChannelCache["status"]> = new Set([
 export async function executeDeepConsistencyAnalysis(
   prospects: string[],
   options: FindConsistentOutlierChannelsOptions,
-  cacheService: CacheService,
   youtubeService: YoutubeService,
   nicheRepository: NicheRepository
 ): Promise<{ results: ChannelCache[]; quotaExceeded: boolean }> {
@@ -100,26 +98,16 @@ export async function executeDeepConsistencyAnalysis(
             ? { ...channelData.latestAnalysis }
             : undefined;
 
-        // Tier 2: The "Working Memory" (video_list_cache) - Check for cached video list
-        let topVideos: youtube_v3.Schema$Video[] | null = null;
-        const cachedVideoList = await cacheService.getVideoListCache(channelId);
-
-        if (cachedVideoList) {
-          topVideos = cachedVideoList.videos;
-        } else {
-          // No cached video list or it's stale, fetch new videos
-          topVideos = await youtubeService.fetchChannelRecentTopVideos(
+        // Directly fetch new videos using the YoutubeService's cached method
+        const topVideos: youtube_v3.Schema$Video[] =
+          await youtubeService.fetchChannelRecentTopVideos(
             channelId,
             publishedAfter
           );
-          if (topVideos.length > 0) {
-            await cacheService.setVideoListCache(channelId, topVideos);
-          }
-        }
 
         if (!topVideos || topVideos.length === 0) {
           console.error(
-            `No videos found for channel ${channelId} in the specified time window or cache`
+            `No videos found for channel ${channelId} in the specified time window`
           );
           continue;
         }

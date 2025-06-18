@@ -38,7 +38,6 @@ import {
 import { isEnabled } from "../utils/featureFlags.js";
 
 import type { YoutubeService } from "../services/youtube.service.js";
-import type { CacheService } from "../services/cache.service.js"; // Re-adding as it's used in handlers
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { IServiceContainer } from "../container.js";
 import type {
@@ -65,13 +64,7 @@ export interface ToolDefinition<TParams = unknown> {
     | ((
         params: TParams,
         youtubeService: YoutubeService,
-        cacheService: CacheService,
         db: Db
-      ) => Promise<CallToolResult>)
-    | ((
-        params: TParams,
-        youtubeService: YoutubeService,
-        cacheService: CacheService
       ) => Promise<CallToolResult>)
     | ((
         params: TParams,
@@ -81,7 +74,7 @@ export interface ToolDefinition<TParams = unknown> {
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  const { youtubeService, cacheService, db } = container;
+  const { youtubeService, db } = container;
 
   const toolDefinitions: ToolDefinition<any>[] = [
     // Video tools
@@ -129,12 +122,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
       handler: (params: FindConsistentOutlierChannelsOptions) =>
-        findConsistentOutlierChannelsHandler(
-          params,
-          youtubeService,
-          cacheService,
-          db
-        ),
+        findConsistentOutlierChannelsHandler(params, youtubeService, db),
     } as ToolDefinition<FindConsistentOutlierChannelsOptions>);
   }
 

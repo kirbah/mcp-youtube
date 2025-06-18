@@ -1,6 +1,5 @@
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { NicheRepository } from "./niche.repository.js";
-import { CacheService } from "../cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { ChannelCache } from "./analysis.types.js";
 import { youtube_v3 } from "googleapis";
@@ -18,7 +17,6 @@ export const MIN_VIDEOS_FOR_ANALYSIS = 10;
 export async function executeChannelPreFiltering(
   channelIds: string[],
   options: FindConsistentOutlierChannelsOptions,
-  cacheService: CacheService,
   youtubeService: YoutubeService,
   nicheRepository: NicheRepository
 ): Promise<string[]> {

@@ -168,8 +168,8 @@ export class YoutubeService {
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
-      CACHE_TTLS.STANDARD, // Using your centralized TTL constant (e.g., 24 hours)
-      CACHE_COLLECTIONS.VIDEO_DETAILS // Using your centralized collection name constant
+      CACHE_TTLS.STANDARD,
+      CACHE_COLLECTIONS.VIDEO_DETAILS
     );
   }
 
@@ -294,7 +294,7 @@ export class YoutubeService {
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
-      CACHE_TTLS.STANDARD,
+      CACHE_TTLS.STATIC,
       CACHE_COLLECTIONS.TRANSCRIPTS
     );
   }
@@ -388,38 +388,63 @@ export class YoutubeService {
     channelId: string,
     publishedAfter: string
   ): Promise<youtube_v3.Schema$Video[]> {
-    try {
-      const searchResponse = await this.youtube.search.list({
-        channelId: channelId,
-        part: ["snippet"],
-        order: "viewCount",
-        maxResults: 50,
-        publishedAfter: publishedAfter,
-        type: ["video"],
-      });
-      this.apiCreditsUsed += 100; // Add the cost after the call
+    const cacheKey = this.cacheService.createOperationKey(
+      "fetchChannelRecentTopVideos",
+      { channelId, publishedAfter }
+    );
 
-      const videoIds =
-        searchResponse.data.items
-          ?.map((item) => item.id?.videoId)
-          .filter((id): id is string => id !== undefined) || [];
+    const operation = async (): Promise<youtube_v3.Schema$Video[]> => {
+      try {
+        const searchResponse = await this.trackCost(
+          () =>
+            this.youtube.search.list({
+              channelId: channelId,
+              part: ["snippet"],
+              order: "viewCount",
+              maxResults: 50,
+              publishedAfter: publishedAfter,
+              type: ["video"],
+            }),
+          API_COSTS["search.list"]
+        );
 
-      if (videoIds.length === 0) {
-        return [];
+        const videoIds =
+          searchResponse.data.items
+            ?.map((item) => item.id?.videoId)
+            .filter((id): id is string => id !== undefined) || [];
+
+        if (videoIds.length === 0) {
+          return [];
+        }
+
+        const videosResponse = await this.trackCost(
+          () =>
+            this.youtube.videos.list({
+              part: ["statistics", "contentDetails"],
+              id: videoIds,
+            }),
+          API_COSTS["videos.list"]
+        );
+
+        return videosResponse.data.items || [];
+      } catch (error: any) {
+        console.error(
+          `API call failed for fetchChannelRecentTopVideos (channelId: ${channelId}, publishedAfter: ${publishedAfter}):`,
+          error.message
+        );
+        throw new Error(
+          `Failed to fetch recent top videos for channel ${channelId}: ${error.message}`
+        );
       }
+    };
 
-      const videosResponse = await this.youtube.videos.list({
-        part: ["statistics", "contentDetails"],
-        id: videoIds,
-      });
-      this.apiCreditsUsed += 1; // Add the cost after the call
-
-      return videosResponse.data.items || [];
-    } catch (error: any) {
-      throw new Error(
-        `Failed to fetch top videos for channel ${channelId}: ${error.message}`
-      );
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.SEMI_STATIC,
+      CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS,
+      { channelId, publishedAfter }
+    );
   }
 
   async getChannelTopVideos(
@@ -552,7 +577,7 @@ export class YoutubeService {
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
-      CACHE_TTLS.SEMI_STATIC, // Using SEMI_STATIC TTL
+      CACHE_TTLS.SEMI_STATIC,
       CACHE_COLLECTIONS.CHANNEL_TOP_VIDEOS,
       options // Pass the original parameters for storage!
     );
@@ -621,7 +646,7 @@ export class YoutubeService {
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
-      CACHE_TTLS.STANDARD,
+      CACHE_TTLS.DYNAMIC,
       CACHE_COLLECTIONS.TRENDING_VIDEOS,
       options
     );
@@ -666,7 +691,7 @@ export class YoutubeService {
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
-      CACHE_TTLS.STATIC, // Video categories are relatively static
+      CACHE_TTLS.STATIC,
       CACHE_COLLECTIONS.VIDEO_CATEGORIES,
       { regionCode }
     );
