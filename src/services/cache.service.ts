@@ -1,6 +1,6 @@
 import { Db, Collection } from "mongodb";
 import { createHash } from "crypto";
-import { omit } from "lodash-es";
+import { omitPaths } from "../utils/objectUtils.js";
 
 /**
  * A generic structure for entries in our new caching collections.
@@ -36,7 +36,7 @@ export class CacheService {
    * @param pathsToExclude Optional: An array of string paths (e.g., "snippet.thumbnails") to exclude from the cached data.
    * @returns A promise that resolves to the data, either from the cache or freshly generated.
    */
-  public async getOrSet<T extends object | null | undefined>( // Ensure T is an object for omit
+  public async getOrSet<T extends object | null | undefined>(
     key: string,
     operation: () => Promise<T>,
     ttlSeconds: number,
@@ -63,17 +63,16 @@ export class CacheService {
       return freshData;
     }
 
-    // If pathsToExclude is provided, use lodash.omit to create a new object
-    // without those paths. Otherwise, use the original freshData.
+    // Use your own utility to create the object that will be cached.
     const dataToCache =
       pathsToExclude && pathsToExclude.length > 0
-        ? (omit(freshData, pathsToExclude) as T) // Use lodash.omit
+        ? omitPaths(freshData, pathsToExclude)
         : freshData;
 
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
     const cacheDocument: GenericCacheEntry<T> = {
       _id: key,
-      data: dataToCache, // This is now the potentially smaller object
+      data: dataToCache, // Storing the (potentially) smaller object
       expiresAt,
     };
     if (params) {

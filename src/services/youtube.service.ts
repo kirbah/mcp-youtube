@@ -170,8 +170,8 @@ export class YoutubeService {
       operation,
       CACHE_TTLS.STANDARD,
       CACHE_COLLECTIONS.VIDEO_DETAILS,
-      options, // The 'params' argument
-      ["snippet.thumbnails"] // The new 'pathsToExclude' argument
+      options,
+      ["snippet.thumbnails"]
     );
   }
 
@@ -267,8 +267,8 @@ export class YoutubeService {
       operation,
       CACHE_TTLS.STANDARD,
       CACHE_COLLECTIONS.VIDEO_DETAILS,
-      options, // The 'params' argument
-      ["snippet.thumbnails"] // The new 'pathsToExclude' argument
+      options,
+      ["snippet.thumbnails"]
     );
   }
 
