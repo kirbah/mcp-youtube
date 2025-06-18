@@ -19,7 +19,7 @@
     "build": "tsc",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "lint": "eslint .",
+    "lint": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js .",
     "test": "jest",
     "prepare": "npm run build",
     "format": "prettier --write .",
