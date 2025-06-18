@@ -1,5 +1,6 @@
 import { YoutubeService, SearchOptions } from "../../youtube.service";
 import { google } from "googleapis";
+import { CacheService } from "../../cache.service"; // Import CacheService
 
 // Mock the googleapis library
 jest.mock("googleapis", () => {
@@ -17,20 +18,37 @@ jest.mock("googleapis", () => {
   };
 });
 
-// Mock environment variables if your class uses them (e.g., API key)
-// process.env.YOUTUBE_API_KEY = "test_api_key"; // Set this if needed by the constructor
+// Mock CacheService
+jest.mock("../../cache.service", () => {
+  return {
+    CacheService: jest.fn().mockImplementation(() => {
+      return {
+        createOperationKey: jest.fn((operationName, options) => {
+          // Simple mock implementation for createOperationKey
+          return `${operationName}-${JSON.stringify(options)}`;
+        }),
+        getOrSet: jest.fn((key, operation, ttl, collection) => operation()), // Directly run the operation for tests
+      };
+    }),
+  };
+});
 
 describe("YoutubeService - searchVideos", () => {
   let videoManagement: YoutubeService;
-  // Access the mockSearchList from the mocked googleapis module
   let mockSearchList: jest.Mock;
+  let mockCacheService: jest.Mocked<CacheService>; // Type for the mocked CacheService
 
   beforeEach(() => {
-    videoManagement = new YoutubeService();
-    // Dynamically import the mockSearchList from the mocked module
-    // and assign it to the mockSearchList variable
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+
+    // Instantiate the mocked CacheService
+    mockCacheService = new (CacheService as jest.Mock)();
+
+    // Pass the mocked CacheService to YoutubeService
+    videoManagement = new YoutubeService(mockCacheService);
+
     mockSearchList = require("googleapis").mockSearchList;
-    mockSearchList.mockClear();
   });
 
   it("should call youtube.search.list with default parameters", async () => {

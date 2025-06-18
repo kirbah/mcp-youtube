@@ -1,6 +1,6 @@
 import { youtube_v3 } from "googleapis"; // Import youtube_v3 for Schema$Video
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
-import { CacheService } from "../cache.service.js";
+import { NicheRepository } from "./niche.repository.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { UpdateFilter } from "mongodb"; // Import UpdateFilter
 import {
@@ -15,7 +15,7 @@ import {
   calculateConsistencyMetrics, // Changed from calculateConsistencyPercentage
 } from "./analysis.logic.js";
 
-// Tier 1: The "Analysis Brain" (channels_cache)
+// Tier 1: The "Analysis Brain" (analysis_channels)
 export const REANALYSIS_SUBSCRIBER_GROWTH_THRESHOLD = 1.2; // 20% growth
 
 // Define statuses that should prevent any further analysis.
@@ -33,8 +33,8 @@ const PRESERVABLE_STATUSES: ReadonlySet<ChannelCache["status"]> = new Set([
 export async function executeDeepConsistencyAnalysis(
   prospects: string[],
   options: FindConsistentOutlierChannelsOptions,
-  cacheService: CacheService,
-  youtubeService: YoutubeService
+  youtubeService: YoutubeService,
+  nicheRepository: NicheRepository
 ): Promise<{ results: ChannelCache[]; quotaExceeded: boolean }> {
   try {
     const promisingChannels: ChannelCache[] = [];
@@ -50,7 +50,7 @@ export async function executeDeepConsistencyAnalysis(
     for (const channelId of prospects) {
       try {
         const channelData = (
-          await cacheService.findChannelsByIds([channelId])
+          await nicheRepository.findChannelsByIds([channelId])
         )[0];
 
         if (!channelData) {
@@ -98,33 +98,23 @@ export async function executeDeepConsistencyAnalysis(
             ? { ...channelData.latestAnalysis }
             : undefined;
 
-        // Tier 2: The "Working Memory" (video_list_cache) - Check for cached video list
-        let topVideos: youtube_v3.Schema$Video[] | null = null;
-        const cachedVideoList = await cacheService.getVideoListCache(channelId);
-
-        if (cachedVideoList) {
-          topVideos = cachedVideoList.videos;
-        } else {
-          // No cached video list or it's stale, fetch new videos
-          topVideos = await youtubeService.fetchChannelRecentTopVideos(
+        // Directly fetch new videos using the YoutubeService's cached method
+        const topVideos: youtube_v3.Schema$Video[] =
+          await youtubeService.fetchChannelRecentTopVideos(
             channelId,
             publishedAfter
           );
-          if (topVideos.length > 0) {
-            await cacheService.setVideoListCache(channelId, topVideos);
-          }
-        }
 
         if (!topVideos || topVideos.length === 0) {
           console.error(
-            `No videos found for channel ${channelId} in the specified time window or cache`
+            `No videos found for channel ${channelId} in the specified time window`
           );
           continue;
         }
 
         // Perform New Pre-Computed Analysis (Writer Logic)
         const { sourceVideoCount, metrics } = calculateConsistencyMetrics(
-          topVideos as youtube_v3.Schema$Video[], // Cast to non-nullable array after check
+          topVideos, // Cast to non-nullable array after check
           channelData.latestStats.subscriberCount
         );
 
@@ -164,7 +154,7 @@ export async function executeDeepConsistencyAnalysis(
           updatePayload.$push = { analysisHistory: historicalEntry };
         }
 
-        await cacheService.updateChannel(channelId, updatePayload);
+        await nicheRepository.updateChannel(channelId, updatePayload);
 
         // STEP 6: Add the updated channel to the results if it's promising
         if (finalConsistencyPercentage >= consistencyThreshold) {

@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
-import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema } from "../../utils/validation.js";
@@ -28,36 +26,14 @@ export const getChannelStatisticsConfig = {
 
 export const getChannelStatisticsHandler = async (
   params: ChannelStatisticsParams,
-  youtubeService: YoutubeService,
-  cacheService?: CacheService
+  youtubeService: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getChannelStatisticsSchema.parse(params);
 
-    // No Cache Fallback
-    if (!cacheService) {
-      const statsPromises = validatedParams.channelIds.map((channelId) =>
-        youtubeService.getChannelStatistics(channelId)
-      );
-      const statisticsResults = await Promise.all(statsPromises);
-      return formatSuccess(statisticsResults);
-    }
-
-    // With Cache
-    const statsPromises = validatedParams.channelIds.map((channelId) => {
-      // For single-entity lookups, the entity ID itself is the best key.
-      const cacheKey = channelId;
-
-      const operation = () => youtubeService.getChannelStatistics(channelId);
-
-      // No need to store 'params' here since the key is self-descriptive.
-      return cacheService.getOrSet<LeanChannelStatistics>(
-        cacheKey,
-        operation,
-        CACHE_TTLS.STANDARD,
-        CACHE_COLLECTIONS.CHANNEL_STATS
-      );
-    });
+    const statsPromises = validatedParams.channelIds.map((channelId) =>
+      youtubeService.getChannelStatistics(channelId)
+    );
 
     const statisticsResults = await Promise.all(statsPromises);
     return formatSuccess(statisticsResults);

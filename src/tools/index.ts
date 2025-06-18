@@ -38,7 +38,6 @@ import {
 import { isEnabled } from "../utils/featureFlags.js";
 
 import type { YoutubeService } from "../services/youtube.service.js";
-import type { CacheService } from "../services/cache.service.js"; // Re-adding as it's used in handlers
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { IServiceContainer } from "../container.js";
 import type {
@@ -54,6 +53,7 @@ import type {
 import type { FindConsistentOutlierChannelsOptions } from "../types/analyzer.types.js";
 import type { ZodRawShape } from "zod";
 
+import { Db } from "mongodb"; // Import Db
 export interface ToolDefinition<TParams = unknown> {
   config: {
     name: string;
@@ -64,7 +64,7 @@ export interface ToolDefinition<TParams = unknown> {
     | ((
         params: TParams,
         youtubeService: YoutubeService,
-        cacheService: CacheService
+        db: Db
       ) => Promise<CallToolResult>)
     | ((
         params: TParams,
@@ -74,46 +74,46 @@ export interface ToolDefinition<TParams = unknown> {
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  const { youtubeService, cacheService } = container;
+  const { youtubeService, db } = container;
 
   const toolDefinitions: ToolDefinition<any>[] = [
     // Video tools
     {
       config: getVideoDetailsConfig,
       handler: (params: VideoDetailsParams) =>
-        getVideoDetailsHandler(params, youtubeService, cacheService),
+        getVideoDetailsHandler(params, youtubeService),
     } as ToolDefinition<VideoDetailsParams>,
     {
       config: searchVideosConfig,
       handler: (params: SearchParams) =>
-        searchVideosHandler(params, youtubeService, cacheService),
+        searchVideosHandler(params, youtubeService),
     } as ToolDefinition<SearchParams>,
     {
       config: getTranscriptsConfig,
       handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, youtubeService, cacheService),
+        getTranscriptsHandler(params, youtubeService),
     } as ToolDefinition<TranscriptsParams>,
     // Channel tools
     {
       config: getChannelStatisticsConfig,
       handler: (params: ChannelStatisticsParams) =>
-        getChannelStatisticsHandler(params, youtubeService, cacheService),
+        getChannelStatisticsHandler(params, youtubeService),
     } as ToolDefinition<ChannelStatisticsParams>,
     {
       config: getChannelTopVideosConfig,
       handler: (params: ChannelParams) =>
-        getChannelTopVideosHandler(params, youtubeService, cacheService),
+        getChannelTopVideosHandler(params, youtubeService),
     } as ToolDefinition<ChannelParams>,
     // General tools
     {
       config: getTrendingVideosConfig,
       handler: (params: TrendingParams) =>
-        getTrendingVideosHandler(params, youtubeService, cacheService),
+        getTrendingVideosHandler(params, youtubeService),
     } as ToolDefinition<TrendingParams>,
     {
       config: getVideoCategoriesConfig,
       handler: (params: VideoCategoriesParams) =>
-        getVideoCategoriesHandler(params, youtubeService, cacheService),
+        getVideoCategoriesHandler(params, youtubeService),
     } as ToolDefinition<VideoCategoriesParams>,
   ];
 
@@ -122,7 +122,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
       handler: (params: FindConsistentOutlierChannelsOptions) =>
-        findConsistentOutlierChannelsHandler(params),
+        findConsistentOutlierChannelsHandler(params, youtubeService, db),
     } as ToolDefinition<FindConsistentOutlierChannelsOptions>);
   }
 

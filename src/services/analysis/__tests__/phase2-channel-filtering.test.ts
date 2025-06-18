@@ -1,6 +1,7 @@
 import { executeChannelPreFiltering } from "../phase2-channel-filtering";
 import { CacheService } from "../../cache.service";
 import { YoutubeService } from "../../../services/youtube.service";
+import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { ChannelCache, LatestAnalysis } from "../analysis.types";
 import { MAX_SUBSCRIBER_CAP } from "../analysis.logic";
@@ -8,14 +9,20 @@ import { MIN_VIDEOS_FOR_ANALYSIS } from "../phase2-channel-filtering";
 import { youtube_v3 } from "googleapis";
 
 // --- Mock Setup ---
-const mockFindChannelsByIds = jest.fn();
-const mockUpdateChannel = jest.fn();
+const mockNicheRepoFindChannelsByIds = jest.fn();
+const mockNicheRepoUpdateChannel = jest.fn();
 const mockBatchFetchStats = jest.fn();
 
 jest.mock("../../cache.service", () => ({
   CacheService: jest.fn().mockImplementation(() => ({
-    findChannelsByIds: mockFindChannelsByIds,
-    updateChannel: mockUpdateChannel,
+    // CacheService no longer has findChannelsByIds or updateChannel for analysis_channels
+  })),
+}));
+
+jest.mock("../niche.repository", () => ({
+  NicheRepository: jest.fn().mockImplementation(() => ({
+    findChannelsByIds: mockNicheRepoFindChannelsByIds,
+    updateChannel: mockNicheRepoUpdateChannel,
   })),
 }));
 
@@ -27,11 +34,15 @@ jest.mock("../../../services/youtube.service", () => ({
 // --- End Mock Setup ---
 
 describe("executeChannelPreFiltering", () => {
-  const cacheService = new CacheService({} as any);
-  const videoManagement = new YoutubeService();
+  let cacheService: CacheService;
+  let youtubeService: YoutubeService;
+  let nicheRepository: NicheRepository;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    cacheService = new CacheService({} as any);
+    youtubeService = new YoutubeService({} as any);
+    nicheRepository = new NicheRepository({} as any);
   });
 
   // --- Test Data Helpers ---
@@ -126,7 +137,7 @@ describe("executeChannelPreFiltering", () => {
         },
       }),
     ];
-    mockFindChannelsByIds.mockResolvedValue(mockCachedDataFromDB);
+    mockNicheRepoFindChannelsByIds.mockResolvedValue(mockCachedDataFromDB);
 
     const mockFreshStatsFromApi = new Map<string, youtube_v3.Schema$Channel>();
     mockFreshStatsFromApi.set("stale_and_valid", {
@@ -153,8 +164,8 @@ describe("executeChannelPreFiltering", () => {
     const result = await executeChannelPreFiltering(
       inputChannelIds,
       options,
-      cacheService,
-      videoManagement
+      youtubeService,
+      nicheRepository
     );
 
     // --- ASSERT ---
@@ -164,28 +175,28 @@ describe("executeChannelPreFiltering", () => {
       "uncached_and_valid",
     ]);
 
-    expect(mockUpdateChannel).toHaveBeenCalledWith("too_large", {
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith("too_large", {
       $set: { status: "archived_too_large" },
     });
-    expect(mockUpdateChannel).toHaveBeenCalledWith("too_old_for_new", {
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith("too_old_for_new", {
       $set: { status: "archived_too_old" },
     });
-    expect(mockUpdateChannel).toHaveBeenCalledWith("low_potential", {
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith("low_potential", {
       $set: { status: "archived_low_potential" },
     });
-    expect(mockUpdateChannel).toHaveBeenCalledWith("low_video_count", {
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith("low_video_count", {
       $set: { status: "archived_low_sample_size" },
     });
 
-    expect(mockUpdateChannel).toHaveBeenCalledWith(
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith(
       "stale_and_valid",
       expect.any(Object)
     );
-    expect(mockUpdateChannel).toHaveBeenCalledWith(
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith(
       "uncached_and_valid",
       expect.any(Object)
     );
-    expect(mockUpdateChannel).toHaveBeenCalledTimes(6);
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledTimes(6);
 
     expect(result).toEqual([
       "fresh_and_valid",
@@ -206,17 +217,20 @@ describe("executeChannelPreFiltering", () => {
     const freshChannel1 = createMockChannelCache("fresh1");
     const freshChannel2 = createMockChannelCache("fresh2");
 
-    mockFindChannelsByIds.mockResolvedValue([freshChannel1, freshChannel2]);
+    mockNicheRepoFindChannelsByIds.mockResolvedValue([
+      freshChannel1,
+      freshChannel2,
+    ]);
 
     const result = await executeChannelPreFiltering(
       ["fresh1", "fresh2"],
       options,
-      cacheService,
-      videoManagement
+      youtubeService,
+      nicheRepository
     );
 
     expect(mockBatchFetchStats).not.toHaveBeenCalled();
-    expect(mockUpdateChannel).not.toHaveBeenCalled();
+    expect(mockNicheRepoUpdateChannel).not.toHaveBeenCalled();
     expect(result).toEqual(["fresh1", "fresh2"]);
   });
 
@@ -236,17 +250,20 @@ describe("executeChannelPreFiltering", () => {
       createdAt: eightMonthsAgo,
     }); // Valid
 
-    mockFindChannelsByIds.mockResolvedValue([newChannel, establishedChannel]);
+    mockNicheRepoFindChannelsByIds.mockResolvedValue([
+      newChannel,
+      establishedChannel,
+    ]);
 
     const result = await executeChannelPreFiltering(
       ["new_channel", "established_channel"],
       options,
-      cacheService,
-      videoManagement
+      youtubeService,
+      nicheRepository
     );
 
-    expect(mockUpdateChannel).toHaveBeenCalledTimes(1);
-    expect(mockUpdateChannel).toHaveBeenCalledWith("new_channel", {
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledTimes(1);
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith("new_channel", {
       $set: { status: "archived_too_old" },
     });
     expect(result).toEqual(["established_channel"]);

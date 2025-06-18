@@ -1,6 +1,4 @@
-import { youtube_v3 } from "googleapis";
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
-import { CacheService } from "../cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import {
   calculateChannelAgePublishedAfter,
@@ -9,7 +7,6 @@ import {
 
 export async function executeInitialCandidateSearch(
   options: FindConsistentOutlierChannelsOptions,
-  cacheService: CacheService,
   youtubeService: YoutubeService
 ): Promise<string[]> {
   try {
@@ -17,42 +14,18 @@ export async function executeInitialCandidateSearch(
       options.channelAge
     );
 
-    const searchParams: youtube_v3.Params$Resource$Search$List = {
-      q: options.query,
+    const searchResults = await youtubeService.searchVideos({
+      query: options.query,
       publishedAfter: publishedAfter,
-      part: ["snippet"],
-      type: ["video"],
+      type: "video",
       order: "relevance",
-      maxResults: 50, // Assuming MAX_RESULTS_PER_PAGE from NicheAnalyzer
-    };
-
-    if (options.regionCode) {
-      searchParams.regionCode = options.regionCode;
-    }
-
-    if (options.videoCategoryId) {
-      searchParams.videoCategoryId = options.videoCategoryId;
-    }
-
-    let results = await cacheService.getCachedSearchResults(searchParams);
-
-    if (!results) {
-      const initialSearchResults = await youtubeService.searchVideos({
-        query: options.query, // Add the required query
-        publishedAfter: searchParams.publishedAfter,
-        type: searchParams.type?.[0] as "video" | "channel", // Cast to expected type
-        order: searchParams.order as "relevance" | "date" | "viewCount", // Cast to expected type
-        maxResults: searchParams.maxResults,
-        regionCode: searchParams.regionCode,
-        videoCategoryId: searchParams.videoCategoryId,
-      });
-      results = initialSearchResults || [];
-      await cacheService.storeCachedSearchResults(searchParams, results);
-    }
+      maxResults: 50,
+      regionCode: options.regionCode,
+      videoCategoryId: options.videoCategoryId,
+    });
 
     const channelIds = new Set<string>();
-    for (const video of results as youtube_v3.Schema$SearchResult[]) {
-      // Cast to non-nullable array after check
+    for (const video of searchResults) {
       if (video.snippet?.channelId) {
         channelIds.add(video.snippet.channelId);
       }

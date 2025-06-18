@@ -31,11 +31,12 @@ export const CACHE_TTLS = {
  * This helps in organizing data within MongoDB.
  */
 export const CACHE_COLLECTIONS = {
+  TRANSCRIPTS: "transcripts",
   VIDEO_DETAILS: "video_details",
   CHANNEL_TOP_VIDEOS: "channel_top_videos",
+  CHANNEL_RECENT_TOP_VIDEOS: "channel_recent_top_videos",
   VIDEO_SEARCHES: "video_searches",
   VIDEO_CATEGORIES: "video_categories",
-  TRANSCRIPTS: "transcripts",
   CHANNEL_STATS: "channel_stats",
   TRENDING_VIDEOS: "trending_videos",
 };

@@ -2,6 +2,7 @@
 
 import { CacheService } from "../../cache.service"; // Adjusted path
 import { YoutubeService as VideoManagementService } from "../../youtube.service.js"; // Adjusted path
+import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import * as analysisLogic from "../analysis.logic"; // Adjusted path
 import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis"; // Adjusted path
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types"; // Adjusted path
@@ -11,6 +12,7 @@ import {
   HistoricalAnalysisEntry,
 } from "../analysis.types"; // Adjusted path
 import { youtube_v3 } from "googleapis";
+import { CACHE_COLLECTIONS } from "../../../config/cache.config";
 
 // Helper function to create mock LatestAnalysis object
 function createMockLatestAnalysis(
@@ -83,27 +85,95 @@ function createMockChannelCache(
 
 // Mock CacheService
 jest.mock("../../cache.service", () => {
+  const actualCacheService = jest.requireActual(
+    "../../cache.service"
+  ).CacheService;
   return {
-    CacheService: jest.fn().mockImplementation(() => ({
-      findChannelsByIds: jest.fn(),
-      getVideoListCache: jest.fn(),
-      setVideoListCache: jest.fn(),
-      updateChannel: jest.fn(),
-    })),
+    CacheService: jest.fn().mockImplementation((db: any) => {
+      const instance = new actualCacheService(db); // Pass db to actual constructor
+      jest.spyOn(instance, "createOperationKey");
+      jest.spyOn(instance, "getOrSet");
+
+      // For testing, we want getOrSet to either return a mocked cached value
+      // or execute the operation.
+      instance.getOrSet.mockImplementation(
+        async (
+          key: string,
+          operation: () => Promise<any>,
+          ttl: number,
+          collection: string,
+          params?: any
+        ) => {
+          // Simulate a cache hit if findOne is mocked to return a value
+          const cachedResult = await instance.db
+            .collection(`${instance["CACHE_COLLECTION_PREFIX"]}${collection}`)
+            .findOne({
+              _id: key,
+              expiresAt: { $gt: new Date() },
+            });
+
+          if (cachedResult) {
+            return cachedResult.data;
+          }
+          return operation();
+        }
+      );
+
+      return instance;
+    }),
   };
 });
 const MockedCacheService = CacheService as jest.MockedClass<
   typeof CacheService
 >;
 
-// Mock VideoManagementService
-jest.mock("../../youtube.service.js", () => {
-  // Corrected path and service name
+// Mock NicheRepository
+jest.mock("../niche.repository", () => {
   return {
-    YoutubeService: jest.fn().mockImplementation(() => ({
-      fetchChannelRecentTopVideos: jest.fn(),
-      // Add other methods if they are called in this test file and need mocking
+    NicheRepository: jest.fn().mockImplementation(() => ({
+      findChannelsByIds: jest.fn(),
+      updateChannel: jest.fn(),
     })),
+  };
+});
+const MockedNicheRepository = NicheRepository as jest.MockedClass<
+  typeof NicheRepository
+>;
+
+// Mock VideoManagementService
+jest.mock("../../youtube.service.ts", () => {
+  // We need to mock the actual implementation to use the CacheService mock
+  const actualYoutubeService = jest.requireActual(
+    "../../youtube.service.ts"
+  ).YoutubeService;
+
+  return {
+    YoutubeService: jest.fn().mockImplementation((cacheService: any) => {
+      const instance = new actualYoutubeService(cacheService);
+      jest.spyOn(instance, "fetchChannelRecentTopVideos");
+
+      // Mock the internal youtube API calls that fetchChannelRecentTopVideos makes
+      // This is crucial when getOrSet's operation() is executed
+      (instance as any).youtube = {
+        search: {
+          list: jest.fn(),
+        },
+        videos: {
+          list: jest.fn(),
+        },
+      };
+
+      // Default mock for youtube.search.list and youtube.videos.list
+      // These can be overridden by specific tests if needed
+      (instance as any).youtube.search.list.mockResolvedValue({
+        data: { items: [] },
+      });
+      (instance as any).youtube.videos.list.mockResolvedValue({
+        data: { items: [] },
+      });
+
+      return instance;
+    }),
   };
 });
 const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
@@ -115,20 +185,23 @@ jest.mock("../analysis.logic");
 const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
 
 // Mock the MongoDB Db object
-const mockDb: any = {
-  collection: jest.fn(() => ({
-    findOne: jest.fn(),
-    updateOne: jest.fn(),
-    find: jest.fn(() => ({
-      toArray: jest.fn(),
-    })),
-    deleteOne: jest.fn(),
+const mockCollectionMethods = {
+  findOne: jest.fn(),
+  updateOne: jest.fn(),
+  find: jest.fn(() => ({
+    toArray: jest.fn(),
   })),
+  deleteOne: jest.fn(),
+};
+
+const mockDb: any = {
+  collection: jest.fn(() => mockCollectionMethods), // Always return the same mock methods
 };
 
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: jest.Mocked<CacheService> | any; // Cast to any
-  let videoManagementInstance: jest.Mocked<VideoManagementService> | any; // Cast to any
+  let cacheServiceInstance: jest.Mocked<CacheService> | any;
+  let videoManagementInstance: jest.Mocked<VideoManagementService> | any;
+  let nicheRepositoryInstance: jest.Mocked<NicheRepository> | any;
 
   // Define variables in a broader scope
   let publishedAfterString: string;
@@ -145,8 +218,15 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    cacheServiceInstance = new MockedCacheService(mockDb); // Pass mockDb to constructor
-    videoManagementInstance = new MockedVideoManagementService(); // Use the mocked class
+    // cacheServiceInstance is no longer directly used by executeDeepConsistencyAnalysis,
+    // but it's still needed for the YoutubeService constructor if we were not mocking YoutubeService fully.
+    // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
+    // However, keeping it for consistency with the mock setup of YoutubeService.
+    cacheServiceInstance = new MockedCacheService(mockDb);
+    videoManagementInstance = new MockedVideoManagementService(
+      cacheServiceInstance
+    ); // YoutubeService now takes CacheService
+    nicheRepositoryInstance = new MockedNicheRepository(mockDb);
 
     // Initialize variables for each test
     publishedAfterString = new Date().toISOString();
@@ -163,11 +243,11 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       },
     ];
 
-    // Ensure the mock instance methods are set up if not automatically by jest.mock
-    if (!videoManagementInstance.fetchChannelRecentTopVideos) {
-      videoManagementInstance.fetchChannelRecentTopVideos = jest.fn();
-    }
-    videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue([]);
+    // Reset the mock implementation for fetchChannelRecentTopVideos for each test
+    // No need to mock fetchChannelRecentTopVideos here directly,
+    // as the YoutubeService mock now uses the actual implementation
+    // which will interact with the mocked cacheServiceInstance.
+    // We just need to ensure cacheServiceInstance is set up for the test.
 
     mockedAnalysisLogic.isQuotaError.mockReturnValue(false);
     mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
@@ -184,13 +264,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
   });
 
   it("should attempt to run without throwing an error with empty inputs", async () => {
-    cacheServiceInstance.findChannelsByIds.mockResolvedValue([]);
+    nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([]);
     await expect(
       executeDeepConsistencyAnalysis(
         [],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       )
     ).resolves.toEqual({ results: [], quotaExceeded: false });
   });
@@ -214,20 +294,22 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_promising",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.8 > 0.7
 
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel1"],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(1);
       expect(results[0].status).toBe("analyzed_promising");
     });
@@ -250,19 +332,21 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_low_consistency",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.6 < 0.7
 
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel1"],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
     });
 
@@ -297,12 +381,23 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       ];
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
-      cacheServiceInstance.getVideoListCache.mockResolvedValue({
-        _id: "channel2",
-        videos: mockVideos,
-        fetchedAt: new Date(),
-      });
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
+      // Mock the findOne call on the mocked db collection to simulate a cache hit
+      mockDb
+        .collection(
+          `${cacheServiceInstance["CACHE_COLLECTION_PREFIX"]}${CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS}`
+        )
+        .findOne.mockResolvedValue({
+          _id: cacheServiceInstance.createOperationKey(
+            "fetchChannelRecentTopVideos",
+            { channelId: "channel2", publishedAfter: publishedAfterString }
+          ),
+          data: mockVideos,
+          expiresAt: new Date(Date.now() + 10000), // Future date
+        });
+
       mockedAnalysisLogic.calculateConsistencyMetrics.mockReturnValue({
         sourceVideoCount: mockVideos.length,
         metrics: {
@@ -315,15 +410,19 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel2"],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
-      ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.setVideoListCache).not.toHaveBeenCalled(); // Because it used the cache
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalled();
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockDb.collection(
+          `${cacheServiceInstance["CACHE_COLLECTION_PREFIX"]}${CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS}`
+        ).findOne
+      ).toHaveBeenCalledTimes(1); // Ensure cache was checked via findOne
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1); // Should be called once to update the channel
       expect(results).toHaveLength(1);
       expect(results[0]._id).toBe("channel2");
       expect(results[0].status).toBe("analyzed_promising");
@@ -347,19 +446,27 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }),
         status: "analyzed_low_consistency",
       });
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
 
       await executeDeepConsistencyAnalysis(
         ["channel-no-growth"],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
-      expect(cacheServiceInstance.getVideoListCache).not.toHaveBeenCalled();
+      // Since YoutubeService is mocked to handle caching internally,
+      // fetchChannelRecentTopVideos should not be called if the growth gate fails.
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
       ).not.toHaveBeenCalled();
+      expect(
+        mockDb.collection(
+          `${cacheServiceInstance["CACHE_COLLECTION_PREFIX"]}${CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS}`
+        ).findOne
+      ).not.toHaveBeenCalled(); // Cache should not be checked either
     });
 
     it("should archive old analysis and update new one atomically for a promising channel", async () => {
@@ -402,8 +509,10 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       };
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Force fetch
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
+      // Mock YoutubeService's fetchChannelRecentTopVideos to return newMockVideos
       videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue(
         newMockVideos
       );
@@ -415,12 +524,12 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         ["channel3"],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      const updateArg = cacheServiceInstance.updateChannel.mock.calls[0][1];
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      const updateArg = nicheRepositoryInstance.updateChannel.mock.calls[0][1];
       expect(updateArg.$set!).toBeDefined();
       expect(
         updateArg.$set!.latestAnalysis!.metrics["STANDARD"]
@@ -480,7 +589,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         publishedAfterString
       );
 
-      cacheServiceInstance.findChannelsByIds.mockImplementation(
+      nicheRepositoryInstance.findChannelsByIds.mockImplementation(
         async (ids: string[]): Promise<ChannelCache[]> => {
           // Explicitly type ids and return
           const data: ChannelCache[] = [];
@@ -489,8 +598,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
           return data;
         }
       );
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null);
 
+      // Mock YoutubeService's fetchChannelRecentTopVideos to simulate quota error
       videoManagementInstance.fetchChannelRecentTopVideos.mockImplementation(
         async (chId, pubAfter) => {
           // Correct signature
@@ -529,21 +638,21 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results, quotaExceeded } = await executeDeepConsistencyAnalysis(
         [channelId1, channelId2], // These are the _id values
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
       expect(quotaExceeded).toBe(true);
       expect(results).toHaveLength(1);
       expect(results[0]._id).toBe(channelId1);
       expect(results[0].status).toBe("analyzed_promising");
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledWith(
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledWith(
         channelId1,
         expect.anything()
       );
 
-      const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
+      const updateCalls = nicheRepositoryInstance.updateChannel.mock.calls;
       const channel2Call = updateCalls.find(
         (call: any) => call[0] === channel2Id
       ); // Cast to any
@@ -571,9 +680,10 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Trigger new fetch
-
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
+      // Trigger new fetch by mocking YoutubeService directly
       const mockFetchedVideos: youtube_v3.Schema$Video[] = [
         {
           id: "video1",
@@ -619,8 +729,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       );
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // Standard threshold
 
-      cacheServiceInstance.setVideoListCache.mockResolvedValue(undefined); // Mock a successful void promise
-      cacheServiceInstance.updateChannel.mockResolvedValue(undefined); // Mock a successful void promise
+      nicheRepositoryInstance.updateChannel.mockResolvedValue(undefined); // Mock a successful void promise
 
       const publishedAfterString = new Date().toISOString();
       mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
@@ -630,13 +739,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         [channelId],
         baseMockOptions, // Uses 'STANDARD' and consistencyLevel 'MODERATE' (threshold 0.7)
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
       const [updatedChannelId, updatePayload] =
-        cacheServiceInstance.updateChannel.mock.calls[0];
+        nicheRepositoryInstance.updateChannel.mock.calls[0];
 
       expect(updatedChannelId).toBe(channelId);
       expect(updatePayload.$set!).toBeDefined();
@@ -664,9 +773,11 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null); // Trigger fetch
-      videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue([]); // Simulate empty fetch
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
+      // Explicitly mock fetchChannelRecentTopVideos to return an empty array for this test
+      videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue([]);
 
       const consoleErrorSpy = jest
         .spyOn(console, "error")
@@ -680,8 +791,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         [channelId],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
       expect(
@@ -691,15 +802,14 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         videoManagementInstance.fetchChannelRecentTopVideos
       ).toHaveBeenCalledWith(channelId, publishedAfterString);
 
-      expect(cacheServiceInstance.setVideoListCache).not.toHaveBeenCalled();
       expect(
         mockedAnalysisLogic.calculateConsistencyMetrics
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `No videos found for channel ${channelId} in the specified time window or cache`
-      );
+        `No videos found for channel ${channelId} in the specified time window`
+      ); // Removed "or cache" as YoutubeService handles cache internally
 
       consoleErrorSpy.mockRestore(); // Restore original console.error
     });
@@ -712,13 +822,22 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         status: "candidate",
       });
 
-      cacheServiceInstance.findChannelsByIds.mockResolvedValue([mockChannel]);
-      // Simulate cache hit with an empty video list
-      cacheServiceInstance.getVideoListCache.mockResolvedValue({
-        _id: channelId,
-        videos: [],
-        fetchedAt: new Date(),
-      });
+      nicheRepositoryInstance.findChannelsByIds.mockResolvedValue([
+        mockChannel,
+      ]);
+      // Simulate cache hit with an empty video list by mocking the findOne call on the mocked db collection
+      mockDb
+        .collection(
+          `${cacheServiceInstance["CACHE_COLLECTION_PREFIX"]}${CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS}`
+        )
+        .findOne.mockResolvedValue({
+          _id: cacheServiceInstance.createOperationKey(
+            "fetchChannelRecentTopVideos",
+            { channelId: channelId, publishedAfter: publishedAfterString }
+          ),
+          data: [], // Empty cached list
+          expiresAt: new Date(Date.now() + 10000), // Future date
+        });
 
       const consoleErrorSpy = jest
         .spyOn(console, "error")
@@ -727,21 +846,25 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         [channelId],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance,
+        nicheRepositoryInstance
       );
 
-      expect(cacheServiceInstance.getVideoListCache).toHaveBeenCalledTimes(1);
       expect(
         videoManagementInstance.fetchChannelRecentTopVideos
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockDb.collection(
+          `${cacheServiceInstance["CACHE_COLLECTION_PREFIX"]}${CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS}`
+        ).findOne
+      ).toHaveBeenCalledTimes(1); // Ensure cache was checked via findOne
       expect(
         mockedAnalysisLogic.calculateConsistencyMetrics
       ).not.toHaveBeenCalled();
-      expect(cacheServiceInstance.updateChannel).not.toHaveBeenCalled();
+      expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `No videos found for channel ${channelId} in the specified time window or cache`
+        `No videos found for channel ${channelId} in the specified time window`
       );
 
       consoleErrorSpy.mockRestore();
@@ -772,7 +895,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         },
       });
 
-      cacheServiceInstance.findChannelsByIds.mockImplementation(
+      nicheRepositoryInstance.findChannelsByIds.mockImplementation(
         async (ids: string[]): Promise<ChannelCache[]> => {
           // Explicitly type ids and return
           const data: ChannelCache[] = [];
@@ -781,8 +904,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
           return data;
         }
       );
-      cacheServiceInstance.getVideoListCache.mockResolvedValue(null);
 
+      // Mock YoutubeService's fetchChannelRecentTopVideos to simulate generic error
       videoManagementInstance.fetchChannelRecentTopVideos.mockImplementation(
         async (chId, pubAfter) => {
           // Correct signature
@@ -823,8 +946,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       );
       mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.8 > 0.7, so successChannel is promising
 
-      cacheServiceInstance.setVideoListCache.mockResolvedValue(undefined);
-      cacheServiceInstance.updateChannel.mockResolvedValue(undefined);
+      nicheRepositoryInstance.updateChannel.mockResolvedValue(undefined);
 
       const consoleErrorSpy = jest
         .spyOn(console, "error")
@@ -833,8 +955,8 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results, quotaExceeded } = await executeDeepConsistencyAnalysis(
         [successChannelId, failChannelId],
         baseMockOptions,
-        cacheServiceInstance,
-        videoManagementInstance
+        videoManagementInstance, // Removed cacheServiceInstance
+        nicheRepositoryInstance
       );
 
       expect(
@@ -847,13 +969,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         videoManagementInstance.fetchChannelRecentTopVideos
       ).toHaveBeenCalledWith(failChannelId, publishedAfterString);
 
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledTimes(1);
-      expect(cacheServiceInstance.updateChannel).toHaveBeenCalledWith(
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
+      expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledWith(
         successChannelId,
         expect.anything()
       );
 
-      const updateCalls = cacheServiceInstance.updateChannel.mock.calls;
+      const updateCalls = nicheRepositoryInstance.updateChannel.mock.calls;
       const failChannelUpdateCall = updateCalls.find(
         (call: any) => call[0] === failChannelId
       ); // Cast to any

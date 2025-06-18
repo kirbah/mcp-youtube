@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
-import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema, maxResultsSchema } from "../../utils/validation.js";
@@ -47,37 +45,12 @@ export const getChannelTopVideosConfig = {
 
 export const getChannelTopVideosHandler = async (
   params: ChannelParams,
-  youtubeService: YoutubeService,
-  cacheService?: CacheService
+  youtubeService: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getChannelTopVideosSchema.parse(params);
 
-    if (!cacheService) {
-      // No cache: go direct
-      const topVideos =
-        await youtubeService.getChannelTopVideos(validatedParams);
-      return formatSuccess(topVideos);
-    }
-
-    // With cache:
-    // 1. Create a unique key based on all parameters
-    const cacheKey = cacheService.createOperationKey(
-      "getChannelTopVideos",
-      validatedParams
-    );
-
-    // 2. Define the operation
-    const operation = () => youtubeService.getChannelTopVideos(validatedParams);
-
-    // 3. Use getOrSet
-    const topVideos = await cacheService.getOrSet(
-      cacheKey,
-      operation,
-      CACHE_TTLS.SEMI_STATIC, // Use named constant for TTL
-      CACHE_COLLECTIONS.CHANNEL_TOP_VIDEOS, // Use named constant for collection
-      validatedParams // Pass the original parameters for storage!
-    );
+    const topVideos = await youtubeService.getChannelTopVideos(validatedParams);
 
     return formatSuccess(topVideos);
   } catch (error: any) {

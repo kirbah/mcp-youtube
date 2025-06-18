@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
-import { CacheService } from "../../services/cache.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
-import { CACHE_TTLS, CACHE_COLLECTIONS } from "../../config/cache.config.js";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { videoIdSchema } from "../../utils/validation.js";
@@ -50,88 +48,74 @@ export const getVideoDetailsConfig = {
 
 export const getVideoDetailsHandler = async (
   params: VideoDetailsParams,
-  youtubeService: YoutubeService,
-  cacheService?: CacheService
+  youtubeService: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoDetailsSchema.parse(params);
 
     const videoPromises = validatedParams.videoIds.map(async (videoId) => {
-      const transform = (fullVideoDetails: youtube_v3.Schema$Video | null) => {
-        if (!fullVideoDetails) return { [videoId]: null };
+      // 1. Call the service. Caching is now transparent and handled inside youtubeService.
+      const fullVideoDetails = await youtubeService.getVideo({
+        videoId,
+        parts: ["snippet", "statistics", "contentDetails"],
+      });
 
-        const viewCount = parseYouTubeNumber(
-          fullVideoDetails.statistics?.viewCount
-        );
-        const likeCount = parseYouTubeNumber(
-          fullVideoDetails.statistics?.likeCount
-        );
-        const commentCount = parseYouTubeNumber(
-          fullVideoDetails.statistics?.commentCount
-        );
-
-        const formattedDescription = formatDescription(
-          fullVideoDetails.snippet?.description,
-          validatedParams.descriptionDetail
-        );
-
-        const baseLeanDetails = {
-          id: fullVideoDetails.id ?? null,
-          title: fullVideoDetails.snippet?.title ?? null,
-          channelId: fullVideoDetails.snippet?.channelId ?? null,
-          channelTitle: fullVideoDetails.snippet?.channelTitle ?? null,
-          publishedAt: fullVideoDetails.snippet?.publishedAt ?? null,
-          duration: fullVideoDetails.contentDetails?.duration ?? null,
-          viewCount: viewCount,
-          likeCount: likeCount,
-          commentCount: commentCount,
-          likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
-          commentToViewRatio: calculateCommentToViewRatio(
-            viewCount,
-            commentCount
-          ),
-          categoryId: fullVideoDetails.snippet?.categoryId ?? null,
-          defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
-        };
-
-        const detailsWithDescription =
-          formattedDescription !== undefined
-            ? { ...baseLeanDetails, description: formattedDescription }
-            : baseLeanDetails;
-
-        const leanDetails: LeanVideoDetails = validatedParams.includeTags
-          ? {
-              ...detailsWithDescription,
-              tags: fullVideoDetails.snippet?.tags ?? [],
-            }
-          : detailsWithDescription;
-
-        return { [videoId]: leanDetails };
-      };
-
-      if (!cacheService) {
-        const fullDetails = await youtubeService.getVideo({
-          videoId,
-          parts: ["snippet", "statistics", "contentDetails"],
-        });
-        return transform(fullDetails);
+      // 2. The transformation logic remains here. It operates on the data
+      //    whether it came from the cache or a live API call.
+      if (!fullVideoDetails) {
+        // Handle case where video is not found
+        return { [videoId]: null };
       }
 
-      const operation = () =>
-        youtubeService.getVideo({
-          videoId,
-          parts: ["snippet", "statistics", "contentDetails"],
-        });
-
-      const fullDetails = await cacheService.getOrSet(
-        videoId,
-        operation,
-        CACHE_TTLS.STANDARD, // Use named constant for TTL
-        CACHE_COLLECTIONS.VIDEO_DETAILS, // Use named constant for collection
-        validatedParams // Pass the original parameters for storage!
+      // ... all your existing logic to parse counts and create the 'leanDetails' object ...
+      const viewCount = parseYouTubeNumber(
+        fullVideoDetails.statistics?.viewCount
+      );
+      const likeCount = parseYouTubeNumber(
+        fullVideoDetails.statistics?.likeCount
+      );
+      const commentCount = parseYouTubeNumber(
+        fullVideoDetails.statistics?.commentCount
       );
 
-      return transform(fullDetails);
+      const formattedDescription = formatDescription(
+        fullVideoDetails.snippet?.description,
+        validatedParams.descriptionDetail
+      );
+
+      const baseLeanDetails = {
+        id: fullVideoDetails.id ?? null,
+        title: fullVideoDetails.snippet?.title ?? null,
+        channelId: fullVideoDetails.snippet?.channelId ?? null,
+        channelTitle: fullVideoDetails.snippet?.channelTitle ?? null,
+        publishedAt: fullVideoDetails.snippet?.publishedAt ?? null,
+        duration: fullVideoDetails.contentDetails?.duration ?? null,
+        viewCount: viewCount,
+        likeCount: likeCount,
+        commentCount: commentCount,
+        likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
+        commentToViewRatio: calculateCommentToViewRatio(
+          viewCount,
+          commentCount
+        ),
+        categoryId: fullVideoDetails.snippet?.categoryId ?? null,
+        defaultLanguage: fullVideoDetails.snippet?.defaultLanguage ?? null,
+      };
+
+      const detailsWithDescription =
+        formattedDescription !== undefined
+          ? { ...baseLeanDetails, description: formattedDescription }
+          : baseLeanDetails;
+
+      const leanDetails: LeanVideoDetails = validatedParams.includeTags
+        ? {
+            ...detailsWithDescription,
+            tags: fullVideoDetails.snippet?.tags ?? [],
+          }
+        : detailsWithDescription;
+
+      // Return the final transformed object for this video
+      return { [videoId]: leanDetails };
     });
 
     const results = await Promise.all(videoPromises);
@@ -139,6 +123,7 @@ export const getVideoDetailsHandler = async (
       (acc, current) => ({ ...acc, ...current }),
       {} as Record<string, LeanVideoDetails | null>
     );
+
     return formatSuccess(finalOutput);
   } catch (error: any) {
     return formatError(error);

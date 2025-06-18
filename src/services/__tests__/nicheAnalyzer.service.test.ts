@@ -1,6 +1,7 @@
 import { NicheAnalyzerService } from "../nicheAnalyzer.service";
 import { CacheService } from "../cache.service";
 import { YoutubeService } from "../../services/youtube.service";
+import { NicheRepository } from "../analysis/niche.repository"; // Import NicheRepository
 import { executeInitialCandidateSearch } from "../analysis/phase1-candidate-search";
 import { executeChannelPreFiltering } from "../analysis/phase2-channel-filtering";
 import { executeDeepConsistencyAnalysis } from "../analysis/phase3-deep-analysis";
@@ -13,6 +14,7 @@ import {
 // Mock dependencies
 jest.mock("../cache.service");
 jest.mock("../../services/youtube.service");
+jest.mock("../analysis/niche.repository"); // Mock NicheRepository
 jest.mock("../analysis/phase1-candidate-search");
 jest.mock("../analysis/phase2-channel-filtering");
 jest.mock("../analysis/phase3-deep-analysis");
@@ -22,6 +24,7 @@ describe("NicheAnalyzerService", () => {
   let nicheAnalyzerService: NicheAnalyzerService;
   let mockCacheService: jest.Mocked<CacheService>;
   let mockVideoManagement: jest.Mocked<YoutubeService>;
+  let mockNicheRepository: jest.Mocked<NicheRepository>; // Declare mockNicheRepository
 
   // Mocked phase functions
   const mockExecuteInitialCandidateSearch =
@@ -38,7 +41,9 @@ describe("NicheAnalyzerService", () => {
     mockCacheService = new CacheService(
       null as any
     ) as jest.Mocked<CacheService>;
-    mockVideoManagement = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManagement = new YoutubeService(
+      mockCacheService
+    ) as jest.Mocked<YoutubeService>;
 
     // Provide mock implementations for VideoManagement methods
     mockVideoManagement.resetApiCreditsUsed = jest.fn();
@@ -46,10 +51,20 @@ describe("NicheAnalyzerService", () => {
     mockVideoManagement.searchVideos = jest.fn();
     mockVideoManagement.batchFetchChannelStatistics = jest.fn();
     mockVideoManagement.fetchChannelRecentTopVideos = jest.fn();
+    mockVideoManagement.getVideo = jest.fn();
+    mockVideoManagement.getTranscript = jest.fn();
+    mockVideoManagement.getChannelStatistics = jest.fn();
+    mockVideoManagement.getChannelTopVideos = jest.fn();
+    mockVideoManagement.getTrendingVideos = jest.fn();
+    mockVideoManagement.getVideoCategories = jest.fn();
+
+    mockNicheRepository = new NicheRepository(
+      null as any
+    ) as jest.Mocked<NicheRepository>; // Initialize mockNicheRepository
 
     nicheAnalyzerService = new NicheAnalyzerService(
-      mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository
     );
 
     // Reset phase function mocks
@@ -96,20 +111,19 @@ describe("NicheAnalyzerService", () => {
     // Check order of calls and data passing
     expect(mockExecuteInitialCandidateSearch).toHaveBeenCalledWith(
       options,
-      mockCacheService,
       mockVideoManagement
     );
     expect(mockExecuteChannelPreFiltering).toHaveBeenCalledWith(
       phase1Output,
       options,
-      mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository
     );
     expect(mockExecuteDeepConsistencyAnalysis).toHaveBeenCalledWith(
       phase2Output,
       options,
-      mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository
     );
     expect(mockFormatAndRankAnalysisResults).toHaveBeenCalledWith(
       phase3Output.results,
@@ -205,15 +219,14 @@ describe("NicheAnalyzerService", () => {
     // Ensure Phase 1 was called
     expect(mockExecuteInitialCandidateSearch).toHaveBeenCalledWith(
       options,
-      mockCacheService,
       mockVideoManagement
     );
     // Ensure Phase 2 (the failing one) was called
     expect(mockExecuteChannelPreFiltering).toHaveBeenCalledWith(
       ["channel1", "channel2"],
       options,
-      mockCacheService,
-      mockVideoManagement
+      mockVideoManagement,
+      mockNicheRepository
     );
 
     // Ensure subsequent phases were NOT called

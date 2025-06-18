@@ -1,5 +1,6 @@
 import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
+import { CacheService } from "../../cache.service";
 
 // Mock googleapis
 jest.mock("googleapis", () => {
@@ -16,13 +17,37 @@ jest.mock("googleapis", () => {
   };
 });
 
+jest.mock("../../cache.service", () => {
+  const mockCacheService = {
+    getOrSet: jest.fn((key, operation) => operation()),
+    createOperationKey: jest.fn(
+      (operationName, params) => `${operationName}-${JSON.stringify(params)}`
+    ),
+    getCachedSearchResults: jest.fn(),
+    storeCachedSearchResults: jest.fn(),
+    getVideoListCache: jest.fn(),
+    setVideoListCache: jest.fn(),
+    generateSearchParamsHash: jest.fn(),
+  };
+  return {
+    CacheService: jest.fn(() => mockCacheService),
+  };
+});
+
 // Test suite for VideoManagement.getTrendingVideos method
 describe("YoutubeService.getTrendingVideos", () => {
   let videoManagement: YoutubeService;
   let mockVideosList: jest.Mock; // Declare type for the mock
+  let mockCacheServiceInstance: jest.Mocked<CacheService>;
 
   beforeEach(() => {
-    videoManagement = new YoutubeService();
+    // Get the mocked CacheService instance
+    const { CacheService: MockedCacheService } = jest.requireMock(
+      "../../cache.service"
+    );
+    mockCacheServiceInstance = new MockedCacheService();
+    videoManagement = new YoutubeService(mockCacheServiceInstance);
+
     // Access the mock directly from the mocked module
     // The google.youtube() call here will use the mocked implementation.
     mockVideosList = google.youtube({ version: "v3" }).videos.list as jest.Mock;
@@ -198,13 +223,13 @@ describe("YoutubeService.getTrendingVideos", () => {
       return { data: { items: [] } };
     });
     // Re-initialize with no API key
-    expect(() => new YoutubeService()).not.toThrow(); // Constructor itself might not throw if API key check is lazy
+    expect(() => new YoutubeService(mockCacheServiceInstance)).not.toThrow(); // Constructor itself might not throw if API key check is lazy
 
     // Simulate that a call to youtube.videos.list would fail if auth (API key) is missing.
     mockVideosList.mockRejectedValue(new Error("Missing API key"));
     delete process.env.YOUTUBE_API_KEY; // Ensure API key is not set for this specific test scenario
 
-    const freshVideoManagement = new YoutubeService(); // Create a new instance that would use the missing API key
+    const freshVideoManagement = new YoutubeService(mockCacheServiceInstance); // Create a new instance that would use the missing API key
     await expect(freshVideoManagement.getTrendingVideos({})).rejects.toThrow(
       "Failed to retrieve trending videos: Missing API key"
     );

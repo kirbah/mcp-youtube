@@ -1,5 +1,6 @@
 import { YoutubeService } from "../../youtube.service";
 import { google } from "googleapis";
+import { CacheService } from "../../cache.service";
 
 jest.mock("googleapis", () => {
   const mockChannelsList = jest.fn();
@@ -16,18 +17,42 @@ jest.mock("googleapis", () => {
   };
 });
 
+jest.mock("../../cache.service", () => {
+  const mockCacheService = {
+    getOrSet: jest.fn((key, operation) => operation()),
+    createOperationKey: jest.fn(
+      (operationName, params) => `${operationName}-${JSON.stringify(params)}`
+    ),
+    getCachedSearchResults: jest.fn(),
+    storeCachedSearchResults: jest.fn(),
+    getVideoListCache: jest.fn(),
+    setVideoListCache: jest.fn(),
+    generateSearchParamsHash: jest.fn(),
+  };
+  return {
+    CacheService: jest.fn(() => mockCacheService),
+  };
+});
+
 // Destructure the mock function for easier access in tests
 const { __mockChannelsList: mockChannelsList } = jest.requireMock("googleapis");
 
 describe("YoutubeService.getChannelStatistics", () => {
   let youtubeService: YoutubeService;
+  let mockCacheServiceInstance: jest.Mocked<CacheService>;
 
   beforeEach(() => {
     // Reset the mock before each test
     mockChannelsList.mockReset();
     // Set the required environment variable
     process.env.YOUTUBE_API_KEY = "test_api_key";
-    youtubeService = new YoutubeService();
+
+    // Get the mocked CacheService instance
+    const { CacheService: MockedCacheService } = jest.requireMock(
+      "../../cache.service"
+    );
+    mockCacheServiceInstance = new MockedCacheService();
+    youtubeService = new YoutubeService(mockCacheServiceInstance);
   });
 
   afterEach(() => {

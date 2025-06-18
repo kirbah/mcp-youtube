@@ -1,4 +1,5 @@
 import { YoutubeService } from "../../youtube.service";
+import { CacheService } from "../../cache.service"; // Import CacheService
 import { google } from "googleapis";
 import { parseYouTubeNumber } from "../../../utils/numberParser";
 import {
@@ -7,6 +8,7 @@ import {
 } from "../../../utils/engagementCalculator";
 import { truncateDescription } from "../../../utils/textUtils";
 
+jest.mock("../../cache.service"); // Mock CacheService
 jest.mock("../../../utils/numberParser");
 jest.mock("../../../utils/engagementCalculator");
 jest.mock("../../../utils/textUtils");
@@ -66,6 +68,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
   let videoManagement: YoutubeService;
   let mockSearchList: jest.Mock;
   let mockVideosList: jest.Mock;
+  let mockCacheService: jest.Mocked<CacheService>; // Declare mockCacheService
 
   beforeEach(() => {
     // Reset mocks for each test
@@ -87,7 +90,18 @@ describe("YoutubeService.getChannelTopVideos", () => {
         list: jest.fn(),
       },
     }));
-    videoManagement = new YoutubeService();
+
+    // Mock CacheService and its methods
+    mockCacheService = new CacheService({} as any) as jest.Mocked<CacheService>;
+    mockCacheService.createOperationKey.mockImplementation(
+      (operationName, options) =>
+        `${operationName}-${JSON.stringify(options || {})}`
+    );
+    mockCacheService.getOrSet.mockImplementation(
+      async (key, operation, ttl, collection) => operation()
+    );
+
+    videoManagement = new YoutubeService(mockCacheService); // Pass mockCacheService
     (parseYouTubeNumber as jest.Mock).mockImplementation((val) =>
       parseInt(val || "0")
     );
@@ -861,12 +875,17 @@ describe("YoutubeService.getChannelTopVideos", () => {
 
     // Assert that the final result is sliced to targetResults
     expect(result).toHaveLength(targetResults);
-    expect(result.map((v: any) => v.id)).toEqual(
+    expect(
+      result
+        .map((v) => v.id)
+        .filter((id): id is string => id !== null && id !== undefined)
+    ).toEqual(
+      // Filter out null/undefined
       mockVideoIdsFromSearch.slice(0, targetResults)
-    ); // Changed v.videoId to v.id
-    expect(result[0].id).toBe("video1"); // Changed from videoId to id
-    expect(result[1].id).toBe("video2"); // Changed from videoId to id
-    expect(result[2].id).toBe("video3"); // Changed from videoId to id
+    );
+    expect(result[0].id).toBe("video1");
+    expect(result[1].id).toBe("video2");
+    expect(result[2].id).toBe("video3");
   });
 
   it("should throw a formatted error if youtube.videos.list fails", async () => {

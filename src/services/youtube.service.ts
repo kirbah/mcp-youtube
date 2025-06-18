@@ -6,6 +6,8 @@ import {
 } from "../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
 import { formatDescription } from "../utils/textUtils.js";
+import { CacheService } from "./cache.service.js";
+import { CACHE_TTLS, CACHE_COLLECTIONS } from "../config/cache.config.js";
 import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
@@ -50,13 +52,26 @@ export interface TrendingOptions {
   maxResults?: number;
 }
 
+const API_COSTS = {
+  // Read-operations
+  "search.list": 100,
+  "videos.list": 1,
+  "channels.list": 1,
+  "videoCategories.list": 1,
+
+  // Custom/external library calls that don't use the official API quota
+  getTranscript: 0,
+};
+
 export class YoutubeService {
   private youtube: youtube_v3.Youtube;
+  private cacheService: CacheService;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly ABSOLUTE_MAX_RESULTS = 500;
   private apiCreditsUsed: number = 0; // The new internal counter
 
-  constructor() {
+  constructor(cacheService: CacheService) {
+    this.cacheService = cacheService;
     this.youtube = google.youtube({
       version: "v3",
       auth: process.env.YOUTUBE_API_KEY,
@@ -71,6 +86,14 @@ export class YoutubeService {
   // New Method: Resets the counter for a fresh run
   public resetApiCreditsUsed(): void {
     this.apiCreditsUsed = 0;
+  }
+
+  private async trackCost<T>(
+    operation: () => Promise<T>,
+    cost: number
+  ): Promise<T> {
+    this.apiCreditsUsed += cost;
+    return operation();
   }
 
   private calculatePublishedAfter(recency: string): string {
@@ -110,109 +133,170 @@ export class YoutubeService {
     return targetTime.toISOString();
   }
 
-  async getVideo({ videoId, parts = ["snippet"] }: VideoOptions) {
-    try {
-      const response = await this.youtube.videos.list({
-        part: parts,
-        id: [videoId],
-      });
-      this.apiCreditsUsed += 1; // Add the cost after the call
+  async getVideo(
+    options: VideoOptions
+  ): Promise<youtube_v3.Schema$Video | null> {
+    const { videoId, parts = ["snippet"] } = options;
 
-      if (!response.data.items?.length) {
-        throw new Error("Video not found.");
+    // 1. Create a unique key. For an entity like a video, the ID is perfect.
+    const cacheKey = videoId;
+
+    // 2. Define the 'operation' to run on a cache miss. This is your original logic.
+    const operation = async (): Promise<youtube_v3.Schema$Video | null> => {
+      try {
+        const response = await this.trackCost(
+          () => this.youtube.videos.list({ part: parts, id: [videoId] }),
+          API_COSTS["videos.list"] // Assuming API_COSTS is defined in this file
+        );
+        // Return the video object or null if not found
+        return response.data.items?.[0] ?? null;
+      } catch (error: any) {
+        // It's good practice for the operation to handle its own specific errors
+        console.error(
+          `API call failed for getVideo (videoId: ${videoId}):`,
+          error.message
+        );
+        // Return null or re-throw depending on desired behavior for failed API calls
+        throw new Error(
+          `Failed to retrieve video information: ${error.message}`
+        );
       }
+    };
 
-      return response.data.items[0];
-    } catch (error: any) {
-      throw new Error(`Failed to retrieve video information: ${error.message}`);
-    }
+    // 3. Use the CacheService to get data. It will either hit the cache or run the operation.
+    // We don't store params because the key itself is the primary identifier.
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STANDARD,
+      CACHE_COLLECTIONS.VIDEO_DETAILS
+    );
   }
 
-  async searchVideos({
-    query,
-    maxResults = 10,
-    order = "relevance",
-    type = "video",
-    channelId,
-    videoDuration,
-    publishedAfter,
-    recency,
-    regionCode,
-  }: SearchOptions) {
-    try {
-      const results: youtube_v3.Schema$SearchResult[] = [];
-      let nextPageToken: string | undefined = undefined;
-      const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
+  async searchVideos(
+    options: SearchOptions
+  ): Promise<youtube_v3.Schema$SearchResult[]> {
+    const cacheKey = this.cacheService.createOperationKey(
+      "searchVideos",
+      options
+    );
 
-      // Calculate publishedAfter from recency if provided
-      let calculatedPublishedAfter = publishedAfter;
-      if (recency && recency !== "any") {
-        calculatedPublishedAfter = this.calculatePublishedAfter(recency);
+    const operation = async (): Promise<youtube_v3.Schema$SearchResult[]> => {
+      try {
+        const {
+          query,
+          maxResults = 10,
+          order = "relevance",
+          type = "video",
+          channelId,
+          videoDuration,
+          publishedAfter,
+          recency,
+          regionCode,
+        } = options;
+
+        const results: youtube_v3.Schema$SearchResult[] = [];
+        let nextPageToken: string | undefined = undefined;
+        const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
+
+        // Calculate publishedAfter from recency if provided
+        let calculatedPublishedAfter = publishedAfter;
+        if (recency && recency !== "any") {
+          calculatedPublishedAfter = this.calculatePublishedAfter(recency);
+        }
+
+        while (results.length < targetResults) {
+          const searchParams: youtube_v3.Params$Resource$Search$List = {
+            part: ["snippet"],
+            q: query,
+            maxResults: Math.min(
+              this.MAX_RESULTS_PER_PAGE,
+              targetResults - results.length
+            ),
+            type: [type],
+            order: order,
+            pageToken: nextPageToken,
+          };
+
+          // Add optional parameters if provided
+          if (channelId) {
+            searchParams.channelId = channelId;
+          }
+
+          if (videoDuration && videoDuration !== "any") {
+            searchParams.videoDuration = videoDuration;
+          }
+
+          if (calculatedPublishedAfter) {
+            searchParams.publishedAfter = calculatedPublishedAfter;
+          }
+
+          if (regionCode) {
+            searchParams.regionCode = regionCode;
+          }
+
+          const response = await this.trackCost(
+            () => this.youtube.search.list(searchParams),
+            API_COSTS["search.list"]
+          );
+          const searchResponse: youtube_v3.Schema$SearchListResponse =
+            response.data;
+
+          if (!searchResponse.items?.length) {
+            break;
+          }
+
+          results.push(...searchResponse.items);
+          nextPageToken = searchResponse.nextPageToken || undefined;
+
+          if (!nextPageToken) {
+            break;
+          }
+        }
+
+        return results.slice(0, targetResults);
+      } catch (error: any) {
+        throw new Error(`Failed to search videos: ${error.message}`);
       }
+    };
 
-      while (results.length < targetResults) {
-        const searchParams: youtube_v3.Params$Resource$Search$List = {
-          part: ["snippet"],
-          q: query,
-          maxResults: Math.min(
-            this.MAX_RESULTS_PER_PAGE,
-            targetResults - results.length
-          ),
-          type: [type],
-          order: order,
-          pageToken: nextPageToken,
-        };
-
-        // Add optional parameters if provided
-        if (channelId) {
-          searchParams.channelId = channelId;
-        }
-
-        if (videoDuration && videoDuration !== "any") {
-          searchParams.videoDuration = videoDuration;
-        }
-
-        if (calculatedPublishedAfter) {
-          searchParams.publishedAfter = calculatedPublishedAfter;
-        }
-
-        if (regionCode) {
-          searchParams.regionCode = regionCode;
-        }
-
-        const response: youtube_v3.Schema$SearchListResponse = (
-          await this.youtube.search.list(searchParams)
-        ).data;
-        this.apiCreditsUsed += 100; // Add the cost after the call
-
-        if (!response.items?.length) {
-          break;
-        }
-
-        results.push(...response.items);
-        nextPageToken = response.nextPageToken || undefined;
-
-        if (!nextPageToken) {
-          break;
-        }
-      }
-
-      return results.slice(0, targetResults);
-    } catch (error: any) {
-      throw new Error(`Failed to search videos: ${error.message}`);
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STANDARD,
+      CACHE_COLLECTIONS.VIDEO_SEARCHES,
+      options
+    );
   }
 
   async getTranscript(videoId: string, lang?: string) {
-    try {
-      const transcript = await getSubtitles({
-        videoID: videoId,
-        lang: lang || "en",
-      });
-      return transcript;
-    } catch (error: any) {
-      throw new Error(`Failed to retrieve transcript: ${error.message}`);
-    }
+    const cacheKey = this.cacheService.createOperationKey("getTranscript", {
+      videoId,
+      lang,
+    });
+
+    const operation = async () => {
+      try {
+        const transcript = await getSubtitles({
+          videoID: videoId,
+          lang: lang || "en",
+        });
+        return transcript;
+      } catch (error: any) {
+        console.error(
+          `Failed to retrieve transcript for videoId ${videoId}:`,
+          error.message
+        );
+        throw new Error(`Failed to retrieve transcript: ${error.message}`);
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STATIC,
+      CACHE_COLLECTIONS.TRANSCRIPTS
+    );
   }
 
   async batchFetchChannelStatistics(
@@ -253,212 +337,208 @@ export class YoutubeService {
   async getChannelStatistics(
     channelId: string
   ): Promise<LeanChannelStatistics> {
-    try {
-      const response = await this.youtube.channels.list({
-        part: ["snippet", "statistics"],
-        id: [channelId],
-      });
-      this.apiCreditsUsed += 1; // Add the cost after the call
+    const cacheKey = channelId; // Use channelId directly as the key
 
-      if (!response.data.items?.length) {
-        throw new Error("Channel not found.");
+    const operation = async (): Promise<LeanChannelStatistics> => {
+      try {
+        const response = await this.trackCost(
+          () =>
+            this.youtube.channels.list({
+              part: ["snippet", "statistics"],
+              id: [channelId],
+            }),
+          API_COSTS["channels.list"]
+        );
+
+        if (!response.data.items?.length) {
+          throw new Error("Channel not found.");
+        }
+
+        const channel = response.data.items[0];
+        return {
+          channelId: channelId,
+          title: channel.snippet?.title,
+          subscriberCount: parseYouTubeNumber(
+            channel.statistics?.subscriberCount
+          ),
+          viewCount: parseYouTubeNumber(channel.statistics?.viewCount),
+          videoCount: parseYouTubeNumber(channel.statistics?.videoCount),
+          createdAt: channel.snippet?.publishedAt,
+        };
+      } catch (error: any) {
+        console.error(
+          `API call failed for getChannelStatistics (channelId: ${channelId}):`,
+          error.message
+        );
+        throw new Error(
+          `Failed to retrieve channel statistics: ${error.message}`
+        );
       }
+    };
 
-      const channel = response.data.items[0];
-      return {
-        channelId: channelId,
-        title: channel.snippet?.title,
-        subscriberCount: parseYouTubeNumber(
-          channel.statistics?.subscriberCount
-        ),
-        viewCount: parseYouTubeNumber(channel.statistics?.viewCount),
-        videoCount: parseYouTubeNumber(channel.statistics?.videoCount),
-        createdAt: channel.snippet?.publishedAt,
-      };
-    } catch (error: any) {
-      throw new Error(
-        `Failed to retrieve channel statistics: ${error.message}`
-      );
-    }
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STANDARD,
+      CACHE_COLLECTIONS.CHANNEL_STATS
+    );
   }
 
   async fetchChannelRecentTopVideos(
     channelId: string,
     publishedAfter: string
   ): Promise<youtube_v3.Schema$Video[]> {
-    try {
-      const searchResponse = await this.youtube.search.list({
-        channelId: channelId,
-        part: ["snippet"],
-        order: "viewCount",
-        maxResults: 50,
-        publishedAfter: publishedAfter,
-        type: ["video"],
-      });
-      this.apiCreditsUsed += 100; // Add the cost after the call
+    const cacheKey = this.cacheService.createOperationKey(
+      "fetchChannelRecentTopVideos",
+      { channelId, publishedAfter }
+    );
 
-      const videoIds =
-        searchResponse.data.items
-          ?.map((item) => item.id?.videoId)
-          .filter((id): id is string => id !== undefined) || [];
-
-      if (videoIds.length === 0) {
-        return [];
-      }
-
-      const videosResponse = await this.youtube.videos.list({
-        part: ["statistics", "contentDetails"],
-        id: videoIds,
-      });
-      this.apiCreditsUsed += 1; // Add the cost after the call
-
-      return videosResponse.data.items || [];
-    } catch (error: any) {
-      throw new Error(
-        `Failed to fetch top videos for channel ${channelId}: ${error.message}`
-      );
-    }
-  }
-
-  async getChannelTopVideos({
-    channelId,
-    maxResults = 10,
-    includeTags = false,
-    descriptionDetail = "NONE",
-  }: ChannelOptions): Promise<LeanChannelTopVideo[]> {
-    try {
-      const searchResults: youtube_v3.Schema$SearchResult[] = [];
-      let nextPageToken: string | undefined = undefined;
-      const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
-
-      while (searchResults.length < targetResults) {
-        const searchResponse: youtube_v3.Schema$SearchListResponse = (
-          await this.youtube.search.list({
-            part: ["id"],
-            channelId: channelId,
-            maxResults: Math.min(
-              this.MAX_RESULTS_PER_PAGE,
-              targetResults - searchResults.length
-            ),
-            order: "viewCount",
-            type: ["video"],
-            pageToken: nextPageToken,
-          })
-        ).data;
-        this.apiCreditsUsed += 100; // Add the cost after the call
-
-        if (!searchResponse.items?.length) {
-          break;
-        }
-
-        searchResults.push(...searchResponse.items);
-        nextPageToken = searchResponse.nextPageToken || undefined;
-
-        if (!nextPageToken) {
-          break;
-        }
-      }
-
-      if (!searchResults.length) {
-        throw new Error("No videos found.");
-      }
-
-      const videoIds = searchResults
-        .map((item) => item.id?.videoId)
-        .filter((id): id is string => id !== undefined);
-
-      // Retrieve video details in batches of 50
-      const videoDetails: youtube_v3.Schema$Video[] = [];
-      for (let i = 0; i < videoIds.length; i += this.MAX_RESULTS_PER_PAGE) {
-        const batch = videoIds.slice(i, i + this.MAX_RESULTS_PER_PAGE);
-        const videosResponse = await this.youtube.videos.list({
-          part: ["snippet", "statistics", "contentDetails"],
-          id: batch,
-        });
-        this.apiCreditsUsed += 1; // Add the cost after the call
-
-        if (videosResponse.data.items) {
-          videoDetails.push(...videosResponse.data.items);
-        }
-      }
-
-      return videoDetails.slice(0, targetResults).map((video) => {
-        const viewCount = parseYouTubeNumber(video.statistics?.viewCount);
-        const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
-        const commentCount = parseYouTubeNumber(video.statistics?.commentCount);
-
-        const formattedDescription = formatDescription(
-          video.snippet?.description,
-          descriptionDetail
+    const operation = async (): Promise<youtube_v3.Schema$Video[]> => {
+      try {
+        const searchResponse = await this.trackCost(
+          () =>
+            this.youtube.search.list({
+              channelId: channelId,
+              part: ["snippet"],
+              order: "viewCount",
+              maxResults: 50,
+              publishedAfter: publishedAfter,
+              type: ["video"],
+            }),
+          API_COSTS["search.list"]
         );
 
-        const baseVideo = {
-          id: video.id,
-          title: video.snippet?.title,
-          publishedAt: video.snippet?.publishedAt,
-          duration: video.contentDetails?.duration,
-          viewCount: viewCount,
-          likeCount: likeCount,
-          commentCount: commentCount,
-          likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
-          commentToViewRatio: calculateCommentToViewRatio(
-            viewCount,
-            commentCount
-          ),
-          categoryId: video.snippet?.categoryId ?? null,
-          defaultLanguage: video.snippet?.defaultLanguage ?? null,
-        };
+        const videoIds =
+          searchResponse.data.items
+            ?.map((item) => item.id?.videoId)
+            .filter((id): id is string => id !== undefined) || [];
 
-        // Conditionally add description if not NONE
-        const videoWithDescription =
-          formattedDescription !== undefined
-            ? { ...baseVideo, description: formattedDescription }
-            : baseVideo;
+        if (videoIds.length === 0) {
+          return [];
+        }
 
-        return includeTags
-          ? { ...videoWithDescription, tags: video.snippet?.tags ?? [] }
-          : videoWithDescription;
-      });
-    } catch (error: any) {
-      throw new Error(
-        `Failed to retrieve channel's top videos: ${error.message}`
-      );
-    }
+        const videosResponse = await this.trackCost(
+          () =>
+            this.youtube.videos.list({
+              part: ["statistics", "contentDetails"],
+              id: videoIds,
+            }),
+          API_COSTS["videos.list"]
+        );
+
+        return videosResponse.data.items || [];
+      } catch (error: any) {
+        console.error(
+          `API call failed for fetchChannelRecentTopVideos (channelId: ${channelId}, publishedAfter: ${publishedAfter}):`,
+          error.message
+        );
+        throw new Error(
+          `Failed to fetch recent top videos for channel ${channelId}: ${error.message}`
+        );
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.SEMI_STATIC,
+      CACHE_COLLECTIONS.CHANNEL_RECENT_TOP_VIDEOS,
+      { channelId, publishedAfter }
+    );
   }
 
-  async getTrendingVideos({
-    regionCode = "US",
-    categoryId,
-    maxResults = 10,
-  }: TrendingOptions): Promise<LeanTrendingVideo[]> {
-    try {
-      const params: youtube_v3.Params$Resource$Videos$List = {
-        part: ["snippet", "statistics", "contentDetails"],
-        chart: "mostPopular",
-        regionCode: regionCode,
-        maxResults: maxResults,
-      };
+  async getChannelTopVideos(
+    options: ChannelOptions
+  ): Promise<LeanChannelTopVideo[]> {
+    const cacheKey = this.cacheService.createOperationKey(
+      "getChannelTopVideos",
+      options
+    );
 
-      if (categoryId) {
-        params.videoCategoryId = categoryId;
-      }
+    const operation = async (): Promise<LeanChannelTopVideo[]> => {
+      try {
+        const {
+          channelId,
+          maxResults = 10,
+          includeTags = false,
+          descriptionDetail = "NONE",
+        } = options;
 
-      const response = await this.youtube.videos.list(params);
-      this.apiCreditsUsed += 1; // Add the cost after the call
+        const searchResults: youtube_v3.Schema$SearchResult[] = [];
+        let nextPageToken: string | undefined = undefined;
+        const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
 
-      return (
-        response.data.items?.map((video) => {
+        while (searchResults.length < targetResults) {
+          const response = await this.trackCost(
+            () =>
+              this.youtube.search.list({
+                part: ["id"],
+                channelId: channelId,
+                maxResults: Math.min(
+                  this.MAX_RESULTS_PER_PAGE,
+                  targetResults - searchResults.length
+                ),
+                order: "viewCount",
+                type: ["video"],
+                pageToken: nextPageToken,
+              }),
+            API_COSTS["search.list"]
+          );
+          const searchResponse: youtube_v3.Schema$SearchListResponse =
+            response.data;
+
+          if (!searchResponse.items?.length) {
+            break;
+          }
+
+          searchResults.push(...searchResponse.items);
+          nextPageToken = searchResponse.nextPageToken || undefined;
+
+          if (!nextPageToken) {
+            break;
+          }
+        }
+
+        if (!searchResults.length) {
+          throw new Error("No videos found.");
+        }
+
+        const videoIds = searchResults
+          .map((item) => item.id?.videoId)
+          .filter((id): id is string => id !== undefined);
+
+        // Retrieve video details in batches of 50
+        const videoDetails: youtube_v3.Schema$Video[] = [];
+        for (let i = 0; i < videoIds.length; i += this.MAX_RESULTS_PER_PAGE) {
+          const batch = videoIds.slice(i, i + this.MAX_RESULTS_PER_PAGE);
+          const response = await this.trackCost(
+            () =>
+              this.youtube.videos.list({
+                part: ["snippet", "statistics", "contentDetails"],
+                id: batch,
+              }),
+            API_COSTS["videos.list"]
+          );
+          if (response.data.items) {
+            videoDetails.push(...response.data.items);
+          }
+        }
+
+        return videoDetails.slice(0, targetResults).map((video) => {
           const viewCount = parseYouTubeNumber(video.statistics?.viewCount);
           const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
           const commentCount = parseYouTubeNumber(
             video.statistics?.commentCount
           );
 
-          return {
+          const formattedDescription = formatDescription(
+            video.snippet?.description,
+            descriptionDetail
+          );
+
+          const baseVideo = {
             id: video.id,
             title: video.snippet?.title,
-            channelId: video.snippet?.channelId,
-            channelTitle: video.snippet?.channelTitle,
             publishedAt: video.snippet?.publishedAt,
             duration: video.contentDetails?.duration,
             viewCount: viewCount,
@@ -469,30 +549,151 @@ export class YoutubeService {
               viewCount,
               commentCount
             ),
+            categoryId: video.snippet?.categoryId ?? null,
+            defaultLanguage: video.snippet?.defaultLanguage ?? null,
           };
-        }) || []
-      );
-    } catch (error: any) {
-      throw new Error(`Failed to retrieve trending videos: ${error.message}`);
-    }
+
+          // Conditionally add description if not NONE
+          const videoWithDescription =
+            formattedDescription !== undefined
+              ? { ...baseVideo, description: formattedDescription }
+              : baseVideo;
+
+          return includeTags
+            ? { ...videoWithDescription, tags: video.snippet?.tags ?? [] }
+            : videoWithDescription;
+        });
+      } catch (error: any) {
+        console.error(
+          `API call failed for getChannelTopVideos (channelId: ${options.channelId}):`,
+          error.message
+        );
+        throw new Error(
+          `Failed to retrieve channel's top videos: ${error.message}`
+        );
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.SEMI_STATIC,
+      CACHE_COLLECTIONS.CHANNEL_TOP_VIDEOS,
+      options // Pass the original parameters for storage!
+    );
+  }
+
+  async getTrendingVideos(
+    options: TrendingOptions
+  ): Promise<LeanTrendingVideo[]> {
+    const cacheKey = this.cacheService.createOperationKey(
+      "getTrendingVideos",
+      options
+    );
+
+    const operation = async (): Promise<LeanTrendingVideo[]> => {
+      try {
+        const { regionCode = "US", categoryId, maxResults = 10 } = options;
+
+        const params: youtube_v3.Params$Resource$Videos$List = {
+          part: ["snippet", "statistics", "contentDetails"],
+          chart: "mostPopular",
+          regionCode: regionCode,
+          maxResults: maxResults,
+        };
+
+        if (categoryId) {
+          params.videoCategoryId = categoryId;
+        }
+
+        const response = await this.trackCost(
+          () => this.youtube.videos.list(params),
+          API_COSTS["videos.list"]
+        );
+
+        return (
+          response.data.items?.map((video) => {
+            const viewCount = parseYouTubeNumber(video.statistics?.viewCount);
+            const likeCount = parseYouTubeNumber(video.statistics?.likeCount);
+            const commentCount = parseYouTubeNumber(
+              video.statistics?.commentCount
+            );
+
+            return {
+              id: video.id,
+              title: video.snippet?.title,
+              channelId: video.snippet?.channelId,
+              channelTitle: video.snippet?.channelTitle,
+              publishedAt: video.snippet?.publishedAt,
+              duration: video.contentDetails?.duration,
+              viewCount: viewCount,
+              likeCount: likeCount,
+              commentCount: commentCount,
+              likeToViewRatio: calculateLikeToViewRatio(viewCount, likeCount),
+              commentToViewRatio: calculateCommentToViewRatio(
+                viewCount,
+                commentCount
+              ),
+            };
+          }) || []
+        );
+      } catch (error: any) {
+        console.error(`API call failed for getTrendingVideos:`, error.message);
+        throw new Error(`Failed to retrieve trending videos: ${error.message}`);
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.DYNAMIC,
+      CACHE_COLLECTIONS.TRENDING_VIDEOS,
+      options
+    );
   }
 
   async getVideoCategories(regionCode: string = "US") {
-    try {
-      const response = await this.youtube.videoCategories.list({
-        part: ["snippet"],
-        regionCode: regionCode,
-      });
-      this.apiCreditsUsed += 1; // Add the cost after the call
+    const cacheKey = this.cacheService.createOperationKey(
+      "getVideoCategories",
+      {
+        regionCode,
+      }
+    );
 
-      const categories = response.data.items?.map((category) => ({
-        id: category.id,
-        title: category.snippet?.title,
-      }));
+    const operation = async () => {
+      try {
+        const response = await this.trackCost(
+          () =>
+            this.youtube.videoCategories.list({
+              part: ["snippet"],
+              regionCode: regionCode,
+            }),
+          API_COSTS["videoCategories.list"]
+        );
 
-      return categories || [];
-    } catch (error: any) {
-      throw new Error(`Failed to retrieve video categories: ${error.message}`);
-    }
+        const categories = response.data.items?.map((category) => ({
+          id: category.id,
+          title: category.snippet?.title,
+        }));
+
+        return categories || [];
+      } catch (error: any) {
+        console.error(
+          `API call failed for getVideoCategories (regionCode: ${regionCode}):`,
+          error.message
+        );
+        throw new Error(
+          `Failed to retrieve video categories: ${error.message}`
+        );
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.STATIC,
+      CACHE_COLLECTIONS.VIDEO_CATEGORIES,
+      { regionCode }
+    );
   }
 }
