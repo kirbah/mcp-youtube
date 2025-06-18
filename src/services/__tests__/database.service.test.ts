@@ -3,11 +3,12 @@ import {
   disconnectFromDatabase,
   getDb,
 } from "../database.service";
-import { MongoClient, Db } from "mongodb";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type MongoClient } from "mongodb"; // Changed to type-only import
 
 // Define mocks for MongoClient methods before the jest.mock call
 const mockConnect = jest.fn().mockResolvedValue(undefined);
-const mockDbMethod = jest.fn().mockReturnValue({} as Db); // Renamed to avoid conflict with Db type
+const mockDbMethod = jest.fn().mockReturnValue({} as any); // Changed Db to any to avoid needing Db import
 const mockClose = jest.fn().mockResolvedValue(undefined);
 
 // Mock MongoClient
@@ -20,6 +21,7 @@ jest.mock("mongodb", () => {
       db: mockDbMethod,
       close: mockClose,
     })),
+    // Explicitly mock Db if it's used as a type elsewhere and not imported directly
   };
 });
 
