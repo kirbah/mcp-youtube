@@ -117,9 +117,7 @@ jest.mock("../../cache.service", () => {
     }),
   };
 });
-const MockedCacheService = CacheService as jest.MockedClass<
-  typeof CacheService
->;
+const MockedCacheService = CacheService;
 
 // Mock NicheRepository
 jest.mock("../niche.repository", () => {
@@ -130,9 +128,7 @@ jest.mock("../niche.repository", () => {
     })),
   };
 });
-const MockedNicheRepository = NicheRepository as jest.MockedClass<
-  typeof NicheRepository
->;
+const MockedNicheRepository = NicheRepository;
 
 // Mock VideoManagementService
 jest.mock("../../youtube.service.ts", () => {
@@ -148,7 +144,7 @@ jest.mock("../../youtube.service.ts", () => {
 
       // Mock the internal youtube API calls that fetchChannelRecentTopVideos makes
       // This is crucial when getOrSet's operation() is executed
-      (instance as any).youtube = {
+      instance.youtube = {
         search: {
           list: jest.fn(),
         },
@@ -159,10 +155,10 @@ jest.mock("../../youtube.service.ts", () => {
 
       // Default mock for youtube.search.list and youtube.videos.list
       // These can be overridden by specific tests if needed
-      (instance as any).youtube.search.list.mockResolvedValue({
+      instance.youtube.search.list.mockResolvedValue({
         data: { items: [] },
       });
-      (instance as any).youtube.videos.list.mockResolvedValue({
+      instance.youtube.videos.list.mockResolvedValue({
         data: { items: [] },
       });
 
@@ -176,7 +172,7 @@ const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
 
 // Mock analysis.logic functions
 jest.mock("../analysis.logic");
-const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
+const mockedAnalysisLogic = analysisLogic;
 
 // Mock the MongoDB Db object
 const mockCollectionMethods = {
@@ -216,15 +212,11 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     // but it's still needed for the YoutubeService constructor if we were not mocking YoutubeService fully.
     // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
     // However, keeping it for consistency with the mock setup of YoutubeService.
-    cacheServiceInstance = new MockedCacheService(
-      mockDb
-    ) as jest.Mocked<CacheService>;
+    cacheServiceInstance = new MockedCacheService(mockDb);
     videoManagementInstance = new MockedVideoManagementService(
       cacheServiceInstance
     ) as jest.Mocked<VideoManagementService>; // YoutubeService now takes CacheService
-    nicheRepositoryInstance = new MockedNicheRepository(
-      mockDb
-    ) as jest.Mocked<NicheRepository>;
+    nicheRepositoryInstance = new MockedNicheRepository(mockDb);
 
     // Initialize variables for each test
     publishedAfterString = new Date().toISOString();
@@ -528,13 +520,13 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       expect(nicheRepositoryInstance.updateChannel).toHaveBeenCalledTimes(1);
       const updateArg = nicheRepositoryInstance.updateChannel.mock.calls[0][1];
-      expect(updateArg.$set!).toBeDefined();
+      expect(updateArg.$set).toBeDefined();
       expect(
         updateArg.$set!.latestAnalysis!.metrics["STANDARD"]
           .consistencyPercentage
       ).toBe(0.85);
       expect(updateArg.$set!.status).toBe("analyzed_promising");
-      expect(updateArg.$push!).toBeDefined();
+      expect(updateArg.$push).toBeDefined();
       expect(updateArg.$push!.analysisHistory).toEqual(oldAnalysisData);
 
       expect(results).toHaveLength(1);
@@ -746,9 +738,9 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         nicheRepositoryInstance.updateChannel.mock.calls[0];
 
       expect(updatedChannelId).toBe(channelId);
-      expect(updatePayload.$set!).toBeDefined();
+      expect(updatePayload.$set).toBeDefined();
       expect(updatePayload.$set!.status).toBe("analyzed_low_consistency");
-      expect(updatePayload.$set!.latestAnalysis!).toBeDefined();
+      expect(updatePayload.$set!.latestAnalysis).toBeDefined();
       expect(
         updatePayload.$set!.latestAnalysis!.metrics.STANDARD
           .consistencyPercentage

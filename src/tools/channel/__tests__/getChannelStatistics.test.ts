@@ -59,7 +59,7 @@ describe("getChannelStatisticsHandler", () => {
     // Clear all mocks before each test
     jest.clearAllMocks();
     // Get the instance of the mocked YoutubeService
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
   });
 
   it("should return channel statistics for a single valid channel ID", async () => {

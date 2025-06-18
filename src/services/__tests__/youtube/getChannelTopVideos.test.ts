@@ -92,7 +92,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
     }));
 
     // Mock CacheService and its methods
-    mockCacheService = new CacheService({} as any) as jest.Mocked<CacheService>;
+    mockCacheService = new CacheService({} as any);
     mockCacheService.createOperationKey.mockImplementation(
       (operationName, options) =>
         `${operationName}-${JSON.stringify(options || {})}`
@@ -342,7 +342,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
     mockVideosList.mockImplementation(async (params) => {
       const ids = params.id as string[];
       const requestedDetails = mockVideoDetailsItems.filter((detailItem) =>
-        ids.includes(detailItem.id!)
+        ids.includes(detailItem.id)
       );
       return { data: { items: requestedDetails } };
     });
@@ -461,7 +461,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
     mockVideosList.mockImplementation(async (params) => {
       const ids = params.id as string[];
       const requestedDetails = mockVideoDetailsItems.filter((detailItem) =>
-        ids.includes(detailItem.id!)
+        ids.includes(detailItem.id)
       );
       return { data: { items: requestedDetails } };
     });

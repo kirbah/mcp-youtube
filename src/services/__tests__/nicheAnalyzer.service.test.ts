@@ -38,12 +38,8 @@ describe("NicheAnalyzerService", () => {
 
   beforeEach(() => {
     // Reset mocks before each test
-    mockCacheService = new CacheService(
-      null as any
-    ) as jest.Mocked<CacheService>;
-    mockVideoManagement = new YoutubeService(
-      mockCacheService
-    ) as jest.Mocked<YoutubeService>;
+    mockCacheService = new CacheService(null as any);
+    mockVideoManagement = new YoutubeService(mockCacheService);
 
     // Provide mock implementations for VideoManagement methods
     mockVideoManagement.resetApiCreditsUsed = jest.fn();
@@ -58,9 +54,7 @@ describe("NicheAnalyzerService", () => {
     mockVideoManagement.getTrendingVideos = jest.fn();
     mockVideoManagement.getVideoCategories = jest.fn();
 
-    mockNicheRepository = new NicheRepository(
-      null as any
-    ) as jest.Mocked<NicheRepository>; // Initialize mockNicheRepository
+    mockNicheRepository = new NicheRepository(null as any); // Initialize mockNicheRepository
 
     nicheAnalyzerService = new NicheAnalyzerService(
       mockVideoManagement,

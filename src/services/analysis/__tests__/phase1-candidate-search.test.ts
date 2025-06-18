@@ -25,9 +25,7 @@ describe("executeInitialCandidateSearch", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockYoutubeService = new YoutubeService(
-      {} as any
-    ) as jest.Mocked<YoutubeService>;
+    mockYoutubeService = new YoutubeService({} as any);
 
     defaultOptions = {
       query: "test query",

@@ -19,7 +19,7 @@ describe("searchVideosHandler", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
     mockVideoManager.searchVideos = jest.fn();
 
     // Spy on the 'parse' method of the actual searchVideosSchema from the imported module

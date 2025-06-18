@@ -39,9 +39,7 @@ describe("YoutubeService.getVideoCategories", () => {
       },
     });
 
-    mockCacheServiceInstance = new CacheService(
-      {} as any
-    ) as jest.Mocked<CacheService>;
+    mockCacheServiceInstance = new CacheService({} as any);
 
     videoManagement = new YoutubeService(mockCacheServiceInstance);
     // Ensure process.env.YOUTUBE_API_KEY is mocked or set if your VideoManagement constructor relies on it directly.
