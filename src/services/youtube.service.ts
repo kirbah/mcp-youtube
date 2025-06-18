@@ -313,11 +313,14 @@ export class YoutubeService {
       for (let i = 0; i < channelIds.length; i += batchSize) {
         const batch = channelIds.slice(i, i + batchSize);
 
-        const response = await this.youtube.channels.list({
-          part: ["snippet", "statistics"],
-          id: batch,
-        });
-        this.apiCreditsUsed += 1; // Add the cost after the call
+        const response = await this.trackCost(
+          () =>
+            this.youtube.channels.list({
+              part: ["snippet", "statistics"],
+              id: batch,
+            }),
+          API_COSTS["channels.list"]
+        );
 
         if (response.data.items) {
           for (const channel of response.data.items) {
