@@ -1,12 +1,10 @@
 import { YoutubeService } from "../../youtube.service";
-import { CacheService } from "../../cache.service"; // Import CacheService
+import { CacheService } from "../../cache.service";
 
 // Mock the googleapis library
-// Define mockSearchList here so it can be used in the mock factory and assigned later
-let mockSearchListGlobal: jest.Mock;
+const mockSearchListGlobal = jest.fn();
 
 jest.mock("googleapis", () => {
-  mockSearchListGlobal = jest.fn(); // Assign the mock function here
   return {
     google: {
       youtube: jest.fn(() => ({
@@ -15,8 +13,6 @@ jest.mock("googleapis", () => {
         },
       })),
     },
-    // Export the mock function so we can spy on it and change its behavior in tests
-    mockSearchList: mockSearchListGlobal, // Export it as mockSearchList
   };
 });
 
