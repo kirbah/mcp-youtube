@@ -50,7 +50,6 @@ import type {
   VideoCategoriesParams,
   FindConsistentOutlierChannelsParams,
 } from "../types/tools.js";
-import type { FindConsistentOutlierChannelsOptions } from "../types/analyzer.types.js";
 import type { ZodRawShape } from "zod";
 
 import { Db } from "mongodb"; // Import Db
@@ -121,9 +120,10 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
   if (isEnabled("toolFindConsistentOutlierChannels")) {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
-      handler: (params: FindConsistentOutlierChannelsOptions) =>
+      // This now correctly reflects that the handler expects the flexible `Params` type.
+      handler: (params: FindConsistentOutlierChannelsParams) =>
         findConsistentOutlierChannelsHandler(params, youtubeService, db),
-    } as ToolDefinition<FindConsistentOutlierChannelsOptions>);
+    } as ToolDefinition<FindConsistentOutlierChannelsParams>);
   }
 
   return toolDefinitions;

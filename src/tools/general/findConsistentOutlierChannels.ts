@@ -7,6 +7,7 @@ import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { NicheRepository } from "../../services/analysis/niche.repository.js";
 import type { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
+import type { FindConsistentOutlierChannelsParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const findConsistentOutlierChannelsSchema = z.object({
@@ -78,21 +79,29 @@ export const findConsistentOutlierChannelsConfig = {
 };
 
 export const findConsistentOutlierChannelsHandler = async (
-  params: FindConsistentOutlierChannelsOptions,
+  // The handler ACCEPTS the flexible `Params` type
+  params: FindConsistentOutlierChannelsParams,
   youtubeService: YoutubeService,
   db: Db
 ): Promise<CallToolResult> => {
   try {
+    // --- THIS IS THE EXPLICIT CONVERSION POINT ---
+    // We use Zod to parse the user's flexible input.
+    // The result of `parse` is a new, complete object with all defaults applied.
+    // This new object perfectly matches the strict `...Options` type.
+    const validatedOptions: FindConsistentOutlierChannelsOptions =
+      findConsistentOutlierChannelsSchema.parse(params);
+
+    // Now, we create our services and pass them the strict, validated options.
     const nicheRepository = new NicheRepository(db);
     const nicheAnalyzer = new NicheAnalyzerService(
       youtubeService,
       nicheRepository
     );
 
-    const validatedParams = findConsistentOutlierChannelsSchema.parse(params);
-
+    // The analyzer's method is called with the guaranteed, complete options object.
     const searchResults =
-      await nicheAnalyzer.findConsistentOutlierChannels(validatedParams);
+      await nicheAnalyzer.findConsistentOutlierChannels(validatedOptions);
 
     return formatSuccess(searchResults);
   } catch (error: any) {
