@@ -11,6 +11,7 @@ export default tseslint.config(
       "dist/",
       "node_modules/",
       "coverage/",
+      "test-results/",
       "**/*.config.js",
       "**/*.config.mjs",
       "**/*.config.cjs",
@@ -24,7 +25,7 @@ export default tseslint.config(
   // This is what brings in the stricter type checking.
   ...tseslint.configs.recommendedTypeChecked,
 
-  // Configuration for TypeScript source files
+  // Configuration for TypeScript SOURCE files
   {
     files: ["src/**/*.ts"],
     ignores: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
@@ -36,7 +37,7 @@ export default tseslint.config(
         ...globals.es2021,
       },
       parserOptions: {
-        project: true,
+        project: "tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -76,7 +77,7 @@ export default tseslint.config(
     },
   },
 
-  // Configuration for TypeScript test files
+  // Configuration for TypeScript TEST files
   {
     files: ["src/**/*.test.ts", "src/**/__tests__/**/*.ts"],
     languageOptions: {
@@ -88,23 +89,37 @@ export default tseslint.config(
         ...globals.jest,
       },
       parserOptions: {
-        project: true,
+        project: "tsconfig.test.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
-      // === Relax rules for test files ===
+      // === Keep code clean, but as warnings ===
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+
+      // === Turn off rules that are impractical for tests ===
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/await-thenable": "warn",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/no-floating-promises": "off",
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-non-null-assertion": "off",
-      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/require-await": "off", // Important for mocks
+
+      // === Turn off other less critical rules for tests ===
+      "@typescript-eslint/unbound-method": "off", // Often tricky with Jest mocks
+      "@typescript-eslint/no-non-null-assertion": "off", // Useful for telling TS "I know this exists in my test setup"
+      "@typescript-eslint/ban-ts-comment": "off", // Allows using @ts-ignore in tests if absolutely needed
     },
   },
 

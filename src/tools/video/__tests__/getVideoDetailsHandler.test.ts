@@ -302,15 +302,15 @@ describe("getVideoDetailsHandler", () => {
     it("should not truncate description if it is within LONG limit when using LONG", async () => {
       (calculateLikeToViewRatio as jest.Mock).mockReturnValue(0);
       (calculateCommentToViewRatio as jest.Mock).mockReturnValue(0);
-      let params = {
+      const params = {
         videoIds: ["shortDescVideo"],
         descriptionDetail: "LONG" as const,
       };
-      let result = await getVideoDetailsHandler(params, mockVideoManager);
+      const result = await getVideoDetailsHandler(params, mockVideoManager);
       if (!result.success || !result.content)
         throw new Error("Test failed: success true but no content");
-      let returnedData = JSON.parse(result.content[0].text as string);
-      let videoResult = returnedData["shortDescVideo"];
+      const returnedData = JSON.parse(result.content[0].text as string);
+      const videoResult = returnedData["shortDescVideo"];
       expect(videoResult.description).toBe("Short and sweet.");
     });
 

@@ -54,7 +54,7 @@ function createMockChannelCache(
     latestAnalysis: undefined,
   };
 
-  let final = { ...defaults, ...overrides };
+  const final = { ...defaults, ...overrides };
 
   // Ensure latestStats is fully merged
   if (overrides.latestStats) {
@@ -62,7 +62,7 @@ function createMockChannelCache(
   }
 
   // Handle latestAnalysis explicitly
-  if (overrides.hasOwnProperty("latestAnalysis")) {
+  if (Object.prototype.hasOwnProperty.call(overrides, "latestAnalysis")) {
     if (overrides.latestAnalysis === null) {
       final.latestAnalysis = undefined; // Change null to undefined
     } else if (overrides.latestAnalysis) {
@@ -93,10 +93,10 @@ jest.mock("../../cache.service", () => {
       instance.getOrSet.mockImplementation(
         async (
           key: string,
-          operation: () => Promise<any>,
+          operation: () => Promise<unknown>, // Use unknown for generic return type
           ttl: number,
           collection: string,
-          params?: any
+          params?: object // Use object as per CacheService definition
         ) => {
           // Simulate a cache hit if findOne is mocked to return a value
           const cachedResult = await instance.db
@@ -193,9 +193,9 @@ const mockDb: any = {
 };
 
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: jest.Mocked<CacheService> | any;
-  let videoManagementInstance: jest.Mocked<VideoManagementService> | any;
-  let nicheRepositoryInstance: jest.Mocked<NicheRepository> | any;
+  let cacheServiceInstance: jest.Mocked<CacheService>;
+  let videoManagementInstance: jest.Mocked<VideoManagementService>;
+  let nicheRepositoryInstance: jest.Mocked<NicheRepository>;
 
   // Define variables in a broader scope
   let publishedAfterString: string;
@@ -216,11 +216,15 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     // but it's still needed for the YoutubeService constructor if we were not mocking YoutubeService fully.
     // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
     // However, keeping it for consistency with the mock setup of YoutubeService.
-    cacheServiceInstance = new MockedCacheService(mockDb);
+    cacheServiceInstance = new MockedCacheService(
+      mockDb
+    ) as jest.Mocked<CacheService>;
     videoManagementInstance = new MockedVideoManagementService(
       cacheServiceInstance
-    ); // YoutubeService now takes CacheService
-    nicheRepositoryInstance = new MockedNicheRepository(mockDb);
+    ) as jest.Mocked<VideoManagementService>; // YoutubeService now takes CacheService
+    nicheRepositoryInstance = new MockedNicheRepository(
+      mockDb
+    ) as jest.Mocked<NicheRepository>;
 
     // Initialize variables for each test
     publishedAfterString = new Date().toISOString();

@@ -1,20 +1,22 @@
-import { YoutubeService, SearchOptions } from "../../youtube.service";
-import { google } from "googleapis";
+import { YoutubeService } from "../../youtube.service";
 import { CacheService } from "../../cache.service"; // Import CacheService
 
 // Mock the googleapis library
+// Define mockSearchList here so it can be used in the mock factory and assigned later
+let mockSearchListGlobal: jest.Mock;
+
 jest.mock("googleapis", () => {
-  const mockSearchList = jest.fn();
+  mockSearchListGlobal = jest.fn(); // Assign the mock function here
   return {
     google: {
       youtube: jest.fn(() => ({
         search: {
-          list: mockSearchList,
+          list: mockSearchListGlobal,
         },
       })),
     },
     // Export the mock function so we can spy on it and change its behavior in tests
-    mockSearchList,
+    mockSearchList: mockSearchListGlobal, // Export it as mockSearchList
   };
 });
 
@@ -35,7 +37,7 @@ jest.mock("../../cache.service", () => {
 
 describe("YoutubeService - searchVideos", () => {
   let videoManagement: YoutubeService;
-  let mockSearchList: jest.Mock;
+  let mockSearchList: jest.Mock; // This will now be assigned from the global mock
   let mockCacheService: jest.Mocked<CacheService>; // Type for the mocked CacheService
 
   beforeEach(() => {
@@ -48,7 +50,8 @@ describe("YoutubeService - searchVideos", () => {
     // Pass the mocked CacheService to YoutubeService
     videoManagement = new YoutubeService(mockCacheService);
 
-    mockSearchList = require("googleapis").mockSearchList;
+    // Assign the global mock to the local variable
+    mockSearchList = mockSearchListGlobal;
   });
 
   it("should call youtube.search.list with default parameters", async () => {
