@@ -194,7 +194,7 @@ describe("YoutubeService - searchVideos", () => {
     mockSearchList.mockRejectedValueOnce(new Error(errorMessage));
 
     await expect(videoManagement.searchVideos({ query })).rejects.toThrow(
-      `Failed to search videos: ${errorMessage}`
+      `YouTube API call for searchVideos failed`
     );
   });
 

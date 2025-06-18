@@ -81,7 +81,7 @@ describe("YoutubeService.getTranscript", () => {
     mockGetSubtitles.mockRejectedValue(new Error(errorMessage));
 
     await expect(videoManagement.getTranscript(videoId)).rejects.toThrow(
-      `Failed to retrieve transcript: ${errorMessage}`
+      `API call for getTranscript failed for videoId: ${videoId}`
     );
     expect(mockGetSubtitles).toHaveBeenCalledWith({
       videoID: videoId,
