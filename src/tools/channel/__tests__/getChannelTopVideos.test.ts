@@ -46,7 +46,7 @@ describe("getChannelTopVideosHandler", () => {
   let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
     // Clear mocks for specific methods used in this test suite
     mockVideoManager.getChannelTopVideos.mockClear();
     mockVideoManager.getChannelStatistics.mockClear();

@@ -41,9 +41,7 @@ describe("YoutubeService.getVideo", () => {
 
     // Get the mocked CacheService instance
     // The constructor of CacheService is mocked, so new CacheService() will return our mock implementation
-    mockCacheServiceInstance = new CacheService(
-      {} as any
-    ) as jest.Mocked<CacheService>; // Pass a dummy db, it won't be used by the mock
+    mockCacheServiceInstance = new CacheService({} as any); // Pass a dummy db, it won't be used by the mock
 
     youtubeService = new YoutubeService(mockCacheServiceInstance); // Pass the mocked CacheService instance
   });

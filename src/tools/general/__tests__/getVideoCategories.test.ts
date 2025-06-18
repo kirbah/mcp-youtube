@@ -22,7 +22,7 @@ jest.mock("../../../services/youtube.service"); // Mock YoutubeService
 
 // Helper to access the deeply nested mock
 const getMockVideoCategoriesList = () => {
-  const mockedGoogleapis = jest.requireMock("googleapis") as any;
+  const mockedGoogleapis = jest.requireMock("googleapis");
   // google.youtube() returns the object with videoCategories.list
   // So we need to get the mock from the result of the call to youtube()
   // This is a bit tricky because google.youtube is also a mock.
@@ -35,7 +35,7 @@ describe("getVideoCategoriesHandler", () => {
   let mockVideoCategoriesList: jest.Mock;
 
   beforeEach(() => {
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
     mockVideoManager.getVideoCategories = jest.fn(); // This is the method from VideoManagement
 
     // Reset the list mock for each test

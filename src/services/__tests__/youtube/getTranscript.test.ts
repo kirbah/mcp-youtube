@@ -20,9 +20,7 @@ jest.mock("youtube-captions-scraper", () => ({
 }));
 
 // Cast getSubtitles to JestMockedFunction for easier mocking
-const mockGetSubtitles = getSubtitles as jest.MockedFunction<
-  typeof getSubtitles
->;
+const mockGetSubtitles = getSubtitles;
 
 describe("YoutubeService.getTranscript", () => {
   let videoManagement: YoutubeService;

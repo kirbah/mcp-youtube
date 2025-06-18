@@ -19,7 +19,7 @@ describe("getVideoDetailsHandler", () => {
   let mockVideoManager: jest.Mocked<YoutubeService>;
 
   beforeEach(() => {
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
 
     // Mock specific methods
     mockVideoManager.getVideo = jest.fn();

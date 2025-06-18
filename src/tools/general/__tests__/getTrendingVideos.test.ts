@@ -12,7 +12,7 @@ jest.mock("../../../services/youtube.service");
 jest.mock("../../../utils/errorHandler");
 jest.mock("../../../utils/responseFormatter");
 
-const mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+const mockVideoManager = new YoutubeService();
 const mockFormatError = formatError as jest.Mock;
 const mockFormatSuccess = formatSuccess as jest.Mock;
 

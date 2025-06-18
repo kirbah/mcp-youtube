@@ -24,9 +24,7 @@ describe("findConsistentOutlierChannelsHandler", () => {
     NicheAnalyzerService.prototype.findConsistentOutlierChannels = jest.fn();
 
     // Create fresh mock instances for services passed as arguments to the handler
-    mockYoutubeService = new YoutubeService(
-      {} as any
-    ) as jest.Mocked<YoutubeService>;
+    mockYoutubeService = new YoutubeService({} as any);
     mockDb = new Db("test", "test") as jest.Mocked<Db>;
 
     // If YoutubeService or Db methods were called, they would need setup here, e.g.:
@@ -82,7 +80,7 @@ describe("findConsistentOutlierChannelsHandler", () => {
     expect(result.content).toBeDefined();
     expect(result.content?.length).toBe(1);
     expect(result.content?.[0].type).toBe("text");
-    expect(JSON.parse(result.content![0].text!)).toEqual(mockOutlierChannels);
+    expect(JSON.parse(result.content![0].text)).toEqual(mockOutlierChannels);
   });
 
   it("should return a formatted error if NicheAnalyzerService.findConsistentOutlierChannels throws an error", async () => {
@@ -137,7 +135,7 @@ describe("findConsistentOutlierChannelsHandler", () => {
     expect(result.error?.message).toContain("query"); // Check that the error is related to the 'query' field
 
     // To be more precise, we can parse the JSON string in error.message
-    const zodIssues = JSON.parse(result.error!.message!);
+    const zodIssues = JSON.parse(result.error!.message);
     expect(Array.isArray(zodIssues)).toBe(true);
     expect(zodIssues.length).toBeGreaterThan(0);
     expect(zodIssues[0].code).toBe("invalid_type"); // Zod uses invalid_type when undefined is passed for a required string

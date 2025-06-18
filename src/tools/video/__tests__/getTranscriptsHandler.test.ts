@@ -14,7 +14,7 @@ describe("getTranscriptsHandler", () => {
 
   beforeEach(() => {
     // Initialize VideoManagement mock
-    mockVideoManager = new YoutubeService() as jest.Mocked<YoutubeService>;
+    mockVideoManager = new YoutubeService();
 
     // Mock specific methods
     mockVideoManager.getTranscript = jest.fn();

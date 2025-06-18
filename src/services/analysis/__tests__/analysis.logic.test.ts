@@ -342,7 +342,7 @@ describe("calculateDerivedMetrics", () => {
       channelTitle: "Test Channel No Stats",
       // latestStats is undefined
     };
-    const metrics = calculateDerivedMetrics(channel as ChannelCache);
+    const metrics = calculateDerivedMetrics(channel);
     expect(metrics.historicalAvgViewsPerVideo).toBe(0);
     expect(metrics.libraryEngagementRatio).toBe(0);
   });
@@ -552,7 +552,7 @@ describe("shouldSkipReAnalysis", () => {
       latestAnalysis: baseMockLatestAnalysis,
       analysisHistory: undefined, // Test case
     };
-    expect(shouldSkipReAnalysis(channelData as ChannelCache)).toBe(false);
+    expect(shouldSkipReAnalysis(channelData)).toBe(false);
   });
 
   it("should return false if analysisHistory is an empty array", () => {
