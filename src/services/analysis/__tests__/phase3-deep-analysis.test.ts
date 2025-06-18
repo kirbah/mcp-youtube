@@ -1,16 +1,10 @@
-// src/services/analysis/__tests__/phase3-deep-analysis.test.ts
-
-import { CacheService } from "../../cache.service"; // Adjusted path
-import { YoutubeService as VideoManagementService } from "../../youtube.service.js"; // Adjusted path
-import { NicheRepository } from "../niche.repository"; // Import NicheRepository
-import * as analysisLogic from "../analysis.logic"; // Adjusted path
-import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis"; // Adjusted path
-import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types"; // Adjusted path
-import {
-  ChannelCache,
-  LatestAnalysis,
-  HistoricalAnalysisEntry,
-} from "../analysis.types"; // Adjusted path
+import { CacheService } from "../../cache.service";
+import { YoutubeService as VideoManagementService } from "../../youtube.service.js";
+import { NicheRepository } from "../niche.repository";
+import * as analysisLogic from "../analysis.logic";
+import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis";
+import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
+import { ChannelCache, LatestAnalysis } from "../../../types/niche.types";
 import { youtube_v3 } from "googleapis";
 import { CACHE_COLLECTIONS } from "../../../config/cache.config";
 

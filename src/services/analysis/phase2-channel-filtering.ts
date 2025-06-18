@@ -1,7 +1,7 @@
 import { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
 import { NicheRepository } from "./niche.repository.js";
 import { YoutubeService } from "../../services/youtube.service.js";
-import { ChannelCache } from "./analysis.types.js";
+import type { ChannelCache } from "../../types/niche.types.js";
 import { youtube_v3 } from "googleapis";
 import {
   applyStalnessHeuristic,

@@ -3,6 +3,7 @@
 import "dotenv/config";
 import { YoutubeService } from "./services/youtube.service.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Db } from "mongodb";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { allTools } from "./tools/index.js";
 import { initializeContainer } from "./container.js";
@@ -20,7 +21,7 @@ if (!process.env.YOUTUBE_API_KEY) {
 
 async function main() {
   const container = await initializeContainer();
-  const { youtubeService } = container; // Destructure youtubeService
+  const { youtubeService, db } = container; // Destructure youtubeService and db
 
   // Create MCP server
   const server = new McpServer({
@@ -35,19 +36,15 @@ async function main() {
       config.description,
       config.inputSchema,
       (params: any) => {
-        // Check if handler expects videoManager parameter
-        if (handler.length === 2) {
-          // Handler expects (params, youtubeService)
-          return (
-            handler as (
-              params: any,
-              youtubeService: YoutubeService
-            ) => Promise<any>
-          )(params, youtubeService);
-        } else {
-          // Handler expects only (params)
-          return (handler as (params: any) => Promise<any>)(params);
-        }
+        // All handlers now consistently expect (params, youtubeService, databaseService)
+        // The handler itself will destructure the parameters it needs.
+        return (
+          handler as (
+            params: any,
+            youtubeService: YoutubeService,
+            db: Db
+          ) => Promise<any>
+        )(params, youtubeService, db);
       }
     );
   });

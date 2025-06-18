@@ -1,11 +1,6 @@
-// src/container.ts
 import "dotenv/config";
 import { Db } from "mongodb";
-import {
-  connectToDatabase,
-  disconnectFromDatabase,
-  getDb,
-} from "./services/database.service.js";
+import { connectToDatabase, getDb } from "./services/database.service.js";
 import { CacheService } from "./services/cache.service.js";
 import { YoutubeService } from "./services/youtube.service.js";
 
