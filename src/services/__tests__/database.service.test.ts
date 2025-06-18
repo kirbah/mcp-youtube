@@ -3,11 +3,11 @@ import {
   disconnectFromDatabase,
   getDb,
 } from "../database.service";
-import { MongoClient, Db } from "mongodb";
+import { Db } from "mongodb";
 
 // Define mocks for MongoClient methods before the jest.mock call
 const mockConnect = jest.fn().mockResolvedValue(undefined);
-const mockDbMethod = jest.fn().mockReturnValue({} as Db); // Renamed to avoid conflict with Db type
+const mockDbMethod = jest.fn().mockReturnValue({} as Db);
 const mockClose = jest.fn().mockResolvedValue(undefined);
 
 // Mock MongoClient
