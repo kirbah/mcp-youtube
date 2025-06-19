@@ -63,7 +63,8 @@ export interface ChannelCache {
     | "analyzed_promising_monitor"
     | "archived_unreplicable"
     | "archived_niche_mismatch"
-    | "archived_too_large";
+    | "archived_too_large"
+    | "archived_too_small";
   latestStats: {
     fetchedAt: Date;
     subscriberCount: number;
