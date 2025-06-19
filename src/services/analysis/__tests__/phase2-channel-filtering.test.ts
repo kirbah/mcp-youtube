@@ -3,7 +3,7 @@ import { CacheService } from "../../cache.service";
 import { YoutubeService } from "../../../services/youtube.service";
 import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
-import type { ChannelCache } from "../../../types/niche.types";
+import type { ChannelCache, LatestAnalysis } from "../../../types/niche.types";
 import { MAX_SUBSCRIBER_CAP } from "../analysis.logic";
 import { MIN_VIDEOS_FOR_ANALYSIS } from "../phase2-channel-filtering";
 import { youtube_v3 } from "googleapis";
@@ -196,13 +196,9 @@ describe("executeChannelPreFiltering", () => {
       "uncached_and_valid",
       expect.any(Object)
     );
-    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledTimes(6);
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledTimes(7);
 
-    expect(result).toEqual([
-      "fresh_and_valid",
-      "stale_and_valid",
-      "uncached_and_valid",
-    ]);
+    expect(result).toEqual(["fresh_and_valid", "stale_and_valid"]);
   });
 
   it("should not call the API if all channels are fresh from cache and valid", async () => {
@@ -267,5 +263,48 @@ describe("executeChannelPreFiltering", () => {
       $set: { status: "archived_too_old" },
     });
     expect(result).toEqual(["established_channel"]);
+  });
+
+  it("should filter out channels with subscriber count below MIN_SUBSCRIBER_THRESHOLD", async () => {
+    // --- ARRANGE ---
+    const inputChannelIds = ["too_small_subscribers"];
+    const options: FindConsistentOutlierChannelsOptions = {
+      query: "test",
+      channelAge: "NEW",
+      consistencyLevel: "HIGH",
+      outlierMagnitude: "STANDARD",
+      maxResults: 10,
+    };
+
+    const mockCachedDataFromDB: ChannelCache[] = [
+      createMockChannelCache("too_small_subscribers", {
+        latestStats: {
+          fetchedAt: new Date(),
+          subscriberCount: 500, // Less than MIN_SUBSCRIBER_THRESHOLD (1000)
+          videoCount: 50,
+          viewCount: 500000,
+        },
+      }),
+    ];
+    mockNicheRepoFindChannelsByIds.mockResolvedValue(mockCachedDataFromDB);
+    mockBatchFetchStats.mockResolvedValue(new Map()); // No fresh stats needed
+
+    // --- ACT ---
+    const result = await executeChannelPreFiltering(
+      inputChannelIds,
+      options,
+      youtubeService,
+      nicheRepository
+    );
+
+    // --- ASSERT ---
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledTimes(1);
+    expect(mockNicheRepoUpdateChannel).toHaveBeenCalledWith(
+      "too_small_subscribers",
+      {
+        $set: { status: "archived_too_small" },
+      }
+    );
+    expect(result).toEqual([]); // Should be filtered out
   });
 });

@@ -9,6 +9,7 @@ import {
   isValidChannelAge,
   calculateDerivedMetrics,
   MAX_SUBSCRIBER_CAP,
+  MIN_SUBSCRIBER_THRESHOLD,
   MIN_AVG_VIEWS_THRESHOLD,
 } from "./analysis.logic.js";
 
@@ -93,6 +94,13 @@ export async function executeChannelPreFiltering(
       if (channelData.latestStats.subscriberCount > MAX_SUBSCRIBER_CAP) {
         await nicheRepository.updateChannel(channelId, {
           $set: { status: "archived_too_large" },
+        });
+        continue;
+      }
+
+      if (channelData.latestStats.subscriberCount < MIN_SUBSCRIBER_THRESHOLD) {
+        await nicheRepository.updateChannel(channelId, {
+          $set: { status: "archived_too_small" },
         });
         continue;
       }
