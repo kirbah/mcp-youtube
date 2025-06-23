@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     reviewers: # Optional
       - "kirbah"
     labels: # Optional
@@ -17,7 +17,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly" # Consider "daily" if preferred
+      interval: "monthly" # Consider "daily" if preferred
     reviewers: # Optional
       - "kirbah"
     labels: # Optional
