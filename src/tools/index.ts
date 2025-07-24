@@ -50,14 +50,14 @@ import type {
   VideoCategoriesParams,
   FindConsistentOutlierChannelsParams,
 } from "../types/tools.js";
-import type { ZodRawShape } from "zod";
+import { z } from "zod";
 
 import { Db } from "mongodb"; // Import Db
 export interface ToolDefinition<TParams = unknown> {
   config: {
     name: string;
     description: string;
-    inputSchema: ZodRawShape;
+    inputSchema: z.ZodObject<any>;
   };
   handler:
     | ((

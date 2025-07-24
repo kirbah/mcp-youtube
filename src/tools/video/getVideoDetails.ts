@@ -14,35 +14,30 @@ import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getVideoDetailsSchema = z.object({
-  videoIds: z.array(videoIdSchema),
-  includeTags: z.boolean().optional().default(false),
+  videoIds: z
+    .array(videoIdSchema)
+    .describe("Array of YouTube video IDs to get details for"),
+  includeTags: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
+    ),
   descriptionDetail: z
     .enum(["NONE", "SNIPPET", "LONG"])
     .optional()
-    .default("NONE"),
+    .default("NONE")
+    .describe(
+      "Controls video description detail to manage token cost. Options: 'NONE' (default, no text), 'SNIPPET' (a brief preview for broad scans), 'LONG' (a 500-char text for deep analysis of specific targets)."
+    ),
 });
 
 export const getVideoDetailsConfig = {
   name: "getVideoDetails",
   description:
     "Get detailed information about multiple YouTube videos. Returns comprehensive data including video metadata, statistics, and content details. Use this when you need complete information about specific videos.",
-  inputSchema: {
-    videoIds: z
-      .array(z.string())
-      .describe("Array of YouTube video IDs to get details for"),
-    includeTags: z
-      .boolean()
-      .optional()
-      .describe(
-        "Specify 'true' to include the video's 'tags' array in the response, which is useful for extracting niche keywords. The 'tags' are omitted by default to conserve tokens."
-      ),
-    descriptionDetail: z
-      .enum(["NONE", "SNIPPET", "LONG"])
-      .optional()
-      .describe(
-        "Controls video description detail to manage token cost. Options: 'NONE' (default, no text), 'SNIPPET' (a brief preview for broad scans), 'LONG' (a 500-char text for deep analysis of specific targets)."
-      ),
-  },
+  inputSchema: getVideoDetailsSchema,
 };
 
 export const getVideoDetailsHandler = async (
