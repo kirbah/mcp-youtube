@@ -42,7 +42,9 @@ The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client ap
 1.  **Ensure you have a YouTube Data API v3 Key.**
     - If you don't have one, follow the [YouTube API Setup](#youtube-api-setup) instructions below.
 
-2.  **Configure your MCP client:**
+2.  **MongoDB Connection String:** This server uses MongoDB to cache API responses and store analysis data, which significantly improves performance and reduces API quota usage. You can get a free MongoDB Atlas cluster to obtain a connection string.
+
+3.  **Configure your MCP client:**
     Add the following JSON configuration to your client, replacing `"YOUR_YOUTUBE_API_KEY_HERE"` with your actual API key.
 
     ```json
@@ -52,7 +54,8 @@ The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client ap
           "command": "npx",
           "args": ["-y", "@kirbah/mcp-youtube"],
           "env": {
-            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE"
+            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
+            "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/your_database_name"
           }
         }
       }
@@ -135,6 +138,7 @@ If you wish to contribute, modify the server, or run it locally outside of an MC
     Then, edit `.env` to add your `YOUTUBE_API_KEY`:
     ```
     YOUTUBE_API_KEY=your_youtube_api_key_here
+    MDB_MCP_CONNECTION_STRING=your_mongodb_connection_string_here
     ```
 
 ### Development Scripts
