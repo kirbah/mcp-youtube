@@ -7,22 +7,18 @@ import type { VideoCategoriesParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getVideoCategoriesSchema = z.object({
-  regionCode: regionCodeSchema.default("US"),
+  regionCode: regionCodeSchema
+    .default("US")
+    .describe(
+      "Two-letter country code (e.g., 'US', 'GB', 'JP'). Defaults to 'US'"
+    ),
 });
 
 export const getVideoCategoriesConfig = {
   name: "getVideoCategories",
   description:
     "Retrieves available video categories for a specific region. Returns a list of YouTube video categories with their IDs and titles that can be used for filtering trending videos or other category-specific operations. Different regions may have different available categories.",
-  inputSchema: {
-    regionCode: z
-      .string()
-      .length(2)
-      .optional()
-      .describe(
-        "Two-letter country code (e.g., 'US', 'GB', 'JP'). Defaults to 'US'"
-      ),
-  },
+  inputSchema: getVideoCategoriesSchema,
 };
 
 export const getVideoCategoriesHandler = async (
@@ -31,7 +27,7 @@ export const getVideoCategoriesHandler = async (
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getVideoCategoriesSchema.parse(params);
-    const { regionCode = "US" } = validatedParams;
+    const { regionCode } = validatedParams;
 
     const categories = await youtubeService.getVideoCategories(regionCode);
     return formatSuccess(categories);

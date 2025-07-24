@@ -10,25 +10,21 @@ import type { TranscriptsParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getTranscriptsSchema = z.object({
-  videoIds: z.array(videoIdSchema),
-  lang: languageSchema.default("en"),
+  videoIds: z
+    .array(videoIdSchema)
+    .describe("Array of YouTube video IDs to get transcripts for"),
+  lang: languageSchema
+    .default("en")
+    .describe(
+      "Language code for transcripts (e.g., 'en', 'ko', 'es'). Defaults to environment setting or 'en'"
+    ),
 });
 
 export const getTranscriptsConfig = {
   name: "getTranscripts",
   description:
     "Retrieves transcripts for multiple videos. Returns the text content of videos' captions, useful for accessibility and content analysis. Use this when you need the spoken content of multiple videos.",
-  inputSchema: {
-    videoIds: z
-      .array(z.string())
-      .describe("Array of YouTube video IDs to get transcripts for"),
-    lang: z
-      .string()
-      .optional()
-      .describe(
-        "Language code for transcripts (e.g., 'en', 'ko', 'es'). Defaults to environment setting or 'en'"
-      ),
-  },
+  inputSchema: getTranscriptsSchema,
 };
 
 export const getTranscriptsHandler = async (
@@ -37,7 +33,7 @@ export const getTranscriptsHandler = async (
 ): Promise<CallToolResult> => {
   try {
     const validatedParams = getTranscriptsSchema.parse(params);
-    const { videoIds, lang = "en" } = validatedParams;
+    const { videoIds, lang } = validatedParams;
 
     const transcriptPromises = videoIds.map((videoId) =>
       youtubeService.getTranscript(videoId, lang)

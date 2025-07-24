@@ -23,7 +23,7 @@ describe("validation", () => {
       const params = { name: "Test", age: "30" };
       expect(() => validateParams(params, testSchema)).toThrow(Error);
       expect(() => validateParams(params, testSchema)).toThrow(
-        "Validation error: Invalid input: expected number, received string"
+        "Validation error: Expected number, received string" // <-- NEW ZOD 4 MESSAGE
       );
     });
 

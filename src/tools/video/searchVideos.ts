@@ -9,12 +9,29 @@ import type { LeanVideoSearchResult } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const searchVideosSchema = z.object({
-  query: querySchema,
-  maxResults: maxResultsSchema,
-  order: z.enum(["relevance", "date", "viewCount"]).optional(),
-  type: z.enum(["video", "channel"]).optional(),
-  channelId: z.string().optional(),
-  videoDuration: z.enum(["any", "short", "medium", "long"]).optional(),
+  query: querySchema.describe("Search query string to find videos"),
+  maxResults: maxResultsSchema
+    .optional()
+    .default(10)
+    .describe("Maximum number of results to return (1-500, default: 10)"),
+  order: z
+    .enum(["relevance", "date", "viewCount"])
+    .optional()
+    .describe("Sort order for results (default: relevance)"),
+  type: z
+    .enum(["video", "channel"])
+    .optional()
+    .describe("Type of content to search for (default: video)"),
+  channelId: z
+    .string()
+    .optional()
+    .describe("Restrict search to specific channel ID"),
+  videoDuration: z
+    .enum(["any", "short", "medium", "long"])
+    .optional()
+    .describe(
+      "Filter by video duration. 'any' (default): no duration filter. 'short': videos less than 4 minutes. 'medium': videos 4 to 20 minutes. 'long': videos longer than 20 minutes."
+    ),
   recency: z
     .enum([
       "any",
@@ -25,58 +42,20 @@ export const searchVideosSchema = z.object({
       "pastQuarter",
       "pastYear",
     ])
-    .optional(),
-  regionCode: z.string().length(2).optional(),
+    .optional()
+    .describe("Filter by recency"),
+  regionCode: z
+    .string()
+    .length(2)
+    .optional()
+    .describe("2-letter country code to restrict results"),
 });
 
 export const searchVideosConfig = {
   name: "searchVideos",
   description:
     "Searches for videos based on a query string. Returns a list of videos matching the search criteria, including titles, descriptions, and metadata. Use this when you need to find videos related to specific topics or keywords.",
-  inputSchema: {
-    query: z.string().describe("Search query string to find videos"),
-    maxResults: z
-      .number()
-      .min(1)
-      .max(500)
-      .optional()
-      .describe("Maximum number of results to return (1-500, default: 10)"),
-    order: z
-      .enum(["relevance", "date", "viewCount"])
-      .optional()
-      .describe("Sort order for results (default: relevance)"),
-    type: z
-      .enum(["video", "channel"])
-      .optional()
-      .describe("Type of content to search for (default: video)"),
-    channelId: z
-      .string()
-      .optional()
-      .describe("Restrict search to specific channel ID"),
-    videoDuration: z
-      .enum(["any", "short", "medium", "long"])
-      .optional()
-      .describe(
-        "Filter by video duration. 'any' (default): no duration filter. 'short': videos less than 4 minutes. 'medium': videos 4 to 20 minutes. 'long': videos longer than 20 minutes."
-      ),
-    recency: z
-      .enum([
-        "any",
-        "pastHour",
-        "pastDay",
-        "pastWeek",
-        "pastMonth",
-        "pastQuarter",
-        "pastYear",
-      ])
-      .optional()
-      .describe("Filter by recency"),
-    regionCode: z
-      .string()
-      .length(2)
-      .optional()
-      .describe("2-letter country code to restrict results"),
-  },
+  inputSchema: searchVideosSchema,
 };
 
 export const searchVideosHandler = async (

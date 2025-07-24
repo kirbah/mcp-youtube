@@ -9,18 +9,16 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 export const getChannelStatisticsSchema = z.object({
   channelIds: z
     .array(channelIdSchema)
-    .min(1, "Channel IDs array must contain at least 1 element(s)"),
+    .min(1, "Channel IDs array must contain at least 1 element(s)")
+    .describe("Array of YouTube channel IDs to get statistics for"),
 });
 
 export const getChannelStatisticsConfig = {
   name: "getChannelStatistics",
   description:
     "Retrieves statistics for multiple channels. Returns detailed metrics including subscriber count, view count, video count, and channel creation date for each channel. Use this when you need to analyze the performance and reach of multiple YouTube channels.",
-  inputSchema: {
-    channelIds: z
-      .array(z.string())
-      .describe("Array of YouTube channel IDs to get statistics for"),
-  },
+  // The inputSchema is now the complete Zod object schema.
+  inputSchema: getChannelStatisticsSchema,
 };
 
 export const getChannelStatisticsHandler = async (
