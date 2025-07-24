@@ -43,7 +43,9 @@ export const searchVideosSchema = z.object({
       "pastYear",
     ])
     .optional()
-    .describe("Filter by recency"),
+    .describe(
+      "Filter by recency. Possible values: 'any', 'pastHour', 'pastDay', 'pastWeek', 'pastMonth', 'pastQuarter', 'pastYear'."
+    ),
   regionCode: z
     .string()
     .length(2)

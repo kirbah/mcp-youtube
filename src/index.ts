@@ -34,7 +34,7 @@ async function main() {
     server.tool(
       config.name,
       config.description,
-      config.inputSchema.shape, // Pass the shape of the ZodObject
+      config.inputSchema.shape,
       (params: any) => {
         // All handlers now consistently expect (params, youtubeService, databaseService)
         // The handler itself will destructure the parameters it needs.
