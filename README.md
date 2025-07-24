@@ -44,6 +44,8 @@ The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client ap
 
 2.  **MongoDB Connection String:** This server uses MongoDB to cache API responses and store analysis data, which significantly improves performance and reduces API quota usage. You can get a free MongoDB Atlas cluster to obtain a connection string.
 
+    **Important:** The server is hardcoded to use the database name `youtube_niche_analysis`. Your connection string must point to this database, and your user must have read/write permissions for it.
+
 3.  **Configure your MCP client:**
     Add the following JSON configuration to your client, replacing `"YOUR_YOUTUBE_API_KEY_HERE"` with your actual API key.
 
@@ -55,7 +57,7 @@ The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client ap
           "args": ["-y", "@kirbah/mcp-youtube"],
           "env": {
             "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
-            "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/your_database_name"
+            "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube_niche_analysis"
           }
         }
       }
