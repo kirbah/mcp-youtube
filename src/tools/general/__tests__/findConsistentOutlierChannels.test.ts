@@ -131,9 +131,7 @@ describe("findConsistentOutlierChannelsHandler", () => {
     // The message from ZodError (which is error.message when error is ZodError) is a JSON string of issues.
     // We expect it to contain the message "Required" for the "query" path.
     expect(result.error?.message).toBeDefined();
-    expect(result.error?.message).toContain(
-      "Invalid input: expected string, received undefined"
-    ); // Zod's default message for missing required string
+    expect(result.error?.message).toContain("Required"); // Zod's default message for missing required string
     expect(result.error?.message).toContain("query"); // Check that the error is related to the 'query' field
 
     // To be more precise, we can parse the JSON string in error.message
@@ -142,8 +140,6 @@ describe("findConsistentOutlierChannelsHandler", () => {
     expect(zodIssues.length).toBeGreaterThan(0);
     expect(zodIssues[0].code).toBe("invalid_type"); // Zod uses invalid_type when undefined is passed for a required string
     expect(zodIssues[0].path).toEqual(["query"]);
-    expect(zodIssues[0].message).toBe(
-      "Invalid input: expected string, received undefined"
-    );
+    expect(zodIssues[0].message).toBe("Required");
   });
 });

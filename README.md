@@ -40,7 +40,6 @@ This Model Context Protocol (MCP) server empowers AI language models to seamless
 The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client application (like Claude Desktop or a custom client).
 
 1.  **Ensure you have a YouTube Data API v3 Key.**
-
     - If you don't have one, follow the [YouTube API Setup](#youtube-api-setup) instructions below.
 
 2.  **Configure your MCP client:**
