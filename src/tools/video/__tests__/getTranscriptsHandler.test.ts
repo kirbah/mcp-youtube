@@ -192,7 +192,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected array, received string");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected array, received string"
+      );
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Assuming Zod errors are logged
@@ -208,7 +210,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number"); // Zod message for array element
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      ); // Zod message for array element
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Temporarily removed as it's not being called for this case
@@ -225,7 +229,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      );
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Temporarily removed as it's not being called for this case
@@ -241,7 +247,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number"); // For lang
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      ); // For lang
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Temporarily removed as it's not being called for this case
@@ -326,7 +334,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError"); // Changed from ZodValidationError
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Required");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected array, received undefined"
+      );
     }
     expect(mockVideoManager.getTranscript).not.toHaveBeenCalled();
     // expect(console.error).toHaveBeenCalled(); // Assuming Zod errors are logged

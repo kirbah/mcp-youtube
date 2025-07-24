@@ -23,7 +23,7 @@ describe("validation", () => {
       const params = { name: "Test", age: "30" };
       expect(() => validateParams(params, testSchema)).toThrow(Error);
       expect(() => validateParams(params, testSchema)).toThrow(
-        "Validation error: Expected number, received string"
+        "Validation error: Invalid input: expected number, received string"
       );
     });
 
@@ -57,7 +57,7 @@ describe("validation", () => {
         try {
           videoIdSchema.parse("");
         } catch (e: any) {
-          expect(e.errors[0].message).toBe("Video ID cannot be empty");
+          expect(e.issues[0].message).toBe("Video ID cannot be empty");
         }
       });
     });
@@ -71,7 +71,7 @@ describe("validation", () => {
         try {
           channelIdSchema.parse("");
         } catch (e: any) {
-          expect(e.errors[0].message).toBe("Channel ID cannot be empty");
+          expect(e.issues[0].message).toBe("Channel ID cannot be empty");
         }
       });
     });
