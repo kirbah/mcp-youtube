@@ -18,6 +18,7 @@ RUN npm run build
 
 # Set environment variables for Docker (actual values should be provided at runtime)
 ENV YOUTUBE_API_KEY=""
+ENV MDB_MCP_CONNECTION_STRING=""
 
 # Command to run the MCP server
 CMD ["node", "dist/index.js"]
