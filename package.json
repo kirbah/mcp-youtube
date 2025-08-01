@@ -62,7 +62,7 @@
     "@types/node": "^20.19.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
-    "jest": "30.0.2",
+    "jest": "30.0.5",
     "jest-junit": "^16.0.0",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
