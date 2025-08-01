@@ -50,7 +50,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "dotenv": "^17.0.0",
-    "googleapis": "^150.0.1",
+    "googleapis": "^154.1.0",
     "mongodb": "^6.17.0",
     "tsx": "^4.19.4",
     "youtube-captions-scraper": "^2.0.3",
