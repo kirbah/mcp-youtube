@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    // "youtube": {
+    //   "command": "npx",
+    //   "args": ["-y", "@kirbah/mcp-youtube"],
+    //   "env": {
+    //     "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
+    //     "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube_niche_analysis"
+    //   }
+    // }
+    // This configuration is for local development, running the source code directly.
+    // It allows you to test changes without publishing the package.
+    "youtube": {
+      "command": "npm",
+      "args": ["run", "start:client"],
+      "working_directory": "${workspaceFolder}",
+      "env": {
+        // API keys can be set here or loaded from a .env file in your project root.
+      }
+    }
+  }
+}
