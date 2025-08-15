@@ -1,5 +1,5 @@
 import { YoutubeService } from "../../youtube.service";
-import { getSubtitles } from "youtube-captions-scraper";
+import { getSubtitles } from "youtube-caption-extractor";
 import { CacheService } from "../../cache.service";
 
 // Mock the entire CacheService module
@@ -14,8 +14,8 @@ jest.mock("../../cache.service", () => {
   };
 });
 
-// Mock youtube-captions-scraper and ensure getSubtitles is a Jest mock
-jest.mock("youtube-captions-scraper", () => ({
+// Mock youtube-caption-extractor and ensure getSubtitles is a Jest mock
+jest.mock("youtube-caption-extractor", () => ({
   getSubtitles: jest.fn(),
 }));
 

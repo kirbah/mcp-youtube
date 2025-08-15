@@ -1,5 +1,5 @@
 import { google, youtube_v3 } from "googleapis";
-import { getSubtitles } from "youtube-captions-scraper";
+import { getSubtitles } from "youtube-caption-extractor";
 import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
@@ -13,6 +13,12 @@ import type {
   LeanChannelTopVideo,
   LeanTrendingVideo,
 } from "../types/youtube.js";
+
+interface Subtitle {
+  start: string;
+  dur: string;
+  text: string;
+}
 
 export interface VideoOptions {
   videoId: string;
@@ -269,13 +275,13 @@ export class YoutubeService {
     );
   }
 
-  async getTranscript(videoId: string, lang?: string) {
+  async getTranscript(videoId: string, lang?: string): Promise<Subtitle[]> {
     const cacheKey = this.cacheService.createOperationKey("getTranscript", {
       videoId,
       lang,
     });
 
-    const operation = async () => {
+    const operation = async (): Promise<Subtitle[]> => {
       try {
         const transcript = await getSubtitles({
           videoID: videoId,
