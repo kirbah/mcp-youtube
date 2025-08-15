@@ -37,7 +37,6 @@ import {
 } from "./general/findConsistentOutlierChannels.js";
 import { isEnabled } from "../utils/featureFlags.js";
 
-import type { YoutubeService } from "../services/youtube.service.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { IServiceContainer } from "../container.js";
 import type {
@@ -52,78 +51,70 @@ import type {
 } from "../types/tools.js";
 import { z } from "zod";
 
-import { Db } from "mongodb"; // Import Db
 export interface ToolDefinition<TParams = unknown> {
   config: {
     name: string;
     description: string;
     inputSchema: z.ZodObject<any>;
   };
-  handler:
-    | ((
-        params: TParams,
-        youtubeService: YoutubeService,
-        db: Db
-      ) => Promise<CallToolResult>)
-    | ((
-        params: TParams,
-        youtubeService: YoutubeService
-      ) => Promise<CallToolResult>)
-    | ((params: TParams) => Promise<CallToolResult>);
+  handler: (params: TParams) => Promise<CallToolResult>;
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  const { youtubeService, db } = container;
+  // 1. Get all services from the container ONCE.
+  const { youtubeService, db, transcriptService } = container;
 
+  // 2. Define all tools, wrapping the original handlers with the dependencies they need.
   const toolDefinitions: ToolDefinition<any>[] = [
     // Video tools
     {
       config: getVideoDetailsConfig,
       handler: (params: VideoDetailsParams) =>
         getVideoDetailsHandler(params, youtubeService),
-    } as ToolDefinition<VideoDetailsParams>,
+    },
     {
       config: searchVideosConfig,
       handler: (params: SearchParams) =>
         searchVideosHandler(params, youtubeService),
-    } as ToolDefinition<SearchParams>,
+    },
     {
       config: getTranscriptsConfig,
+      // This handler is now simple: (params) => ..., because transcriptService is "baked in".
       handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, youtubeService),
-    } as ToolDefinition<TranscriptsParams>,
+        getTranscriptsHandler(params, transcriptService),
+    },
     // Channel tools
     {
       config: getChannelStatisticsConfig,
       handler: (params: ChannelStatisticsParams) =>
         getChannelStatisticsHandler(params, youtubeService),
-    } as ToolDefinition<ChannelStatisticsParams>,
+    },
     {
       config: getChannelTopVideosConfig,
       handler: (params: ChannelParams) =>
         getChannelTopVideosHandler(params, youtubeService),
-    } as ToolDefinition<ChannelParams>,
+    },
     // General tools
     {
       config: getTrendingVideosConfig,
       handler: (params: TrendingParams) =>
         getTrendingVideosHandler(params, youtubeService),
-    } as ToolDefinition<TrendingParams>,
+    },
     {
       config: getVideoCategoriesConfig,
       handler: (params: VideoCategoriesParams) =>
         getVideoCategoriesHandler(params, youtubeService),
-    } as ToolDefinition<VideoCategoriesParams>,
+    },
   ];
 
   // Add feature-flagged tools conditionally
   if (isEnabled("toolFindConsistentOutlierChannels")) {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
-      // This now correctly reflects that the handler expects the flexible `Params` type.
+      // This handler needs both services, and we provide them here.
       handler: (params: FindConsistentOutlierChannelsParams) =>
         findConsistentOutlierChannelsHandler(params, youtubeService, db),
-    } as ToolDefinition<FindConsistentOutlierChannelsParams>);
+    });
   }
 
   return toolDefinitions;

@@ -4,6 +4,7 @@ let mockConnectToDatabaseFn: jest.Mock;
 let mockGetDbFn: jest.Mock;
 let mockCacheServiceConstructorFn: jest.Mock;
 let mockYoutubeServiceConstructorFn: jest.Mock;
+let mockTranscriptServiceConstructorFn: jest.Mock; // Added mock for TranscriptService
 let mockDbInstanceActual: Partial<Db>; // To ensure instance consistency
 
 describe("initializeContainer", () => {
@@ -33,6 +34,12 @@ describe("initializeContainer", () => {
       .fn()
       .mockImplementation(() => mockYoutubeServiceInstance);
 
+    const mockTranscriptServiceInstance =
+      {} as import("../../src/services/transcript.service").TranscriptService; // representative instance
+    mockTranscriptServiceConstructorFn = jest
+      .fn()
+      .mockImplementation(() => mockTranscriptServiceInstance);
+
     // Use jest.doMock to control the mocks for the dynamically imported module
     jest.doMock("../../src/services/database.service", () => ({
       connectToDatabase: mockConnectToDatabaseFn,
@@ -43,6 +50,9 @@ describe("initializeContainer", () => {
     }));
     jest.doMock("../../src/services/youtube.service", () => ({
       YoutubeService: mockYoutubeServiceConstructorFn,
+    }));
+    jest.doMock("../../src/services/transcript.service", () => ({
+      TranscriptService: mockTranscriptServiceConstructorFn,
     }));
 
     // Dynamically import the module under test AFTER jest.doMock calls
@@ -72,11 +82,17 @@ describe("initializeContainer", () => {
     expect(mockYoutubeServiceConstructorFn).toHaveBeenCalledWith(
       mockCacheServiceConstructorFn.mock.results[0].value
     );
+    expect(mockTranscriptServiceConstructorFn).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptServiceConstructorFn).toHaveBeenCalledWith(
+      mockCacheServiceConstructorFn.mock.results[0].value
+    );
 
     expect(container).toEqual({
       db: mockDbInstanceActual,
       cacheService: mockCacheServiceConstructorFn.mock.results[0].value,
       youtubeService: mockYoutubeServiceConstructorFn.mock.results[0].value,
+      transcriptService:
+        mockTranscriptServiceConstructorFn.mock.results[0].value, // Added
     });
 
     // Call initializeContainer again
@@ -88,6 +104,7 @@ describe("initializeContainer", () => {
     expect(mockGetDbFn).toHaveBeenCalledTimes(1);
     expect(mockCacheServiceConstructorFn).toHaveBeenCalledTimes(1);
     expect(mockYoutubeServiceConstructorFn).toHaveBeenCalledTimes(1);
+    expect(mockTranscriptServiceConstructorFn).toHaveBeenCalledTimes(1); // Added
   });
 
   it("should throw an error if MDB_MCP_CONNECTION_STRING is not set", async () => {
@@ -106,5 +123,6 @@ describe("initializeContainer", () => {
     expect(mockGetDbFn).not.toHaveBeenCalled();
     expect(mockCacheServiceConstructorFn).not.toHaveBeenCalled();
     expect(mockYoutubeServiceConstructorFn).not.toHaveBeenCalled();
+    expect(mockTranscriptServiceConstructorFn).not.toHaveBeenCalled(); // Added
   });
 });
