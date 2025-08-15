@@ -1,5 +1,4 @@
 import { google, youtube_v3 } from "googleapis";
-import { getSubtitles } from "youtube-caption-extractor";
 import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
@@ -13,12 +12,6 @@ import type {
   LeanChannelTopVideo,
   LeanTrendingVideo,
 } from "../types/youtube.js";
-
-interface Subtitle {
-  start: string;
-  dur: string;
-  text: string;
-}
 
 export interface VideoOptions {
   videoId: string;
@@ -64,9 +57,6 @@ const API_COSTS = {
   "videos.list": 1,
   "channels.list": 1,
   "videoCategories.list": 1,
-
-  // Custom/external library calls that don't use the official API quota
-  getTranscript: 0,
 };
 
 export class YoutubeService {
@@ -74,7 +64,7 @@ export class YoutubeService {
   private cacheService: CacheService;
   private readonly MAX_RESULTS_PER_PAGE = 50;
   private readonly ABSOLUTE_MAX_RESULTS = 500;
-  private apiCreditsUsed: number = 0; // The new internal counter
+  private apiCreditsUsed: number = 0;
 
   constructor(cacheService: CacheService) {
     this.cacheService = cacheService;
@@ -84,12 +74,10 @@ export class YoutubeService {
     });
   }
 
-  // New Method: A public getter for the orchestrator to call
   public getApiCreditsUsed(): number {
     return this.apiCreditsUsed;
   }
 
-  // New Method: Resets the counter for a fresh run
   public resetApiCreditsUsed(): void {
     this.apiCreditsUsed = 0;
   }
@@ -108,22 +96,22 @@ export class YoutubeService {
 
     switch (recency) {
       case "pastHour":
-        millisecondsToSubtract = 60 * 60 * 1000; // 1 hour
+        millisecondsToSubtract = 60 * 60 * 1000;
         break;
       case "pastDay":
-        millisecondsToSubtract = 24 * 60 * 60 * 1000; // 1 day
+        millisecondsToSubtract = 24 * 60 * 60 * 1000;
         break;
       case "pastWeek":
-        millisecondsToSubtract = 7 * 24 * 60 * 60 * 1000; // 7 days
+        millisecondsToSubtract = 7 * 24 * 60 * 60 * 1000;
         break;
       case "pastMonth":
-        millisecondsToSubtract = 30 * 24 * 60 * 60 * 1000; // 30 days
+        millisecondsToSubtract = 30 * 24 * 60 * 60 * 1000;
         break;
       case "pastQuarter":
-        millisecondsToSubtract = 90 * 24 * 60 * 60 * 1000; // 90 days
+        millisecondsToSubtract = 90 * 24 * 60 * 60 * 1000;
         break;
       case "pastYear":
-        millisecondsToSubtract = 365 * 24 * 60 * 60 * 1000; // 365 days
+        millisecondsToSubtract = 365 * 24 * 60 * 60 * 1000;
         break;
       default:
         return "";
@@ -131,7 +119,6 @@ export class YoutubeService {
 
     const targetTime = new Date(now.getTime() - millisecondsToSubtract);
 
-    // If recency is pastMonth, pastQuarter, or pastYear, set the day of the month to the 1st
     if (["pastMonth", "pastQuarter", "pastYear"].includes(recency)) {
       targetTime.setDate(1);
     }
@@ -144,17 +131,14 @@ export class YoutubeService {
   ): Promise<youtube_v3.Schema$Video | null> {
     const { videoId, parts = ["snippet"] } = options;
 
-    // 1. Create a unique key. For an entity like a video, the ID is perfect.
     const cacheKey = videoId;
 
-    // 2. Define the 'operation' to run on a cache miss. This is your original logic.
     const operation = async (): Promise<youtube_v3.Schema$Video | null> => {
       try {
         const response = await this.trackCost(
           () => this.youtube.videos.list({ part: parts, id: [videoId] }),
-          API_COSTS["videos.list"] // Assuming API_COSTS is defined in this file
+          API_COSTS["videos.list"]
         );
-        // Return the video object or null if not found
         return response.data.items?.[0] ?? null;
       } catch (error) {
         throw new Error(
@@ -164,8 +148,6 @@ export class YoutubeService {
       }
     };
 
-    // 3. Use the CacheService to get data. It will either hit the cache or run the operation.
-    // We don't store params because the key itself is the primary identifier.
     return this.cacheService.getOrSet(
       cacheKey,
       operation,
@@ -202,7 +184,6 @@ export class YoutubeService {
         let nextPageToken: string | undefined = undefined;
         const targetResults = Math.min(maxResults, this.ABSOLUTE_MAX_RESULTS);
 
-        // Calculate publishedAfter from recency if provided
         let calculatedPublishedAfter = publishedAfter;
         if (recency && recency !== "any") {
           calculatedPublishedAfter = this.calculatePublishedAfter(recency);
@@ -221,7 +202,6 @@ export class YoutubeService {
             pageToken: nextPageToken,
           };
 
-          // Add optional parameters if provided
           if (channelId) {
             searchParams.channelId = channelId;
           }
@@ -275,35 +255,6 @@ export class YoutubeService {
     );
   }
 
-  async getTranscript(videoId: string, lang?: string): Promise<Subtitle[]> {
-    const cacheKey = this.cacheService.createOperationKey("getTranscript", {
-      videoId,
-      lang,
-    });
-
-    const operation = async (): Promise<Subtitle[]> => {
-      try {
-        const transcript = await getSubtitles({
-          videoID: videoId,
-          lang: lang || "en",
-        });
-        return transcript;
-      } catch (error) {
-        throw new Error(
-          `API call for getTranscript failed for videoId: ${videoId}`,
-          { cause: error }
-        );
-      }
-    };
-
-    return this.cacheService.getOrSet(
-      cacheKey,
-      operation,
-      CACHE_TTLS.STATIC,
-      CACHE_COLLECTIONS.TRANSCRIPTS
-    );
-  }
-
   async batchFetchChannelStatistics(
     channelIds: string[]
   ): Promise<Map<string, youtube_v3.Schema$Channel>> {
@@ -347,7 +298,7 @@ export class YoutubeService {
   async getChannelStatistics(
     channelId: string
   ): Promise<LeanChannelStatistics> {
-    const cacheKey = channelId; // Use channelId directly as the key
+    const cacheKey = channelId;
 
     const operation = async (): Promise<LeanChannelStatistics> => {
       try {
@@ -511,7 +462,6 @@ export class YoutubeService {
           .map((item) => item.id?.videoId)
           .filter((id): id is string => id !== undefined);
 
-        // Retrieve video details in batches of 50
         const videoDetails: youtube_v3.Schema$Video[] = [];
         for (let i = 0; i < videoIds.length; i += this.MAX_RESULTS_PER_PAGE) {
           const batch = videoIds.slice(i, i + this.MAX_RESULTS_PER_PAGE);
@@ -557,7 +507,6 @@ export class YoutubeService {
             defaultLanguage: video.snippet?.defaultLanguage ?? null,
           };
 
-          // Conditionally add description if not NONE
           const videoWithDescription =
             formattedDescription !== undefined
               ? { ...baseVideo, description: formattedDescription }
@@ -580,7 +529,7 @@ export class YoutubeService {
       operation,
       CACHE_TTLS.SEMI_STATIC,
       CACHE_COLLECTIONS.CHANNEL_TOP_VIDEOS,
-      options // Pass the original parameters for storage!
+      options
     );
   }
 
