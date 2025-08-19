@@ -1,12 +1,6 @@
-import { getSubtitles } from "youtube-caption-extractor";
+import { getSubtitles, Subtitle } from "youtube-caption-extractor";
 import { CacheService } from "./cache.service.js";
 import { CACHE_TTLS, CACHE_COLLECTIONS } from "../config/cache.config.js";
-
-interface Subtitle {
-  start: string;
-  dur: string;
-  text: string;
-}
 
 export class TranscriptService {
   private cacheService: CacheService;
