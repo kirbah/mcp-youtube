@@ -62,7 +62,7 @@ export default function createServer({
 // 3. Create the `main` function for backward-compatible STDIO execution.
 // This function handles the full lifecycle for STDIO only.
 async function main() {
-  const server = await createServer({
+  const server = createServer({
     config: {
       youtubeApiKey: process.env.YOUTUBE_API_KEY!,
       mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING!,
