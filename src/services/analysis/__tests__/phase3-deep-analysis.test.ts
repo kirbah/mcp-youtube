@@ -2,6 +2,7 @@ import { CacheService } from "../../cache.service";
 import { YoutubeService as VideoManagementService } from "../../youtube.service.js";
 import { NicheRepository } from "../niche.repository";
 import * as analysisLogic from "../analysis.logic";
+import { getDb } from "../../database.service.js";
 import { executeDeepConsistencyAnalysis } from "../phase3-deep-analysis";
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { ChannelCache, LatestAnalysis } from "../../../types/niche.types";
@@ -77,29 +78,48 @@ function createMockChannelCache(
   return final;
 }
 
+// Mock the MongoDB Db object
+const mockCollectionMethods = {
+  findOne: jest.fn(),
+  updateOne: jest.fn(),
+  find: jest.fn(() => ({
+    toArray: jest.fn(),
+  })),
+  deleteOne: jest.fn(),
+};
+
+const mockDb: any = {
+  collection: jest.fn(() => mockCollectionMethods), // Always return the same mock methods
+};
+
+// Mock database service
+jest.mock("../../database.service.js", () => ({
+  getDb: jest.fn(),
+}));
+
 // Mock CacheService
 jest.mock("../../cache.service", () => {
   const actualCacheService = jest.requireActual(
     "../../cache.service"
   ).CacheService;
   return {
-    CacheService: jest.fn().mockImplementation((db: any) => {
-      const instance = new actualCacheService(db); // Pass db to actual constructor
+    CacheService: jest.fn().mockImplementation(() => {
+      const instance = new actualCacheService(); // No db in constructor
       jest.spyOn(instance, "createOperationKey");
       jest.spyOn(instance, "getOrSet");
 
       // For testing, we want getOrSet to either return a mocked cached value
-      // or execute the operation.
+      // or execute the operation, but using our mockDb.
       instance.getOrSet.mockImplementation(
         async (
           key: string,
-          operation: () => Promise<unknown>, // Use unknown for generic return type
+          operation: () => Promise<unknown>,
           ttl: number,
           collection: string,
-          params?: object // Use object as per CacheService definition
+          params?: object
         ) => {
-          // Simulate a cache hit if findOne is mocked to return a value
-          const cachedResult = await instance.db
+          // Simulate a cache hit using mockDb
+          const cachedResult = await mockDb
             .collection(`${instance["CACHE_COLLECTION_PREFIX"]}${collection}`)
             .findOne({
               _id: key,
@@ -174,20 +194,6 @@ const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
 jest.mock("../analysis.logic");
 const mockedAnalysisLogic = analysisLogic;
 
-// Mock the MongoDB Db object
-const mockCollectionMethods = {
-  findOne: jest.fn(),
-  updateOne: jest.fn(),
-  find: jest.fn(() => ({
-    toArray: jest.fn(),
-  })),
-  deleteOne: jest.fn(),
-};
-
-const mockDb: any = {
-  collection: jest.fn(() => mockCollectionMethods), // Always return the same mock methods
-};
-
 describe("executeDeepConsistencyAnalysis Function", () => {
   let cacheServiceInstance: jest.Mocked<CacheService>;
   let videoManagementInstance: jest.Mocked<VideoManagementService>;
@@ -208,15 +214,18 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mocks for each test
+    (getDb as jest.Mock).mockResolvedValue(mockDb);
+
     // cacheServiceInstance is no longer directly used by executeDeepConsistencyAnalysis,
     // but it's still needed for the YoutubeService constructor if we were not mocking YoutubeService fully.
     // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
     // However, keeping it for consistency with the mock setup of YoutubeService.
-    cacheServiceInstance = new MockedCacheService(mockDb);
+    cacheServiceInstance = new MockedCacheService();
     videoManagementInstance = new MockedVideoManagementService(
       cacheServiceInstance
     ) as jest.Mocked<VideoManagementService>; // YoutubeService now takes CacheService
-    nicheRepositoryInstance = new MockedNicheRepository(mockDb);
+    nicheRepositoryInstance = new MockedNicheRepository();
 
     // Initialize variables for each test
     publishedAfterString = new Date().toISOString();

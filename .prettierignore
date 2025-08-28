@@ -1,0 +1,19 @@
+# Environment variables
+.env
+
+# Smithery CLI generated files
+.smithery/
+
+# TypeScript build output
+dist/
+
+# Test and coverage reports
+coverage/
+test-results/
+
+# Dependencies
+node_modules/
+
+# OS-specific files
+.DS_Store
+Thumbs.db

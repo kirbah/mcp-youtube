@@ -1,6 +1,7 @@
 import { Db, Collection } from "mongodb";
 import { createHash } from "crypto";
 import { omitPaths } from "../utils/objectUtils.js";
+import { getDb } from "./database.service.js"; // Import the lazy loader
 
 /**
  * A generic structure for entries in our new caching collections.
@@ -15,12 +16,7 @@ interface GenericCacheEntry<T> {
 }
 
 export class CacheService {
-  private db: Db;
-  private readonly CACHE_COLLECTION_PREFIX = "yt_cache_"; // A prefix for all new generic cache collections.
-
-  constructor(db: Db) {
-    this.db = db;
-  }
+  private readonly CACHE_COLLECTION_PREFIX = "yt_cache_";
 
   /**
    * The core generic caching method. It attempts to retrieve data from the cache using a key.
@@ -44,7 +40,9 @@ export class CacheService {
     params?: object,
     pathsToExclude?: string[]
   ): Promise<T> {
-    const collection: Collection<GenericCacheEntry<T>> = this.db.collection(
+    // Lazily get the database connection here, on first use.
+    const db = await getDb();
+    const collection: Collection<GenericCacheEntry<T>> = db.collection(
       `${this.CACHE_COLLECTION_PREFIX}${collectionName}`
     );
 
