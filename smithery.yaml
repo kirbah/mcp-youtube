@@ -1,7 +1,10 @@
-# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+# Smithery configuration file: https://smithery.ai/docs/build/project-config/smithery-yaml
 
+runtime: "typescript"
+env:
+  MCP_TRANSPORT: "http"
 startCommand:
-  type: stdio
+  type: http
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
     type: object
@@ -14,21 +17,6 @@ startCommand:
       mdbMcpConnectionString:
         type: string
         description: MongoDB connection string to cache the data. (e.g., mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube). Suggest to use MongoDB Atlas to create a free DB.
-      youtubeTranscriptLang:
-        type: string
-        default: en
-        description: Default transcript language. Defaults to 'en'.
-  commandFunction:
-    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
-    |-
-    (config) => ({
-      command: 'node',
-      args: ['dist/index.js'],
-      env: {
-        YOUTUBE_API_KEY: config.youtubeApiKey,
-        MDB_MCP_CONNECTION_STRING: config.mdbMcpConnectionString
-      }
-    })
   exampleConfig:
     youtubeApiKey: YOUR_YOUTUBE_API_KEY_HERE
     mdbMcpConnectionString: YOUR_MONGO_DB_CONNECTION_STRING_HERE

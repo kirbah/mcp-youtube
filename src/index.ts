@@ -3,30 +3,43 @@
 import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import { allTools } from "./tools/index.js";
 import { initializeContainer } from "./container.js";
 import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
 
-// Environment variable validation
-if (!process.env.YOUTUBE_API_KEY) {
-  console.error("Error: YOUTUBE_API_KEY environment variable is not set.");
-  process.exit(1);
-}
+// 1. Define and export the configuration schema for Smithery.
+export const configSchema = z.object({
+  youtubeApiKey: z
+    .string()
+    .describe("YouTube Data API key for accessing the YouTube API."),
+  mdbMcpConnectionString: z
+    .string()
+    .describe("MongoDB connection string to cache the data."),
+});
 
-async function main() {
+// 2. Create the `createServer` function for Smithery's HTTP runtime.
+// It sets up the server but does NOT handle transport or shutdown.
+export default async function createServer({
+  config,
+}: {
+  config: z.infer<typeof configSchema>;
+}) {
+  process.env.YOUTUBE_API_KEY = config.youtubeApiKey;
+  process.env.MDB_MCP_CONNECTION_STRING = config.mdbMcpConnectionString;
+
+  if (!process.env.YOUTUBE_API_KEY) {
+    throw new Error("YOUTUBE_API_KEY is not set.");
+  }
+
   const container = await initializeContainer();
-
-  // Create MCP server
   const server = new McpServer({
     name: "YouTube",
     version: pkg.version,
   });
 
-  // Register all tools
   allTools(container).forEach(({ config, handler }) => {
-    // This now works perfectly, because the `handler` from `allTools`
-    // is a simple function that matches the expected signature.
     server.tool(
       config.name,
       config.description,
@@ -35,29 +48,32 @@ async function main() {
     );
   });
 
-  // Start sending and receiving messages via stdin/stdout
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-
-  console.error(`YouTube MCP server (v${pkg.version}) has started.`); // Optional: log version
+  // Return the inner server object. No event listeners are needed here.
+  return server.server;
 }
 
-void main().catch((err) => {
-  console.error("Error occurred during server execution:", err);
-  void disconnectFromDatabase().finally(() => process.exit(1));
-});
+// 3. Create the `main` function for backward-compatible STDIO execution.
+// This function handles the full lifecycle for STDIO only.
+async function main() {
+  const server = await createServer({
+    config: {
+      youtubeApiKey: process.env.YOUTUBE_API_KEY!,
+      mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING!,
+    },
+  });
 
-// Graceful shutdown handler
-const cleanup = async () => {
-  console.error("Shutting down server...");
-  await disconnectFromDatabase();
-  console.error("Database disconnected. Exiting.");
-  process.exit(0);
-};
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error(`YouTube MCP server (v${pkg.version}) running in stdio mode.`);
 
-process.on("SIGINT", () => {
-  void cleanup();
-}); // Catches Ctrl+C
-process.on("SIGTERM", () => {
-  void cleanup();
-}); // Catches kill signals
+  // Graceful shutdown handlers for STDIO mode (e.g., Ctrl+C)
+  const cleanup = async () => {
+    console.error("Shutting down STDIO server...");
+    await disconnectFromDatabase();
+    console.error("Database disconnected. Exiting.");
+    process.exit(0);
+  };
+
+  process.on("SIGINT", () => void cleanup());
+  process.on("SIGTERM", () => void cleanup());
+}
