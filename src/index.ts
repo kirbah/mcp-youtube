@@ -9,6 +9,13 @@ import { initializeContainer } from "./container.js";
 import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+const transportMode =
+  args.includes("--stdio") || process.env.MCP_TRANSPORT === "stdio"
+    ? "stdio"
+    : "http";
+
 // 1. Define and export the configuration schema for Smithery.
 export const configSchema = z.object({
   youtubeApiKey: z
@@ -21,7 +28,7 @@ export const configSchema = z.object({
 
 // 2. Create the `createServer` function for Smithery's HTTP runtime.
 // It sets up the server but does NOT handle transport or shutdown.
-export default async function createServer({
+export default function createServer({
   config,
 }: {
   config: z.infer<typeof configSchema>;
@@ -33,7 +40,7 @@ export default async function createServer({
     throw new Error("YOUTUBE_API_KEY is not set.");
   }
 
-  const container = await initializeContainer();
+  const container = initializeContainer();
   const server = new McpServer({
     name: "YouTube",
     version: pkg.version,
@@ -76,4 +83,12 @@ async function main() {
 
   process.on("SIGINT", () => void cleanup());
   process.on("SIGTERM", () => void cleanup());
+}
+
+if (transportMode === "stdio") {
+  // By default, the server starts with stdio transport
+  main().catch((error) => {
+    console.error("Server error:", error);
+    process.exit(1);
+  });
 }

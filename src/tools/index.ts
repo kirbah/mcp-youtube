@@ -61,8 +61,8 @@ export interface ToolDefinition<TParams = unknown> {
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
-  // 1. Get all services from the container ONCE.
-  const { youtubeService, db, transcriptService } = container;
+  // We no longer get 'db' from the container.
+  const { youtubeService, transcriptService } = container;
 
   // 2. Define all tools, wrapping the original handlers with the dependencies they need.
   const toolDefinitions: ToolDefinition<any>[] = [
@@ -111,9 +111,9 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
   if (isEnabled("toolFindConsistentOutlierChannels")) {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
-      // This handler needs both services, and we provide them here.
+      // The handler no longer needs the 'db' object passed to it.
       handler: (params: FindConsistentOutlierChannelsParams) =>
-        findConsistentOutlierChannelsHandler(params, youtubeService, db),
+        findConsistentOutlierChannelsHandler(params, youtubeService),
     });
   }
 

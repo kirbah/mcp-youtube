@@ -1,17 +1,15 @@
-import { Db, Collection, Filter, UpdateFilter } from "mongodb";
+import { Collection, Filter, UpdateFilter } from "mongodb";
 import type { ChannelCache } from "../../types/niche.types.js";
+import { getDb } from "../database.service.js"; // Import the lazy loader
 
 export class NicheRepository {
-  private db: Db;
   private readonly CHANNELS_CACHE_COLLECTION = "analysis_channels";
-
-  constructor(db: Db) {
-    this.db = db;
-  }
 
   async findChannelsByIds(ids: string[]): Promise<ChannelCache[]> {
     try {
-      const collection: Collection<ChannelCache> = this.db.collection(
+      // Lazily get the database connection.
+      const db = await getDb();
+      const collection: Collection<ChannelCache> = db.collection(
         this.CHANNELS_CACHE_COLLECTION
       );
       const cachedChannels = await collection
@@ -33,12 +31,14 @@ export class NicheRepository {
     updates: UpdateFilter<ChannelCache>
   ): Promise<void> {
     try {
-      const collection: Collection<ChannelCache> = this.db.collection(
+      // Lazily get the database connection.
+      const db = await getDb();
+      const collection: Collection<ChannelCache> = db.collection(
         this.CHANNELS_CACHE_COLLECTION
       );
       await collection.updateOne(
         { _id: channelId } as Filter<ChannelCache>,
-        updates, // Directly pass the update object
+        updates,
         { upsert: true }
       );
     } catch (error: unknown) {

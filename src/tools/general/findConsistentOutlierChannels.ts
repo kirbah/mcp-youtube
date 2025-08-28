@@ -2,7 +2,6 @@ import { z } from "zod";
 import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
-import { Db } from "mongodb";
 import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
 import { YoutubeService } from "../../services/youtube.service.js";
 import { NicheRepository } from "../../services/analysis/niche.repository.js";
@@ -63,10 +62,8 @@ export const findConsistentOutlierChannelsConfig = {
 };
 
 export const findConsistentOutlierChannelsHandler = async (
-  // The handler ACCEPTS the flexible `Params` type
   params: FindConsistentOutlierChannelsParams,
-  youtubeService: YoutubeService,
-  db: Db
+  youtubeService: YoutubeService
 ): Promise<CallToolResult> => {
   try {
     // --- THIS IS THE EXPLICIT CONVERSION POINT ---
@@ -77,7 +74,7 @@ export const findConsistentOutlierChannelsHandler = async (
       findConsistentOutlierChannelsSchema.parse(params);
 
     // Now, we create our services and pass them the strict, validated options.
-    const nicheRepository = new NicheRepository(db);
+    const nicheRepository = new NicheRepository();
     const nicheAnalyzer = new NicheAnalyzerService(
       youtubeService,
       nicheRepository
