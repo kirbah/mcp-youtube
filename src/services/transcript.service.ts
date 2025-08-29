@@ -59,7 +59,8 @@ export class TranscriptService {
       cacheKey,
       operation,
       CACHE_TTLS.STATIC,
-      CACHE_COLLECTIONS.TRANSCRIPTS
+      CACHE_COLLECTIONS.TRANSCRIPTS,
+      { videoId, lang }
     );
   }
 
