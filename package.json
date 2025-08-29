@@ -22,7 +22,7 @@
     "build:stdio": "tsc",
     "start:stdio": "node dist/index.js --stdio",
     "prepublishOnly": "npm run build:stdio",
-    "start:client": "tsx ./src/index.ts",
+    "start:client": "tsx ./src/index.ts --stdio",
     "inspector": "npx @modelcontextprotocol/inspector tsx ./src/index.ts --stdio",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
