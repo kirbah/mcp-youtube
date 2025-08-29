@@ -25,10 +25,8 @@
     "start:client": "tsx ./src/index.ts",
     "inspector": "npx @modelcontextprotocol/inspector tsx ./src/index.ts",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean",
     "lint": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js .",
     "test": "jest",
-    "prepare": "npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
