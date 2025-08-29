@@ -52,7 +52,7 @@ This file provides instructions for AI coding agents on how to work with this pr
 
 - Use the `install_nvm.sh` script to set up the correct Node.js version.
 - Run `npm install` to install dependencies.
-- Create a `.env` file from `.env.example` and provide a valid `YOUTUBE_API_KEY` and `MDB_MCP_CONNECTION_STRING`.
+- Create a `.env` file from `.env.example` and provide a valid `YOUTUBE_API_KEY`. The `MDB_MCP_CONNECTION_STRING` is optional.
 
 ## Testing Instructions
 

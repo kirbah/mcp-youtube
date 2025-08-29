@@ -40,6 +40,10 @@ export class CacheService {
     params?: object,
     pathsToExclude?: string[]
   ): Promise<T> {
+    if (!process.env.MDB_MCP_CONNECTION_STRING) {
+      // If no DB is configured, bypass caching and execute the operation directly.
+      return operation();
+    }
     // Lazily get the database connection here, on first use.
     const db = await getDb();
     const collection: Collection<GenericCacheEntry<T>> = db.collection(

@@ -50,7 +50,7 @@ describe("CacheService", () => {
     // getDb().collection is also a mock function from our factory
     (mockDb.collection as jest.Mock).mockClear();
 
-    cacheServiceInstance = new CacheService(mockDb);
+    cacheServiceInstance = new CacheService();
   });
 
   describe("createOperationKey", () => {
@@ -89,100 +89,145 @@ describe("CacheService", () => {
     const freshData = { value: "fresh" };
     const cachedData = { value: "cached" };
 
-    it("should return cached data if available and not expired", async () => {
-      actualMockFindOne.mockResolvedValue({
-        _id: key,
-        data: cachedData,
-        expiresAt: new Date(Date.now() + 10000), // 10 seconds in the future
+    describe("when MDB_MCP_CONNECTION_STRING is set", () => {
+      const originalEnv = process.env;
+
+      beforeEach(() => {
+        process.env = {
+          ...originalEnv,
+          MDB_MCP_CONNECTION_STRING: "mongodb://test",
+        };
       });
 
-      const operation = jest.fn().mockResolvedValue(freshData);
-      const result = await cacheServiceInstance.getOrSet(
-        key,
-        operation,
-        ttlSeconds,
-        collectionName
-      );
-
-      expect(result).toEqual(cachedData);
-      expect(operation).not.toHaveBeenCalled();
-      expect(actualMockFindOne).toHaveBeenCalledWith({
-        _id: key,
-        expiresAt: { $gt: expect.any(Date) },
+      afterEach(() => {
+        process.env = originalEnv;
       });
-      expect(actualMockUpdateOne).not.toHaveBeenCalled();
-    });
 
-    it("should execute operation, store, and return fresh data if cache is expired or not found", async () => {
-      // Simulate no cache or expired cache
-      actualMockFindOne.mockResolvedValue(null);
+      it("should return cached data if available and not expired", async () => {
+        actualMockFindOne.mockResolvedValue({
+          _id: key,
+          data: cachedData,
+          expiresAt: new Date(Date.now() + 10000), // 10 seconds in the future
+        });
 
-      const operation = jest.fn().mockResolvedValue(freshData);
-      const result = await cacheServiceInstance.getOrSet(
-        key,
-        operation,
-        ttlSeconds,
-        collectionName
-      );
+        const operation = jest.fn().mockResolvedValue(freshData);
+        const result = await cacheServiceInstance.getOrSet(
+          key,
+          operation,
+          ttlSeconds,
+          collectionName
+        );
 
-      expect(result).toEqual(freshData);
-      expect(operation).toHaveBeenCalledTimes(1);
-      expect(actualMockFindOne).toHaveBeenCalledWith({
-        _id: key,
-        expiresAt: { $gt: expect.any(Date) },
+        expect(result).toEqual(cachedData);
+        expect(operation).not.toHaveBeenCalled();
+        expect(actualMockFindOne).toHaveBeenCalledWith({
+          _id: key,
+          expiresAt: { $gt: expect.any(Date) },
+        });
+        expect(actualMockUpdateOne).not.toHaveBeenCalled();
       });
-      expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
-      const updateCall = actualMockUpdateOne.mock.calls[0];
-      expect(updateCall[0]).toEqual({ _id: key });
-      expect(updateCall[1].$set.data).toEqual(freshData);
-      expect(updateCall[1].$set.expiresAt.getTime()).toBeGreaterThan(
-        Date.now()
-      );
-      expect(updateCall[2]).toEqual({ upsert: true });
+
+      it("should execute operation, store, and return fresh data if cache is expired or not found", async () => {
+        // Simulate no cache or expired cache
+        actualMockFindOne.mockResolvedValue(null);
+
+        const operation = jest.fn().mockResolvedValue(freshData);
+        const result = await cacheServiceInstance.getOrSet(
+          key,
+          operation,
+          ttlSeconds,
+          collectionName
+        );
+
+        expect(result).toEqual(freshData);
+        expect(operation).toHaveBeenCalledTimes(1);
+        expect(actualMockFindOne).toHaveBeenCalledWith({
+          _id: key,
+          expiresAt: { $gt: expect.any(Date) },
+        });
+        expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
+        const updateCall = actualMockUpdateOne.mock.calls[0];
+        expect(updateCall[0]).toEqual({ _id: key });
+        expect(updateCall[1].$set.data).toEqual(freshData);
+        expect(updateCall[1].$set.expiresAt.getTime()).toBeGreaterThan(
+          Date.now()
+        );
+        expect(updateCall[2]).toEqual({ upsert: true });
+      });
+
+      it("should not cache if fresh data is null or undefined", async () => {
+        actualMockFindOne.mockResolvedValue(null);
+
+        const operationNull = jest.fn().mockResolvedValue(null);
+        const resultNull = await cacheServiceInstance.getOrSet(
+          key,
+          operationNull,
+          ttlSeconds,
+          collectionName
+        );
+        expect(resultNull).toBeNull();
+        expect(actualMockUpdateOne).not.toHaveBeenCalled(); // Should not cache null
+
+        actualMockUpdateOne.mockClear(); // Clear for next assertion
+
+        const operationUndefined = jest.fn().mockResolvedValue(undefined);
+        const resultUndefined = await cacheServiceInstance.getOrSet(
+          key,
+          operationUndefined,
+          ttlSeconds,
+          collectionName
+        );
+        expect(resultUndefined).toBeUndefined();
+        expect(actualMockUpdateOne).not.toHaveBeenCalled(); // Should not cache undefined
+      });
+
+      it("should store params if provided", async () => {
+        actualMockFindOne.mockResolvedValue(null);
+        const params = { query: "test" };
+        const operation = jest.fn().mockResolvedValue(freshData);
+
+        await cacheServiceInstance.getOrSet(
+          key,
+          operation,
+          ttlSeconds,
+          collectionName,
+          params
+        );
+
+        expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
+        const updateCall = actualMockUpdateOne.mock.calls[0];
+        expect(updateCall[1].$set.params).toEqual(params);
+      });
     });
 
-    it("should not cache if fresh data is null or undefined", async () => {
-      actualMockFindOne.mockResolvedValue(null);
+    describe("when MDB_MCP_CONNECTION_STRING is not set", () => {
+      const originalEnv = process.env;
 
-      const operationNull = jest.fn().mockResolvedValue(null);
-      const resultNull = await cacheServiceInstance.getOrSet(
-        key,
-        operationNull,
-        ttlSeconds,
-        collectionName
-      );
-      expect(resultNull).toBeNull();
-      expect(actualMockUpdateOne).not.toHaveBeenCalled(); // Should not cache null
+      beforeEach(() => {
+        jest.resetModules();
+        process.env = { ...originalEnv };
+        delete process.env.MDB_MCP_CONNECTION_STRING;
+      });
 
-      actualMockUpdateOne.mockClear(); // Clear for next assertion
+      afterEach(() => {
+        process.env = originalEnv;
+      });
 
-      const operationUndefined = jest.fn().mockResolvedValue(undefined);
-      const resultUndefined = await cacheServiceInstance.getOrSet(
-        key,
-        operationUndefined,
-        ttlSeconds,
-        collectionName
-      );
-      expect(resultUndefined).toBeUndefined();
-      expect(actualMockUpdateOne).not.toHaveBeenCalled(); // Should not cache undefined
-    });
+      it("should bypass caching and execute the operation directly", async () => {
+        const operation = jest.fn().mockResolvedValue(freshData);
+        const result = await cacheServiceInstance.getOrSet(
+          key,
+          operation,
+          ttlSeconds,
+          collectionName
+        );
 
-    it("should store params if provided", async () => {
-      actualMockFindOne.mockResolvedValue(null);
-      const params = { query: "test" };
-      const operation = jest.fn().mockResolvedValue(freshData);
-
-      await cacheServiceInstance.getOrSet(
-        key,
-        operation,
-        ttlSeconds,
-        collectionName,
-        params
-      );
-
-      expect(actualMockUpdateOne).toHaveBeenCalledTimes(1);
-      const updateCall = actualMockUpdateOne.mock.calls[0];
-      expect(updateCall[1].$set.params).toEqual(params);
+        expect(result).toEqual(freshData);
+        expect(operation).toHaveBeenCalledTimes(1);
+        expect(getDb).not.toHaveBeenCalled();
+        expect(actualMockFindOne).not.toHaveBeenCalled();
+        expect(actualMockUpdateOne).not.toHaveBeenCalled();
+      });
     });
   });
 });
