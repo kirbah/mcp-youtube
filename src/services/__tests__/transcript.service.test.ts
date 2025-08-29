@@ -120,7 +120,8 @@ describe("TranscriptService", () => {
         cacheKey,
         expect.any(Function),
         expect.any(Number),
-        expect.any(String)
+        expect.any(String),
+        expect.any(Object)
       );
       expect(mockGetSubtitles).toHaveBeenCalledWith({ videoID: videoId, lang });
       expect(result).toEqual(mockSubtitles);
@@ -154,7 +155,8 @@ describe("TranscriptService", () => {
         cacheKey,
         expect.any(Function),
         expect.any(Number),
-        expect.any(String)
+        expect.any(String),
+        expect.any(Object)
       );
       expect(mockGetSubtitles).not.toHaveBeenCalled();
       expect(result).toEqual(mockSubtitles);
