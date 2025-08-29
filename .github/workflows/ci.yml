@@ -27,11 +27,14 @@ jobs:
       - name: Install dependencies
         run: npm ci # Use 'ci' for cleaner, faster, and more reliable installs in CI
 
-      - name: Build project
-        run: npm run build # Verifies that the TypeScript code compiles successfully
-
       - name: Check formatting
         run: npm run format:check
+
+      - name: Build project stdio
+        run: npm run build:stdio
+
+      - name: Build project http
+        run: npm run build # test smithery build
 
       - name: Run linter
         run: npm run lint

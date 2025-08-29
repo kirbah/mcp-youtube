@@ -20,4 +20,4 @@ npm -v # Should print "10.9.2".
 
 # Install the project
 npm ci
-npm run build
+npm run build:stdio

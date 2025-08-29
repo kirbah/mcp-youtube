@@ -61,7 +61,7 @@ jobs:
           echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV # Make version available to subsequent steps
 
       - name: Build project
-        run: npm run build
+        run: npm run build:stdio
 
       - name: Commit version bump
         run: |
