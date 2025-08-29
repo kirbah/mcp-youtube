@@ -8,8 +8,7 @@ startCommand:
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
     type: object
-    required:
-      - youtubeApiKey
+    required: ["youtubeApiKey"]
     properties:
       youtubeApiKey:
         type: string
