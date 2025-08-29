@@ -16,7 +16,7 @@ startCommand:
         description: YouTube Data API key for accessing the YouTube API.
       mdbMcpConnectionString:
         type: string
-        description: MongoDB connection string to cache the data. (e.g., mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube). Suggest to use MongoDB Atlas to create a free DB.
+        description: (Optional) MongoDB connection string to cache the data. (e.g., mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube). Suggest to use MongoDB Atlas to create a free DB.
   exampleConfig:
     youtubeApiKey: YOUR_YOUTUBE_API_KEY_HERE
     mdbMcpConnectionString: YOUR_MONGO_DB_CONNECTION_STRING_HERE

@@ -34,7 +34,12 @@ export default function createServer({
   config: z.infer<typeof configSchema>;
 }) {
   process.env.YOUTUBE_API_KEY = config.youtubeApiKey;
-  process.env.MDB_MCP_CONNECTION_STRING = config.mdbMcpConnectionString;
+  if (
+    config.mdbMcpConnectionString &&
+    config.mdbMcpConnectionString.startsWith("mongodb")
+  ) {
+    process.env.MDB_MCP_CONNECTION_STRING = config.mdbMcpConnectionString;
+  }
 
   if (!process.env.YOUTUBE_API_KEY) {
     throw new Error("YOUTUBE_API_KEY is not set.");
