@@ -23,6 +23,7 @@ export const configSchema = z.object({
     .describe("YouTube Data API key for accessing the YouTube API."),
   mdbMcpConnectionString: z
     .string()
+    .optional()
     .describe("MongoDB connection string to cache the data."),
 });
 
