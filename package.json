@@ -6,7 +6,7 @@
   "type": "module",
   "module": "src/index.ts",
   "bin": {
-    "mcp-youtube": "./dist/index.js"
+    "@kirbah/mcp-youtube": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -20,10 +20,10 @@
     "start": "npm run start:http",
     "start:http": "node .smithery/index.cjs",
     "build:stdio": "tsc",
-    "start:stdio": "node dist/index.js --stdio",
+    "start:stdio": "node dist/index.js",
     "prepublishOnly": "npm run build:stdio",
-    "start:client": "tsx ./src/index.ts --stdio",
-    "inspector": "npx @modelcontextprotocol/inspector tsx ./src/index.ts --stdio",
+    "start:client": "tsx ./src/index.ts",
+    "inspector": "npx @modelcontextprotocol/inspector tsx ./src/index.ts",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "lint": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js .",

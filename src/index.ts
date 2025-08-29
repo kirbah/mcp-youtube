@@ -9,13 +9,6 @@ import { initializeContainer } from "./container.js";
 import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const transportMode =
-  args.includes("--stdio") || process.env.MCP_TRANSPORT === "stdio"
-    ? "stdio"
-    : "http";
-
 // 1. Define and export the configuration schema for Smithery.
 export const configSchema = z.object({
   youtubeApiKey: z
@@ -91,10 +84,8 @@ async function main() {
   process.on("SIGTERM", () => void cleanup());
 }
 
-if (transportMode === "stdio") {
-  // By default, the server starts with stdio transport
-  main().catch((error) => {
-    console.error("Server error:", error);
-    process.exit(1);
-  });
-}
+// By default, the server starts with stdio transport
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});
