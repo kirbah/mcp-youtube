@@ -1,8 +1,6 @@
 # Smithery configuration file: https://smithery.ai/docs/build/project-config/smithery-yaml
 
 runtime: "typescript"
-env:
-  MCP_TRANSPORT: "http"
 startCommand:
   type: http
   configSchema:
