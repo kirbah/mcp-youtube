@@ -11,6 +11,11 @@ import {
   getTranscriptsConfig,
   getTranscriptsHandler,
 } from "./video/getTranscripts.js";
+import {
+  getVideoCommentsConfig,
+  getVideoCommentsHandler,
+  getVideoCommentsSchema, // Import the schema
+} from "./video/getVideoComments.js";
 
 // Channel tools
 import {
@@ -48,6 +53,7 @@ import type {
   TrendingParams,
   VideoCategoriesParams,
   FindConsistentOutlierChannelsParams,
+  GetVideoCommentsParams,
 } from "../types/tools.js";
 import { z } from "zod";
 
@@ -82,6 +88,12 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
       // This handler is now simple: (params) => ..., because transcriptService is "baked in".
       handler: (params: TranscriptsParams) =>
         getTranscriptsHandler(params, transcriptService),
+    },
+    {
+      config: getVideoCommentsConfig,
+      handler: (
+        params: z.infer<typeof getVideoCommentsSchema> // Use z.infer for correct type
+      ) => getVideoCommentsHandler(params, youtubeService),
     },
     // Channel tools
     {
