@@ -54,16 +54,26 @@ export async function getVideoCommentsHandler(
   params: z.infer<typeof getVideoCommentsSchema>,
   youtubeService: YoutubeService
 ): Promise<CallToolResult> {
-  // Placeholder implementation
-  console.log("getVideoCommentsHandler called with params:", params);
-  return {
-    content: [
-      { type: "text", text: "getVideoComments tool is not yet implemented." },
-    ],
-    output: {
-      message: "getVideoComments tool is not yet implemented.",
-      params,
-    },
-    displayForUser: true,
-  };
+  try {
+    const comments = await youtubeService.getVideoComments(params);
+    return {
+      success: true,
+      content: [{ type: "text", text: JSON.stringify(comments, null, 2) }],
+      output: {
+        message: "Successfully retrieved video comments.",
+        data: comments,
+      },
+      displayForUser: true,
+    };
+  } catch (error: any) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      success: false,
+      content: [{ type: "text", text: `Error: ${errorMessage}` }],
+      output: {
+        message: `Error: ${errorMessage}`,
+      },
+      displayForUser: true,
+    };
+  }
 }
