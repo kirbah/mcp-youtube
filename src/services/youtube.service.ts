@@ -665,25 +665,25 @@ export class YoutubeService {
           const leanReplies: LeanReply[] = replies.map((reply) => {
             const replySnippet = reply.snippet;
             return {
-              replyId: reply.id!,
-              author: replySnippet?.authorDisplayName!,
+              replyId: reply.id ?? "",
+              author: replySnippet?.authorDisplayName ?? "",
               text:
                 commentDetail === "SNIPPET"
                   ? replySnippet?.textDisplay?.substring(0, 200) || ""
                   : replySnippet?.textDisplay || "",
-              publishedAt: replySnippet?.publishedAt!,
+              publishedAt: replySnippet?.publishedAt ?? "",
               likeCount: replySnippet?.likeCount || 0,
             };
           });
 
           return {
-            commentId: commentThread.id!,
-            author: topLevelSnippet?.authorDisplayName!,
+            commentId: commentThread.id ?? "",
+            author: topLevelSnippet?.authorDisplayName ?? "",
             text:
               commentDetail === "SNIPPET"
                 ? topLevelSnippet?.textDisplay?.substring(0, 200) || ""
                 : topLevelSnippet?.textDisplay || "",
-            publishedAt: topLevelSnippet?.publishedAt!,
+            publishedAt: topLevelSnippet?.publishedAt ?? "",
             likeCount: topLevelSnippet?.likeCount || 0,
             replies: leanReplies,
           };
