@@ -94,16 +94,17 @@ In the world of Large Language Models, every token counts. `@kirbah/mcp-youtube`
 
 The server provides the following MCP tools, each designed to return token-optimized data:
 
-| Tool Name              | Description                                                                                                                                  | Parameters (see details in tool schema)                                                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getVideoDetails`      | Retrieves detailed, **lean** information for multiple YouTube videos including metadata, statistics, engagement ratios, and content details. | `videoIds` (array of strings)                                                                                                                             |
-| `searchVideos`         | Searches for videos or channels based on a query string with various filtering options, returning **concise** results.                       | `query` (string), `maxResults` (optional number), `order` (optional), `type` (optional), `channelId` (optional), etc.                                     |
-| `getTranscripts`       | Retrieves **token-efficient** transcripts (captions) for multiple videos, with options for full text or key segments (intro/outro).          | `videoIds` (array of strings), `lang` (optional string for language code), `format` (optional enum: 'full_text', 'key_segments' - default 'key_segments') |
-| `getChannelStatistics` | Retrieves **lean** statistics for multiple channels (subscriber count, view count, video count, creation date).                              | `channelIds` (array of strings)                                                                                                                           |
-| `getChannelTopVideos`  | Retrieves a list of a channel's top-performing videos with **lean** details and engagement ratios.                                           | `channelId` (string), `maxResults` (optional number)                                                                                                      |
-| `getTrendingVideos`    | Retrieves a list of trending videos for a given region and optional category, with **lean** details and engagement ratios.                   | `regionCode` (optional string), `categoryId` (optional string), `maxResults` (optional number)                                                            |
-| `getVideoCategories`   | Retrieves available YouTube video categories (ID and title) for a specific region, providing **essential data only**.                        | `regionCode` (optional string)                                                                                                                            |
-| `getVideoComments`     | Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.                | `videoId` (string), `maxResults` (optional number), `order` (optional), `maxReplies` (optional number), `commentDetail` (optional string)                 |
+| Tool Name                       | Description                                                                                                                                  | Parameters (see details in tool schema)                                                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getVideoDetails`               | Retrieves detailed, **lean** information for multiple YouTube videos including metadata, statistics, engagement ratios, and content details. | `videoIds` (array of strings)                                                                                                                             |
+| `searchVideos`                  | Searches for videos or channels based on a query string with various filtering options, returning **concise** results.                       | `query` (string), `maxResults` (optional number), `order` (optional), `type` (optional), `channelId` (optional), etc.                                     |
+| `getTranscripts`                | Retrieves **token-efficient** transcripts (captions) for multiple videos, with options for full text or key segments (intro/outro).          | `videoIds` (array of strings), `lang` (optional string for language code), `format` (optional enum: 'full_text', 'key_segments' - default 'key_segments') |
+| `getChannelStatistics`          | Retrieves **lean** statistics for multiple channels (subscriber count, view count, video count, creation date).                              | `channelIds` (array of strings)                                                                                                                           |
+| `getChannelTopVideos`           | Retrieves a list of a channel's top-performing videos with **lean** details and engagement ratios.                                           | `channelId` (string), `maxResults` (optional number)                                                                                                      |
+| `getTrendingVideos`             | Retrieves a list of trending videos for a given region and optional category, with **lean** details and engagement ratios.                   | `regionCode` (optional string), `categoryId` (optional string), `maxResults` (optional number)                                                            |
+| `getVideoCategories`            | Retrieves available YouTube video categories (ID and title) for a specific region, providing **essential data only**.                        | `regionCode` (optional string)                                                                                                                            |
+| `getVideoComments`              | Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.                | `videoId` (string), `maxResults` (optional number), `order` (optional), `maxReplies` (optional number), `commentDetail` (optional string)                 |
+| `findConsistentOutlierChannels` | Identifies channels that consistently perform as outliers within a specific niche. **Requires a MongoDB connection.**                        | `niche` (string), `minVideos` (optional number), `maxChannels` (optional number)                                                                          |
 
 _For detailed input parameters and their descriptions, please refer to the `inputSchema` within each tool's configuration file in the `src/tools/` directory (e.g., `src/tools/video/getVideoDetails.ts`)._
 
@@ -216,6 +217,48 @@ This server is an MCP server that communicates via **Standard Input/Output (stdi
 
 - Node.js: `>=20.0.0` (as specified in `package.json`)
 - npm (for managing dependencies and running scripts)
+
+## Deep Dive: `findConsistentOutlierChannels` Tool
+
+The `findConsistentOutlierChannels` tool is designed to identify emerging or established YouTube channels that consistently outperform their size within a specific niche. This tool is particularly useful for content creators, marketers, and analysts looking for high-potential channels.
+
+**Important Note:** This tool **requires a MongoDB connection** to store and analyze channel data. Without `MDB_MCP_CONNECTION_STRING` configured, this tool will not be available.
+
+### Internal Logic Overview
+
+The tool operates through a multi-phase analysis process, leveraging both YouTube Data API and a MongoDB database:
+
+1.  **Candidate Search (Phase 1):**
+    - Uses the provided `query` to search for relevant videos and channels on YouTube.
+    - Filters initial results based on `videoCategoryId` and `regionCode` if specified.
+    - Collects a broad set of potential channels for deeper analysis.
+
+2.  **Channel Filtering (Phase 2):**
+    - Retrieves detailed statistics for candidate channels (subscribers, total views, video count).
+    - Filters channels based on `channelAge` (e.g., 'NEW' for channels under 6 months, 'ESTABLISHED' for 6-24 months).
+    - Ensures channels meet a minimum video count to be considered for consistency.
+
+3.  **Deep Analysis (Phase 3):**
+    - For each filtered channel, fetches their recent top-performing videos.
+    - Calculates a "viral factor" for each video (e.g., views relative to subscriber count).
+    - Assesses the `consistencyLevel` (e.g., 'MODERATE' for ~30% of videos showing outlier performance, 'HIGH' for ~50%).
+    - Determines `outlierMagnitude` (e.g., 'STANDARD' for views > subscribers, 'STRONG' for views > 3x subscribers).
+
+4.  **Ranking & Formatting (Phase 4):**
+    - Ranks channels based on their consistency, outlier magnitude, and overall performance within the niche.
+    - Formats the results into a token-optimized structure suitable for LLMs, including key channel metrics and examples of outlier videos.
+
+### Key Parameters Controlling the Flow
+
+The behavior of this tool is primarily controlled by the following parameters:
+
+- `query` (string, required): The central topic or niche to analyze (e.g., "DIY home repair", "quantum computing explained").
+- `channelAge` (enum: "NEW", "ESTABLISHED", default: "NEW"): Focuses the search on emerging or more mature channels.
+- `consistencyLevel` (enum: "MODERATE", "HIGH", default: "MODERATE"): Sets the threshold for how consistently a channel's videos must perform as outliers.
+- `outlierMagnitude` (enum: "STANDARD", "STRONG", default: "STANDARD"): Defines how significantly a video's performance must exceed typical expectations (e.g., views vs. subscribers) to be considered an "outlier."
+- `videoCategoryId` (string, optional): Narrows the search to a specific YouTube category ID.
+- `regionCode` (string, optional): Targets channels relevant to a particular geographical region.
+- `maxResults` (number, default: 10): Limits the number of top outlier channels returned.
 
 ## Security Considerations
 
