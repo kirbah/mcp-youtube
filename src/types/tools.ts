@@ -57,3 +57,11 @@ export interface FindConsistentOutlierChannelsParams {
   regionCode?: string;
   maxResults?: number;
 }
+
+export interface GetVideoCommentsParams {
+  videoId: string;
+  maxResults?: number;
+  order?: "relevance" | "time";
+  maxReplies?: number;
+  commentDetail?: "SNIPPET" | "FULL";
+}

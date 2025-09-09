@@ -139,3 +139,20 @@ export interface CommentInfo {
     totalReplyCount: number;
   };
 }
+
+export interface LeanReply {
+  replyId: string;
+  author: string;
+  text: string;
+  publishedAt: string;
+  likeCount: number;
+}
+
+export interface LeanComment {
+  commentId: string;
+  author: string;
+  text: string;
+  publishedAt: string;
+  likeCount: number;
+  replies: LeanReply[];
+}

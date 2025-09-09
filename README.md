@@ -88,6 +88,7 @@ In the world of Large Language Models, every token counts. `@kirbah/mcp-youtube`
 - **Insightful Channel Analysis:** Get concise channel statistics (subscribers, views, video count) and discover a channel's top-performing videos without data bloat.
 - **Lean Trend Discovery:** Find trending videos by region and category, and get lists of available video categories, optimized for quick AI processing.
 - **Structured for AI:** All responses are designed to be easily parsable and immediately useful for language models.
+- **Efficient Comment Retrieval:** Fetch video comments with fine-grained control over the number of results and replies, optimized for sentiment analysis and feedback extraction.
 
 ## Available Tools
 
@@ -102,10 +103,11 @@ The server provides the following MCP tools, each designed to return token-optim
 | `getChannelTopVideos`  | Retrieves a list of a channel's top-performing videos with **lean** details and engagement ratios.                                           | `channelId` (string), `maxResults` (optional number)                                                                                                      |
 | `getTrendingVideos`    | Retrieves a list of trending videos for a given region and optional category, with **lean** details and engagement ratios.                   | `regionCode` (optional string), `categoryId` (optional string), `maxResults` (optional number)                                                            |
 | `getVideoCategories`   | Retrieves available YouTube video categories (ID and title) for a specific region, providing **essential data only**.                        | `regionCode` (optional string)                                                                                                                            |
+| `getVideoComments`     | Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.                | `videoId` (string), `maxResults` (optional number), `order` (optional), `maxReplies` (optional number), `commentDetail` (optional string)                 |
 
 _For detailed input parameters and their descriptions, please refer to the `inputSchema` within each tool's configuration file in the `src/tools/` directory (e.g., `src/tools/video/getVideoDetails.ts`)._
 
-> _**Note on API Quota Costs:** Most tools are highly efficient, costing only **1 unit** per call. The exceptions are the search-based tools: `searchVideos` costs **100 units** and `getChannelTopVideos` costs **101 units**. The `getTranscripts` tool has **0** API cost._
+> _**Note on API Quota Costs:** Most tools are highly efficient. `getVideoDetails`, `getChannelStatistics`, and `getTrendingVideos` cost only **1 unit** per call. The `getTranscripts` tool has **0** API cost. The new `getVideoComments` tool has a variable cost: the base call is **1 unit**, but if you request replies (by setting `maxReplies > 0`), it costs an **additional 1 unit for each top-level comment** it fetches replies for. The search-based tools are the most expensive: `searchVideos` costs **100 units** and `getChannelTopVideos` costs **101 units**._
 
 ## Advanced Usage & Local Development
 

@@ -11,7 +11,10 @@ import type {
   LeanChannelStatistics,
   LeanChannelTopVideo,
   LeanTrendingVideo,
+  LeanComment,
+  LeanReply,
 } from "../types/youtube.js";
+import { GetVideoCommentsParams } from "../types/tools.js";
 
 export interface VideoOptions {
   videoId: string;
@@ -57,6 +60,8 @@ const API_COSTS = {
   "videos.list": 1,
   "channels.list": 1,
   "videoCategories.list": 1,
+  "commentThreads.list": 1,
+  "comments.list": 1,
 };
 
 export class YoutubeService {
@@ -599,6 +604,110 @@ export class YoutubeService {
       operation,
       CACHE_TTLS.DYNAMIC,
       CACHE_COLLECTIONS.TRENDING_VIDEOS,
+      options
+    );
+  }
+
+  async getVideoComments(
+    options: GetVideoCommentsParams
+  ): Promise<LeanComment[]> {
+    const cacheKey = this.cacheService.createOperationKey(
+      "getVideoComments",
+      options
+    );
+
+    const operation = async (): Promise<LeanComment[]> => {
+      try {
+        const {
+          videoId,
+          maxResults,
+          order,
+          maxReplies = 0,
+          commentDetail,
+        } = options;
+
+        const commentThreadsResponse = await this.trackCost(
+          () =>
+            this.youtube.commentThreads.list({
+              part: ["snippet"],
+              videoId: videoId,
+              maxResults: maxResults,
+              order: order,
+            }),
+          API_COSTS["commentThreads.list"]
+        );
+
+        const topLevelComments = commentThreadsResponse.data.items || [];
+
+        let allReplies: youtube_v3.Schema$Comment[][] = [];
+        if (maxReplies > 0 && topLevelComments.length > 0) {
+          const replyPromises = topLevelComments.map((commentThread) => {
+            const parentId = commentThread.id;
+            if (!parentId) return Promise.resolve([]);
+            return this.trackCost(
+              () =>
+                this.youtube.comments.list({
+                  part: ["snippet"],
+                  parentId: parentId,
+                  maxResults: maxReplies,
+                }),
+              API_COSTS["comments.list"]
+            ).then((res) => res.data.items || []);
+          });
+          allReplies = await Promise.all(replyPromises);
+        }
+
+        return topLevelComments.map((commentThread, index) => {
+          const topLevelSnippet =
+            commentThread.snippet?.topLevelComment?.snippet;
+          const replies = allReplies[index] || [];
+
+          const leanReplies: LeanReply[] = replies.map((reply) => {
+            const replySnippet = reply.snippet;
+            return {
+              replyId: reply.id ?? "",
+              author: replySnippet?.authorDisplayName ?? "",
+              text:
+                commentDetail === "SNIPPET"
+                  ? replySnippet?.textDisplay?.substring(0, 200) || ""
+                  : replySnippet?.textDisplay || "",
+              publishedAt: replySnippet?.publishedAt ?? "",
+              likeCount: replySnippet?.likeCount || 0,
+            };
+          });
+
+          return {
+            commentId: commentThread.id ?? "",
+            author: topLevelSnippet?.authorDisplayName ?? "",
+            text:
+              commentDetail === "SNIPPET"
+                ? topLevelSnippet?.textDisplay?.substring(0, 200) || ""
+                : topLevelSnippet?.textDisplay || "",
+            publishedAt: topLevelSnippet?.publishedAt ?? "",
+            likeCount: topLevelSnippet?.likeCount || 0,
+            replies: leanReplies,
+          };
+        });
+      } catch (error: any) {
+        if (
+          error.response?.status === 403 &&
+          error.response?.data?.error?.errors?.[0]?.reason ===
+            "commentsDisabled"
+        ) {
+          return [];
+        }
+        throw new Error(
+          `YouTube API call for getVideoComments failed for videoId: ${options.videoId}`,
+          { cause: error }
+        );
+      }
+    };
+
+    return this.cacheService.getOrSet(
+      cacheKey,
+      operation,
+      CACHE_TTLS.DYNAMIC,
+      CACHE_COLLECTIONS.VIDEO_COMMENTS,
       options
     );
   }
