@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { YoutubeService } from "../../services/youtube.service.js";
+import { formatSuccess } from "../../utils/responseFormatter.js";
+import { formatError } from "../../utils/errorHandler.js";
 
 // 2. Define the Input Schema (`getVideoCommentsSchema`)
 export const getVideoCommentsSchema = z.object({
@@ -53,25 +55,16 @@ export async function getVideoCommentsHandler(
   youtubeService: YoutubeService
 ): Promise<CallToolResult> {
   try {
-    const comments = await youtubeService.getVideoComments(params);
-    return {
-      success: true,
-      content: [{ type: "text", text: JSON.stringify(comments, null, 2) }],
-      output: {
-        message: "Successfully retrieved video comments.",
-        data: comments,
-      },
-      displayForUser: true,
-    };
+    // First, validate the parameters (this is the standard pattern)
+    const validatedParams = getVideoCommentsSchema.parse(params);
+
+    // Call the service with the validated parameters
+    const comments = await youtubeService.getVideoComments(validatedParams);
+
+    // Use the standard success formatter
+    return formatSuccess(comments);
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      content: [{ type: "text", text: `Error: ${errorMessage}` }],
-      output: {
-        message: `Error: ${errorMessage}`,
-      },
-      displayForUser: true,
-    };
+    // Use the standard error formatter
+    return formatError(error);
   }
 }
