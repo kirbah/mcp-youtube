@@ -54,9 +54,6 @@ export async function executeDeepConsistencyAnalysis(
         )[0];
 
         if (!channelData) {
-          console.error(
-            `Channel ${channelId} not found in cache during Phase 3`
-          );
           continue;
         }
 
@@ -106,9 +103,6 @@ export async function executeDeepConsistencyAnalysis(
           );
 
         if (!topVideos || topVideos.length === 0) {
-          console.error(
-            `No videos found for channel ${channelId} in the specified time window`
-          );
           continue;
         }
 
@@ -169,15 +163,9 @@ export async function executeDeepConsistencyAnalysis(
         }
       } catch (error: unknown) {
         if (isQuotaError(error)) {
-          console.error("YouTube API quota exceeded. Stopping analysis.");
           quotaExceeded = true;
           break;
         } else {
-          console.error(
-            `Failed to analyze channel ${channelId}: ${
-              error instanceof Error ? error.message : String(error)
-            }`
-          );
           continue;
         }
       }

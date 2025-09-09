@@ -192,10 +192,10 @@ const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
 
 // Mock analysis.logic functions
 jest.mock("../analysis.logic");
-const mockedAnalysisLogic = analysisLogic;
+const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
 
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: jest.Mocked<CacheService>;
+  let cacheServiceInstance: CacheService; // Changed to non-mocked type as it's not directly mocked here
   let videoManagementInstance: jest.Mocked<VideoManagementService>;
   let nicheRepositoryInstance: jest.Mocked<NicheRepository>;
 
@@ -778,9 +778,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       // Explicitly mock fetchChannelRecentTopVideos to return an empty array for this test
       videoManagementInstance.fetchChannelRecentTopVideos.mockResolvedValue([]);
 
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {}); // Spy and suppress output
+      // Removed console.errorSpy as per user's instruction
 
       const publishedAfterString = new Date().toISOString();
       mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
@@ -790,7 +788,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const { results } = await executeDeepConsistencyAnalysis(
         [channelId],
         baseMockOptions,
-        videoManagementInstance, // Removed cacheServiceInstance
+        videoManagementInstance,
         nicheRepositoryInstance
       );
 
@@ -806,18 +804,15 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       ).not.toHaveBeenCalled();
       expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `No videos found for channel ${channelId} in the specified time window`
-      ); // Removed "or cache" as YoutubeService handles cache internally
 
-      consoleErrorSpy.mockRestore(); // Restore original console.error
+      // Removed console.errorSpy.mockRestore();
     });
 
     it("should skip analysis if cached video list is empty", async () => {
       const channelId = "empty_cache_channel";
       const mockChannel = createMockChannelCache({
         _id: channelId,
-        latestAnalysis: undefined, // Changed null to undefined
+        latestAnalysis: undefined,
         status: "candidate",
       });
 
@@ -838,9 +833,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
           expiresAt: new Date(Date.now() + 10000), // Future date
         });
 
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      // Removed console.errorSpy as per user's instruction
 
       const { results } = await executeDeepConsistencyAnalysis(
         [channelId],
@@ -862,20 +855,17 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       ).not.toHaveBeenCalled();
       expect(nicheRepositoryInstance.updateChannel).not.toHaveBeenCalled();
       expect(results).toHaveLength(0);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `No videos found for channel ${channelId} in the specified time window`
-      );
 
-      consoleErrorSpy.mockRestore();
+      // Removed console.errorSpy.mockRestore();
     });
 
-    it("should log error and continue if a generic error occurs during video fetch", async () => {
+    it("should continue if a generic error occurs during video fetch", async () => {
       const successChannelId = "channel_generic_success";
       const failChannelId = "channel_generic_fail";
 
       const channel1Data = createMockChannelCache({
         _id: successChannelId,
-        latestAnalysis: undefined, // Changed null to undefined
+        latestAnalysis: undefined,
         latestStats: {
           fetchedAt: new Date(),
           subscriberCount: 1200,
@@ -885,7 +875,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       });
       const channel2Data = createMockChannelCache({
         _id: failChannelId,
-        latestAnalysis: undefined, // Changed null to undefined
+        latestAnalysis: undefined,
         latestStats: {
           fetchedAt: new Date(),
           subscriberCount: 1000,
@@ -896,7 +886,6 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       nicheRepositoryInstance.findChannelsByIds.mockImplementation(
         async (ids: string[]): Promise<ChannelCache[]> => {
-          // Explicitly type ids and return
           const data: ChannelCache[] = [];
           if (ids.includes(channel1Data._id)) data.push(channel1Data);
           if (ids.includes(channel2Data._id)) data.push(channel2Data);
@@ -904,12 +893,10 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         }
       );
 
-      // Mock YoutubeService's fetchChannelRecentTopVideos to simulate generic error
       videoManagementInstance.fetchChannelRecentTopVideos.mockImplementation(
         async (chId, pubAfter) => {
-          // Correct signature
-          expect(pubAfter).toBe(publishedAfterString); // Verify publishedAfter is passed
-          if (chId === channel1Data._id) return mockSuccessVideos; // Use _id for comparison
+          expect(pubAfter).toBe(publishedAfterString);
+          if (chId === channel1Data._id) return mockSuccessVideos;
           if (chId === failChannelId) throw genericError;
           return [];
         }
@@ -917,7 +904,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
       mockedAnalysisLogic.isQuotaError.mockImplementation(
         (err) => err !== genericError
-      ); // Returns false for genericError
+      );
 
       mockedAnalysisLogic.calculateConsistencyMetrics.mockImplementation(
         (videos, subsCount) => {
@@ -933,7 +920,6 @@ describe("executeDeepConsistencyAnalysis Function", () => {
               },
             };
           }
-          // Default for any other unexpected call
           return {
             sourceVideoCount: 0,
             metrics: {
@@ -943,18 +929,14 @@ describe("executeDeepConsistencyAnalysis Function", () => {
           };
         }
       );
-      mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7); // 0.8 > 0.7, so successChannel is promising
+      mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
 
-      nicheRepositoryInstance.updateChannel.mockResolvedValue(undefined);
-
-      const consoleErrorSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      // Removed console.errorSpy as per user's instruction
 
       const { results, quotaExceeded } = await executeDeepConsistencyAnalysis(
         [successChannelId, failChannelId],
         baseMockOptions,
-        videoManagementInstance, // Removed cacheServiceInstance
+        videoManagementInstance,
         nicheRepositoryInstance
       );
 
@@ -977,20 +959,15 @@ describe("executeDeepConsistencyAnalysis Function", () => {
       const updateCalls = nicheRepositoryInstance.updateChannel.mock.calls;
       const failChannelUpdateCall = updateCalls.find(
         (call: any) => call[0] === failChannelId
-      ); // Cast to any
-      expect(failChannelUpdateCall).toBeUndefined();
-
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `Failed to analyze channel ${failChannelId}: ${genericError.message}`
       );
+      expect(failChannelUpdateCall).toBeUndefined();
 
       expect(quotaExceeded).toBe(false);
       expect(results).toHaveLength(1);
       expect(results[0]._id).toBe(successChannelId);
       expect(results[0].status).toBe("analyzed_promising");
 
-      consoleErrorSpy.mockRestore();
+      // Removed console.errorSpy.mockRestore();
     });
   });
 });
