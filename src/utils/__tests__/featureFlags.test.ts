@@ -35,11 +35,6 @@ describe("featureFlags", () => {
     expect(isEnabled("toolGetCommentSentiment")).toBe(false);
   });
 
-  it("should return false if the feature flag environment variable is not set", () => {
-    // Environment variable is not set by default due to beforeEach
-    expect(isEnabled("toolFindConsistentOutlierChannels")).toBe(false);
-  });
-
   it("should return false if the feature flag environment variable is an arbitrary string", () => {
     process.env[FEATURE_FLAGS.toolGetCommentSentiment] = "enabled";
     expect(isEnabled("toolGetCommentSentiment")).toBe(false);
@@ -52,8 +47,6 @@ describe("featureFlags", () => {
     };
     expect(isEnabled("toolAnalyzeThumbnails", mockEnv)).toBe(true);
     expect(isEnabled("toolGetCommentSentiment", mockEnv)).toBe(false);
-    // Check a flag not present in mockEnv
-    expect(isEnabled("toolFindConsistentOutlierChannels", mockEnv)).toBe(false);
   });
 
   it("should handle all defined feature flags correctly when using process.env", () => {

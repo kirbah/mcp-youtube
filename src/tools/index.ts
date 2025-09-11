@@ -119,14 +119,10 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     },
   ];
 
-  // Add feature-flagged tools conditionally
-  if (
-    isEnabled("toolFindConsistentOutlierChannels") &&
-    process.env.MDB_MCP_CONNECTION_STRING
-  ) {
+  // The findConsistentOutlierChannels tool requires a MongoDB connection.
+  if (process.env.MDB_MCP_CONNECTION_STRING) {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
-      // The handler no longer needs the 'db' object passed to it.
       handler: (params: FindConsistentOutlierChannelsParams) =>
         findConsistentOutlierChannelsHandler(params, youtubeService),
     });

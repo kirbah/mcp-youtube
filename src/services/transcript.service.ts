@@ -48,9 +48,6 @@ export class TranscriptService {
         });
         return transcript;
       } catch (error) {
-        console.error(`Failed to fetch transcript for videoId: ${videoId}`, {
-          cause: error,
-        });
         return [];
       }
     };

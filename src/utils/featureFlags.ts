@@ -4,8 +4,6 @@ import "dotenv/config";
 export const FEATURE_FLAGS = {
   toolGetCommentSentiment: "FEATURE_FLAG_TOOL_COMMENT_SENTIMENT",
   toolAnalyzeThumbnails: "FEATURE_FLAG_TOOL_ANALYZE_THUMBNAILS",
-  toolFindConsistentOutlierChannels:
-    "FEATURE_FLAG_TOOL_FIND_CONSISTENT_OUTLIER_CHANNELS",
 } as const;
 
 type FlagName = keyof typeof FEATURE_FLAGS;
