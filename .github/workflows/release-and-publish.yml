@@ -1,4 +1,4 @@
-name: Release and Publish to NPM
+name: Release and Publish to NPM and MCP
 
 on:
   workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Needed for PAT_GITHUB to push commits/tags and create releases
-      id-token: write # Recommended for npm publish --provenance (can be added to npm publish later)
+      id-token: write # Recommended for npm publish --provenance and for MCP github-oidc
 
     steps:
       - name: Checkout code
@@ -60,12 +60,17 @@ jobs:
           echo "Bumped version to: $NEW_VERSION"
           echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV # Make version available to subsequent steps
 
+      - name: Update server.json version
+        run: |
+          # Also update the package version inside packages array
+          jq --arg v "${{ env.VERSION }}" '.version = $v | .packages[].version = $v' server.json > tmp && mv tmp server.json
+
       - name: Build project
         run: npm run build:stdio
 
       - name: Commit version bump
         run: |
-          git add package.json package-lock.json
+          git add package.json package-lock.json server.json
           git commit -m "chore(release): bump version to v${{ env.VERSION }}"
           # Pushing to the branch the workflow was run on (typically your main/default branch)
           # Assumes the PAT_GITHUB has permissions to push to this branch.
@@ -90,3 +95,13 @@ jobs:
         run: npm publish --tag ${{ github.event.inputs.dist_tag }} # Uses default 'latest' if not provided
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install MCP Publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.0.0/mcp-publisher_1.0.0_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Login to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
