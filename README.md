@@ -209,9 +209,13 @@ To have an MCP client run your _local development version_ (instead of the publi
 7.  Copy the generated API key. This is your `YOUTUBE_API_KEY`.
 8.  **Important Security Step:** Restrict your API key to prevent unauthorized use. Click on the API key name, and under "API restrictions," select "Restrict key" and choose "YouTube Data API v3." You can also add "Application restrictions" (e.g., IP addresses) if applicable.
 
-## How it Works (MCP stdio)
+## How it Works
 
-This server is an MCP server that communicates via **Standard Input/Output (stdio)**. It does not listen on network ports. An MCP client application will typically spawn this server script as a child process and communicate by writing requests to its stdin and reading responses from its stdout.
+This server supports two execution modes:
+
+1.  **HTTP Server Mode (for Smithery.ai):** When deployed on [Smithery.ai](https://smithery.ai/), the server runs as an HTTP server. The `smithery.yaml` configuration file defines this runtime behavior. The `@smithery/cli` tool is used to build and run the server in this mode, as seen in the `build:http` and `start:http` scripts in `package.json`.
+
+2.  **Stdio Mode (for local MCP clients):** For local development or use with other MCP clients, the server communicates via **Standard Input/Output (stdio)**. In this mode, it does not listen on a network port. An MCP client application spawns the server script as a child process and interacts with it through `stdin` and `stdout`. The `build:stdio` and `start:stdio` scripts in `package.json` are used for this mode.
 
 ## System Requirements
 
