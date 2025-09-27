@@ -15,7 +15,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "monthly" # Consider "daily" if preferred
+      interval: "monthly"
     labels: # Optional
       - "dependencies"
       - "dependabot"
@@ -24,3 +24,19 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prettier"
+        update-types: ["version-update:semver-major"]
+    groups:
+      testing-libraries:
+        patterns:
+          - "*jest*"
+      eslint-tooling:
+        patterns:
+          - "eslint"
+          - "*eslint*"
+      typescript-related:
+        patterns:
+          - "typescript"
+          - "@types/*"
