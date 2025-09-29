@@ -43,12 +43,6 @@ describe("findConsistentOutlierChannelsHandler", () => {
       // ... other valid parameters based on findConsistentOutlierChannelsSchema ...
       maxResults: 10,
     };
-    const mockResponse = {
-      // This is not how the handler is structured.
-      // The handler returns CallToolResult, not uses res.status.json
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    } as any; // This needs to be changed based on actual handler return type.
 
     const mockOutlierChannels = [{ channelId: "UC-test-channel" }];
     (

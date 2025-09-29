@@ -1,6 +1,6 @@
 import { YoutubeService } from "../../youtube.service.js";
 import { CacheService } from "../../cache.service.js";
-import { google, youtube_v3 } from "googleapis";
+import { youtube_v3 } from "googleapis";
 import { CACHE_COLLECTIONS, CACHE_TTLS } from "../../../config/cache.config.js";
 
 // Mock the google.youtube object
@@ -25,8 +25,8 @@ describe("YoutubeService - getVideoComments", () => {
 
   beforeEach(() => {
     cacheService = {
-      getOrSet: jest.fn((key, operation, ttl, collection, options, exclude) =>
-        operation()
+      getOrSet: jest.fn(
+        (key, operation, _ttl, _collection, _options, _exclude) => operation()
       ),
       createOperationKey: jest.fn((name, options) =>
         JSON.stringify({ name, options })

@@ -98,7 +98,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
         `${operationName}-${JSON.stringify(options || {})}`
     );
     mockCacheService.getOrSet.mockImplementation(
-      async (key, operation, ttl, collection) => operation()
+      async (key, operation, _ttl, _collection) => operation()
     );
 
     videoManagement = new YoutubeService(mockCacheService); // Pass mockCacheService
@@ -387,7 +387,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
 
     // Assertions for the result
     expect(result).toHaveLength(requestedMaxResults);
-    allVideoIds.forEach((videoId, index) => {
+    allVideoIds.forEach((videoId) => {
       const video = result.find((v) => v.id === videoId);
       expect(video).toBeDefined();
       expect(video).toMatchObject({
@@ -404,13 +404,11 @@ describe("YoutubeService.getChannelTopVideos", () => {
     const MAX_RESULTS_PER_PAGE = 50;
     const ABSOLUTE_MAX_RESULTS = 500; // Defined in VideoManagement class
 
-    let searchCallCount = 0;
     const generateSearchPage = (
       pageNumber: number,
       itemsOnPage: number,
       hasNextPage: boolean
     ) => {
-      searchCallCount++;
       return {
         data: {
           items: Array.from({ length: itemsOnPage }, (_, i) => ({
@@ -757,7 +755,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
 
     expect(result).toHaveLength(mockVideoApiItems.length);
 
-    mockVideoApiItems.forEach((apiItem, index) => {
+    mockVideoApiItems.forEach((apiItem) => {
       const transformedVideo = result.find((v) => v.id === apiItem.id); // Changed v.videoId to v.id
       expect(transformedVideo).toBeDefined();
 

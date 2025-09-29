@@ -8,15 +8,6 @@ import {
 describe("Phase 4 Ranking and Formatting", () => {
   const commonLatestAnalysisMetricsStandard = {};
 
-  const commonLatestAnalysisOptions = {
-    outlierMagnitude: "STANDARD" as const, // Ensure this is treated as a literal type
-    viewsLookbackWindow: 30,
-    minimumTotalViews: 1000,
-    minimumSubscribers: 100,
-    consistencyThreshold: 0.5,
-    checkFrequencyDays: 7,
-  };
-
   const commonLatestStats = {
     viewCount: 100000,
     lastUploadDate: new Date(),
@@ -105,12 +96,6 @@ describe("Phase 4 Ranking and Formatting", () => {
     };
 
     const result = formatAndRankAnalysisResults(mockChannels, options, false);
-
-    // Manually calculate confidence scores
-    // Score = consistencyPercentage * Math.log10(outlierCount + 1) * (subscriberCount / videoCount)
-    const scoreChannel1 = 0.8 * Math.log10(10 + 1) * (1000 / 100); // 0.8 * log10(11) * 10 = 0.8 * 1.04139 * 10 = 8.3311
-    const scoreChannel2 = 0.9 * Math.log10(15 + 1) * (2000 / 50); // 0.9 * log10(16) * 40 = 0.9 * 1.20412 * 40 = 43.34832
-    const scoreChannel3 = 0.7 * Math.log10(5 + 1) * (500 / 200); // 0.7 * log10(6) * 2.5 = 0.7 * 0.77815 * 2.5 = 1.36176
 
     // Expected order: channel2, channel1, channel3
     expect(result.results.length).toBe(3);

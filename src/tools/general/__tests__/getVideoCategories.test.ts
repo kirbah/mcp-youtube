@@ -1,7 +1,6 @@
 import { getVideoCategoriesHandler } from "../getVideoCategories";
 // import { youtube } from '@googleapis/youtube'; // Removed
 import { YoutubeService } from "../../../services/youtube.service";
-import { google } from "googleapis"; // To set up the mock structure
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
 
 jest.mock("googleapis", () => {

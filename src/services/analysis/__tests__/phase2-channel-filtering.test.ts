@@ -1,5 +1,4 @@
 import { executeChannelPreFiltering } from "../phase2-channel-filtering";
-import { CacheService } from "../../cache.service";
 import { YoutubeService } from "../../../services/youtube.service";
 import { NicheRepository } from "../niche.repository"; // Import NicheRepository
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
@@ -34,13 +33,11 @@ jest.mock("../../../services/youtube.service", () => ({
 // --- End Mock Setup ---
 
 describe("executeChannelPreFiltering", () => {
-  let cacheService: CacheService;
   let youtubeService: YoutubeService;
   let nicheRepository: NicheRepository;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    cacheService = new CacheService({} as any);
     youtubeService = new YoutubeService({} as any);
     nicheRepository = new NicheRepository({} as any);
   });

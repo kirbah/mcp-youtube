@@ -40,7 +40,6 @@ import {
   findConsistentOutlierChannelsConfig,
   findConsistentOutlierChannelsHandler,
 } from "./general/findConsistentOutlierChannels.js";
-import { isEnabled } from "../utils/featureFlags.js";
 
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { IServiceContainer } from "../container.js";
@@ -53,17 +52,16 @@ import type {
   TrendingParams,
   VideoCategoriesParams,
   FindConsistentOutlierChannelsParams,
-  GetVideoCommentsParams,
 } from "../types/tools.js";
-import { z } from "zod";
+import { z, AnyZodObject } from "zod";
 
-export interface ToolDefinition<TParams = unknown> {
+export interface ToolDefinition {
   config: {
     name: string;
     description: string;
-    inputSchema: z.ZodObject<any>;
+    inputSchema: AnyZodObject;
   };
-  handler: (params: TParams) => Promise<CallToolResult>;
+  handler: (params: any) => Promise<CallToolResult>;
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
@@ -71,7 +69,7 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
   const { youtubeService, transcriptService } = container;
 
   // 2. Define all tools, wrapping the original handlers with the dependencies they need.
-  const toolDefinitions: ToolDefinition<any>[] = [
+  const toolDefinitions: ToolDefinition[] = [
     // Video tools
     {
       config: getVideoDetailsConfig,
