@@ -1,5 +1,4 @@
 import { executeInitialCandidateSearch } from "../phase1-candidate-search";
-import { CacheService } from "../../cache.service";
 import { YoutubeService } from "../../../services/youtube.service";
 import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.types";
 import { youtube_v3 } from "googleapis";

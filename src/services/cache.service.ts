@@ -1,4 +1,4 @@
-import { Db, Collection } from "mongodb";
+import { Collection } from "mongodb";
 import { createHash } from "crypto";
 import { omitPaths } from "../utils/objectUtils.js";
 import { getDb } from "./database.service.js"; // Import the lazy loader

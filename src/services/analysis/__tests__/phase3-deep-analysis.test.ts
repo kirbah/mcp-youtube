@@ -116,7 +116,7 @@ jest.mock("../../cache.service", () => {
           operation: () => Promise<unknown>,
           ttl: number,
           collection: string,
-          params?: object
+          _params?: object
         ) => {
           // Simulate a cache hit using mockDb
           const cachedResult = await mockDb
@@ -186,10 +186,6 @@ jest.mock("../../youtube.service.ts", () => {
     }),
   };
 });
-const MockedVideoManagementService = VideoManagementService as jest.MockedClass<
-  typeof VideoManagementService
->;
-
 // Mock analysis.logic functions
 jest.mock("../analysis.logic");
 const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
@@ -222,9 +218,7 @@ describe("executeDeepConsistencyAnalysis Function", () => {
     // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
     // However, keeping it for consistency with the mock setup of YoutubeService.
     cacheServiceInstance = new MockedCacheService();
-    videoManagementInstance = new MockedVideoManagementService(
-      cacheServiceInstance
-    ) as jest.Mocked<VideoManagementService>; // YoutubeService now takes CacheService
+    videoManagementInstance = new VideoManagementService(cacheServiceInstance); // YoutubeService now takes CacheService
     nicheRepositoryInstance = new MockedNicheRepository();
 
     // Initialize variables for each test

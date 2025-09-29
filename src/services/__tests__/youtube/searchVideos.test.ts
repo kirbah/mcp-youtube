@@ -25,7 +25,7 @@ jest.mock("../../cache.service", () => {
           // Simple mock implementation for createOperationKey
           return `${operationName}-${JSON.stringify(options)}`;
         }),
-        getOrSet: jest.fn((key, operation, ttl, collection) => operation()), // Directly run the operation for tests
+        getOrSet: jest.fn((key, operation, _ttl, _collection) => operation()), // Directly run the operation for tests
       };
     }),
   };

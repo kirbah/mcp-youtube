@@ -47,7 +47,7 @@ export class TranscriptService {
           lang: lang,
         });
         return transcript;
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     };

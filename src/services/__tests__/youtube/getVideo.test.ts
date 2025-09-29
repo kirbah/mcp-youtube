@@ -18,7 +18,7 @@ jest.mock("../../cache.service", () => {
   return {
     CacheService: jest.fn().mockImplementation(() => {
       return {
-        getOrSet: jest.fn((key, operation, ttl, collection) => operation()),
+        getOrSet: jest.fn((key, operation, _ttl, _collection) => operation()),
         createOperationKey: jest.fn(),
       };
     }),
