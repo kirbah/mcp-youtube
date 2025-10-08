@@ -7,13 +7,13 @@
     "url": "https://github.com/kirbah/mcp-youtube",
     "source": "github"
   },
-  "version": "0.2.6",
+  "version": "0.2.7",
   "packages": [
     {
       "registry_type": "npm",
       "registry_base_url": "https://registry.npmjs.org",
       "identifier": "@kirbah/mcp-youtube",
-      "version": "0.2.6",
+      "version": "0.2.7",
       "runtime_hint": "npx",
       "transport": {
         "type": "stdio"
