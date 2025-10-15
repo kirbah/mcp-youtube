@@ -19,7 +19,9 @@ export function isQuotaError(error: unknown): boolean {
     return true;
   }
   if (err.errors && Array.isArray(err.errors)) {
-    return err.errors.some((e: any) => e.reason === "quotaExceeded");
+    return err.errors.some(
+      (e: { reason: string }) => e.reason === "quotaExceeded"
+    );
   }
   return false;
 }
