@@ -32,10 +32,12 @@ export async function executeInitialCandidateSearch(
     }
 
     return Array.from(channelIds);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (isQuotaError(error)) {
       throw new Error("YouTube API quota exceeded during Phase 1.");
     }
-    throw new Error(`Phase 1 failed: ${error.message}`);
+    const message =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    throw new Error(`Phase 1 failed: ${message}`);
   }
 }

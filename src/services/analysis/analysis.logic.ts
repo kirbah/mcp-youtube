@@ -13,7 +13,7 @@ export function isQuotaError(error: unknown): boolean {
   if (typeof error !== "object" || error === null) {
     return false;
   }
-  const err = error as Record<string, any>; // Cast to a record for property access
+  const err = error as Record<string, unknown>; // Cast to a record for property access
 
   if (err.code === 403) {
     return true;
