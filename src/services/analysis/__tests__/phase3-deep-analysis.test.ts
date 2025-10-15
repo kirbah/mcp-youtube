@@ -188,7 +188,7 @@ jest.mock("../../youtube.service.ts", () => {
 });
 // Mock analysis.logic functions
 jest.mock("../analysis.logic");
-const mockedAnalysisLogic = analysisLogic as jest.Mocked<typeof analysisLogic>;
+const mockedAnalysisLogic = analysisLogic;
 
 describe("executeDeepConsistencyAnalysis Function", () => {
   let cacheServiceInstance: CacheService; // Changed to non-mocked type as it's not directly mocked here
