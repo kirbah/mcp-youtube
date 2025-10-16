@@ -706,11 +706,8 @@ export class YoutubeService {
           };
 
           // You might need to adjust the type assertion based on your error structure
-          const errorData = (error.response as { data?: YouTubeApiError })
-            .data;
-          if (
-            errorData?.error?.errors?.[0]?.reason === "commentsDisabled"
-          ) {
+          const errorData = (error.response as { data?: YouTubeApiError }).data;
+          if (errorData?.error?.errors?.[0]?.reason === "commentsDisabled") {
             return [];
           }
         }
