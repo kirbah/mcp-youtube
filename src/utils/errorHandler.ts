@@ -2,7 +2,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export interface ErrorResponse {
   error: string;
-  details?: any;
+  details?: unknown;
   message: string; // Add message to align with common error structures
 }
 
@@ -50,7 +50,7 @@ const getErrorMessage = (error: unknown): string => {
 // Helper function to check if error has response data
 const hasResponseData = (
   error: unknown
-): error is { response: { data: any } } => {
+): error is { response: { data: unknown } } => {
   return (
     error !== null &&
     typeof error === "object" &&
