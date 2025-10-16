@@ -66,10 +66,9 @@ export class NicheAnalyzerService {
       finalOutput.summary.apiCreditsUsed = actualApiCreditsUsed; // Use the accurate value
 
       return finalOutput;
-    } catch (error: any) {
-      throw new Error(
-        `Failed to find consistent outlier channels: ${error.message}`
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to find consistent outlier channels: ${message}`);
     }
   }
 }

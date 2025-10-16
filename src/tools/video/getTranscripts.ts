@@ -50,7 +50,7 @@ export const getTranscriptsHandler = async (
     const result = formatVideoMap(videoIds, transcripts);
 
     return formatSuccess(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

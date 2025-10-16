@@ -688,13 +688,31 @@ export class YoutubeService {
             replies: leanReplies,
           };
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (
-          error.response?.status === 403 &&
-          error.response?.data?.error?.errors?.[0]?.reason ===
-            "commentsDisabled"
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "status" in error.response &&
+          error.response.status === 403
         ) {
-          return [];
+          // Define a type for the expected error structure
+          type YouTubeApiError = {
+            error: {
+              errors: [{ reason: string }];
+            };
+          };
+
+          // You might need to adjust the type assertion based on your error structure
+          const errorData = (error.response as { data?: YouTubeApiError })
+            .data;
+          if (
+            errorData?.error?.errors?.[0]?.reason === "commentsDisabled"
+          ) {
+            return [];
+          }
         }
         throw new Error(
           `YouTube API call for getVideoComments failed for videoId: ${options.videoId}`,

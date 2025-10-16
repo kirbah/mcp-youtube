@@ -12,13 +12,17 @@ export function omitPaths<T extends object>(obj: T, paths: string[]): T {
 
   for (const path of paths) {
     const parts = path.split(".");
-    let current: any = newObj;
+    let current: unknown = newObj;
 
     // Navigate down the path to the parent of the target property
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
-      if (current && current[part] !== undefined) {
-        current = current[part];
+      if (
+        current &&
+        typeof current === "object" &&
+        part in current
+      ) {
+        current = (current as Record<string, unknown>)[part];
       } else {
         // Path doesn't exist, so we can't delete anything.
         current = null;

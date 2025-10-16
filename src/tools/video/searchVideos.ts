@@ -81,7 +81,7 @@ export const searchVideosHandler = async (
     );
 
     return formatSuccess(leanResults);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

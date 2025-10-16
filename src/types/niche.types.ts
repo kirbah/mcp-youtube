@@ -42,7 +42,7 @@ export interface SearchCache {
   _id?: string;
   searchParamsHash: string;
   searchParams: youtube_v3.Params$Resource$Search$List;
-  results: any[];
+  results: youtube_v3.Schema$SearchResult[];
   createdAt: Date;
   expiresAt: Date;
 }

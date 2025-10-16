@@ -44,7 +44,7 @@ export const getTrendingVideosHandler = async (
       await youtubeService.getTrendingVideos(validatedParams);
 
     return formatSuccess(trendingVideos);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };
