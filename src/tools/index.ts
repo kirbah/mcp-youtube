@@ -61,7 +61,7 @@ export interface ToolDefinition {
     description: string;
     inputSchema: AnyZodObject;
   };
-  handler: (params: unknown) => Promise<CallToolResult>;
+  handler: (params: any) => Promise<CallToolResult>;
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {

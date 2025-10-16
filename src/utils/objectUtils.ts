@@ -28,7 +28,7 @@ export function omitPaths<T extends object>(obj: T, paths: string[]): T {
 
     // If the parent exists, delete the final property
     if (current && typeof current === "object") {
-      delete current[parts[parts.length - 1]];
+      delete (current as Record<string, unknown>)[parts[parts.length - 1]];
     }
   }
 
