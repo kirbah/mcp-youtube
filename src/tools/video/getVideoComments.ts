@@ -63,7 +63,7 @@ export async function getVideoCommentsHandler(
 
     // Use the standard success formatter
     return formatSuccess(comments);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Use the standard error formatter
     return formatError(error);
   }

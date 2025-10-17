@@ -47,7 +47,7 @@ export const getChannelTopVideosHandler = async (
     const topVideos = await youtubeService.getChannelTopVideos(validatedParams);
 
     return formatSuccess(topVideos);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

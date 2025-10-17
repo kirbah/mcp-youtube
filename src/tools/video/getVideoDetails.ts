@@ -119,7 +119,7 @@ export const getVideoDetailsHandler = async (
     );
 
     return formatSuccess(finalOutput);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

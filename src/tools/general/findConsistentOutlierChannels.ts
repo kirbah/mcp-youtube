@@ -85,7 +85,7 @@ export const findConsistentOutlierChannelsHandler = async (
       await nicheAnalyzer.findConsistentOutlierChannels(validatedOptions);
 
     return formatSuccess(searchResults);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

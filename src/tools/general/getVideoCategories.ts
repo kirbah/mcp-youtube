@@ -31,7 +31,7 @@ export const getVideoCategoriesHandler = async (
 
     const categories = await youtubeService.getVideoCategories(regionCode);
     return formatSuccess(categories);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };

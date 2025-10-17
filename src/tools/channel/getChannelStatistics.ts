@@ -34,7 +34,7 @@ export const getChannelStatisticsHandler = async (
 
     const statisticsResults = await Promise.all(statsPromises);
     return formatSuccess(statisticsResults);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return formatError(error);
   }
 };
