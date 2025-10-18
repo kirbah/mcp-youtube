@@ -61,7 +61,7 @@ export interface ToolDefinition {
     description: string;
     inputSchema: AnyZodObject;
   };
-  handler: (params: any) => Promise<CallToolResult>;
+  handler: (params: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
 export function allTools(container: IServiceContainer): ToolDefinition[] {
@@ -73,56 +73,78 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     // Video tools
     {
       config: getVideoDetailsConfig,
-      handler: (params: VideoDetailsParams) =>
-        getVideoDetailsHandler(params, youtubeService),
+      // WRAP the handler and CAST the params
+      handler: (params) =>
+        getVideoDetailsHandler(
+          params as unknown as VideoDetailsParams,
+          youtubeService
+        ),
     },
     {
       config: searchVideosConfig,
-      handler: (params: SearchParams) =>
-        searchVideosHandler(params, youtubeService),
+      handler: (params) =>
+        searchVideosHandler(params as unknown as SearchParams, youtubeService),
     },
     {
       config: getTranscriptsConfig,
-      // This handler is now simple: (params) => ..., because transcriptService is "baked in".
-      handler: (params: TranscriptsParams) =>
-        getTranscriptsHandler(params, transcriptService),
+      handler: (params) =>
+        getTranscriptsHandler(
+          params as unknown as TranscriptsParams,
+          transcriptService
+        ),
     },
     {
       config: getVideoCommentsConfig,
-      handler: (
-        params: z.infer<typeof getVideoCommentsSchema> // Use z.infer for correct type
-      ) => getVideoCommentsHandler(params, youtubeService),
+      handler: (params) =>
+        getVideoCommentsHandler(
+          params as unknown as z.infer<typeof getVideoCommentsSchema>,
+          youtubeService
+        ),
     },
     // Channel tools
     {
       config: getChannelStatisticsConfig,
-      handler: (params: ChannelStatisticsParams) =>
-        getChannelStatisticsHandler(params, youtubeService),
+      handler: (params) =>
+        getChannelStatisticsHandler(
+          params as unknown as ChannelStatisticsParams,
+          youtubeService
+        ),
     },
     {
       config: getChannelTopVideosConfig,
-      handler: (params: ChannelParams) =>
-        getChannelTopVideosHandler(params, youtubeService),
+      handler: (params) =>
+        getChannelTopVideosHandler(
+          params as unknown as ChannelParams,
+          youtubeService
+        ),
     },
     // General tools
     {
       config: getTrendingVideosConfig,
-      handler: (params: TrendingParams) =>
-        getTrendingVideosHandler(params, youtubeService),
+      handler: (params) =>
+        getTrendingVideosHandler(
+          params as unknown as TrendingParams,
+          youtubeService
+        ),
     },
     {
       config: getVideoCategoriesConfig,
-      handler: (params: VideoCategoriesParams) =>
-        getVideoCategoriesHandler(params, youtubeService),
+      handler: (params) =>
+        getVideoCategoriesHandler(
+          params as unknown as VideoCategoriesParams,
+          youtubeService
+        ),
     },
   ];
 
-  // The findConsistentOutlierChannels tool requires a MongoDB connection.
   if (process.env.MDB_MCP_CONNECTION_STRING) {
     toolDefinitions.push({
       config: findConsistentOutlierChannelsConfig,
-      handler: (params: FindConsistentOutlierChannelsParams) =>
-        findConsistentOutlierChannelsHandler(params, youtubeService),
+      handler: (params) =>
+        findConsistentOutlierChannelsHandler(
+          params as unknown as FindConsistentOutlierChannelsParams,
+          youtubeService
+        ),
     });
   }
 
