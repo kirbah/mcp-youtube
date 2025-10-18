@@ -3,6 +3,7 @@ import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
 } from "../utils/engagementCalculator.js";
+import { YouTubeApiError } from "../errors/api.errors.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
 import { formatDescription } from "../utils/textUtils.js";
 import { CacheService } from "./cache.service.js";
@@ -146,9 +147,9 @@ export class YoutubeService {
         );
         return response.data.items?.[0] ?? null;
       } catch (error) {
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for getVideo failed for videoId: ${videoId}`,
-          { cause: error }
+          error
         );
       }
     };
@@ -244,9 +245,10 @@ export class YoutubeService {
 
         return results.slice(0, targetResults);
       } catch (error) {
-        throw new Error(`YouTube API call for searchVideos failed`, {
-          cause: error,
-        });
+        throw new YouTubeApiError(
+          `YouTube API call for searchVideos failed`,
+          error
+        );
       }
     };
 
@@ -292,9 +294,10 @@ export class YoutubeService {
         }
       }
     } catch (error) {
-      throw new Error(`API call for batchFetchChannelStatistics failed`, {
-        cause: error,
-      });
+      throw new YouTubeApiError(
+        `API call for batchFetchChannelStatistics failed`,
+        error
+      );
     }
 
     return results;
@@ -332,9 +335,9 @@ export class YoutubeService {
           createdAt: channel.snippet?.publishedAt,
         };
       } catch (error) {
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for getChannelStatistics failed for channelId: ${channelId}`,
-          { cause: error }
+          error
         );
       }
     };
@@ -391,9 +394,9 @@ export class YoutubeService {
 
         return videosResponse.data.items || [];
       } catch (error) {
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for fetchChannelRecentTopVideos failed for channelId: ${channelId} and publishedAfter: ${publishedAfter}`,
-          { cause: error }
+          error
         );
       }
     };
@@ -522,9 +525,9 @@ export class YoutubeService {
             : videoWithDescription;
         });
       } catch (error) {
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for getChannelTopVideos failed for channelId: ${options.channelId}`,
-          { cause: error }
+          error
         );
       }
     };
@@ -593,9 +596,10 @@ export class YoutubeService {
           }) || []
         );
       } catch (error) {
-        throw new Error(`YouTube API call for getTrendingVideos failed`, {
-          cause: error,
-        });
+        throw new YouTubeApiError(
+          `YouTube API call for getTrendingVideos failed`,
+          error
+        );
       }
     };
 
@@ -711,9 +715,9 @@ export class YoutubeService {
             return [];
           }
         }
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for getVideoComments failed for videoId: ${options.videoId}`,
-          { cause: error }
+          error
         );
       }
     };
@@ -753,9 +757,9 @@ export class YoutubeService {
 
         return categories || [];
       } catch (error) {
-        throw new Error(
+        throw new YouTubeApiError(
           `YouTube API call for getVideoCategories failed for regionCode: ${regionCode}`,
-          { cause: error }
+          error
         );
       }
     };

@@ -1,4 +1,5 @@
-import { formatError } from "../errorHandler"; // Assuming ErrorResponse is exported for type checking if needed
+import { formatError } from "../errorHandler";
+import { AppError, YouTubeApiError } from "../../errors/api.errors.js";
 
 describe("errorHandler", () => {
   describe("formatError", () => {
@@ -14,46 +15,25 @@ describe("errorHandler", () => {
       });
     });
 
-    it("should format a string error message", () => {
-      const error = "String error message";
-      expect(formatError(error)).toEqual({
-        success: false,
-        error: { error: "ToolExecutionError", message: "String error message" },
-        content: [],
-      });
-    });
-
-    it("should format an object with a message property", () => {
-      const error = { message: "Object with message property" };
+    it("should format a string with a default error message", () => {
+      const error = "This is just a string";
       expect(formatError(error)).toEqual({
         success: false,
         error: {
           error: "ToolExecutionError",
-          message: "Object with message property",
+          message: "An unknown error occurred",
         },
         content: [],
       });
     });
 
-    it("should format an error object with response data", () => {
-      const error = {
-        message: "Request failed",
-        response: {
-          data: {
-            code: 404,
-            message: "Not Found",
-          },
-        },
-      };
+    it("should format an object with a message property with a default error message", () => {
+      const error = { message: "I am an object, not an Error" };
       expect(formatError(error)).toEqual({
         success: false,
         error: {
           error: "ToolExecutionError",
-          message: "Request failed",
-          details: {
-            code: 404,
-            message: "Not Found",
-          },
+          message: "An unknown error occurred",
         },
         content: [],
       });
@@ -81,24 +61,42 @@ describe("errorHandler", () => {
       });
     });
 
-    it("should format a number with a default error message", () => {
-      expect(formatError(123)).toEqual({
+    it("should format a custom AppError correctly", () => {
+      const customDetails = { originalCode: 500, reason: "API Limit Exceeded" };
+      const appError = new AppError("Custom application error", customDetails);
+      expect(formatError(appError)).toEqual({
         success: false,
         error: {
-          error: "ToolExecutionError",
-          message: "An unknown error occurred",
+          error: "AppError",
+          message: "Custom application error",
+          details: customDetails,
         },
         content: [],
       });
     });
 
-    it("should format an object without a message property with a default error message", () => {
-      const error = { foo: "bar" };
-      expect(formatError(error)).toEqual({
+    it("should format a custom YouTubeApiError correctly", () => {
+      const originalGoogleError = {
+        response: {
+          data: {
+            error: {
+              code: 403,
+              message: "Forbidden",
+              errors: [{ domain: "youtube.quota", reason: "quotaExceeded" }],
+            },
+          },
+        },
+      };
+      const youtubeApiError = new YouTubeApiError(
+        "YouTube API call failed",
+        originalGoogleError
+      );
+      expect(formatError(youtubeApiError)).toEqual({
         success: false,
         error: {
-          error: "ToolExecutionError",
-          message: "An unknown error occurred",
+          error: "YouTubeApiError",
+          message: "YouTube API call failed",
+          details: originalGoogleError.response.data,
         },
         content: [],
       });
