@@ -75,7 +75,10 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
       config: getVideoDetailsConfig,
       // WRAP the handler and CAST the params
       handler: (params) =>
-        getVideoDetailsHandler(params as unknown as VideoDetailsParams, youtubeService),
+        getVideoDetailsHandler(
+          params as unknown as VideoDetailsParams,
+          youtubeService
+        ),
     },
     {
       config: searchVideosConfig,
@@ -85,7 +88,10 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getTranscriptsConfig,
       handler: (params) =>
-        getTranscriptsHandler(params as unknown as TranscriptsParams, transcriptService),
+        getTranscriptsHandler(
+          params as unknown as TranscriptsParams,
+          transcriptService
+        ),
     },
     {
       config: getVideoCommentsConfig,
@@ -107,13 +113,19 @@ export function allTools(container: IServiceContainer): ToolDefinition[] {
     {
       config: getChannelTopVideosConfig,
       handler: (params) =>
-        getChannelTopVideosHandler(params as unknown as ChannelParams, youtubeService),
+        getChannelTopVideosHandler(
+          params as unknown as ChannelParams,
+          youtubeService
+        ),
     },
     // General tools
     {
       config: getTrendingVideosConfig,
       handler: (params) =>
-        getTrendingVideosHandler(params as unknown as TrendingParams, youtubeService),
+        getTrendingVideosHandler(
+          params as unknown as TrendingParams,
+          youtubeService
+        ),
     },
     {
       config: getVideoCategoriesConfig,
