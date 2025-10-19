@@ -58,7 +58,10 @@ describe("YoutubeService - API Credit Usage", () => {
       (cacheKey, operation) => operation()
     );
 
-    youtubeService = new YoutubeService(mockCacheServiceInstance);
+    youtubeService = new YoutubeService(
+      "test_api_key",
+      mockCacheServiceInstance
+    );
     youtubeService.resetApiCreditsUsed();
   });
 

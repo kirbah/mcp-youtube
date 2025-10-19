@@ -44,7 +44,7 @@ describe("YoutubeService - searchVideos", () => {
     mockCacheService = new (CacheService as jest.Mock)();
 
     // Pass the mocked CacheService to YoutubeService
-    videoManagement = new YoutubeService(mockCacheService);
+    videoManagement = new YoutubeService("test_api_key", mockCacheService);
 
     // Assign the global mock to the local variable
     mockSearchList = mockSearchListGlobal;

@@ -48,13 +48,21 @@ describe("initializeContainer", () => {
   });
 
   it("should initialize services and return the container", async () => {
-    const container = await initializeContainer();
+    const dummyApiKey = "test-api-key";
+    const dummyMdbConnectionString = "mongodb://mock-db";
+    const container = initializeContainer({
+      apiKey: dummyApiKey,
+      mdbMcpConnectionString: dummyMdbConnectionString,
+    });
 
     expect(mockCacheServiceConstructorFn).toHaveBeenCalledTimes(1);
-    expect(mockCacheServiceConstructorFn).toHaveBeenCalledWith();
+    expect(mockCacheServiceConstructorFn).toHaveBeenCalledWith(
+      dummyMdbConnectionString
+    );
     expect(mockYoutubeServiceConstructorFn).toHaveBeenCalledTimes(1);
     // Assert that YoutubeService constructor was called with the instance created by CacheService mock
     expect(mockYoutubeServiceConstructorFn).toHaveBeenCalledWith(
+      dummyApiKey,
       mockCacheServiceConstructorFn.mock.results[0].value
     );
     expect(mockTranscriptServiceConstructorFn).toHaveBeenCalledTimes(1);
@@ -69,11 +77,7 @@ describe("initializeContainer", () => {
         mockTranscriptServiceConstructorFn.mock.results[0].value, // Added
     });
 
-    // Call initializeContainer again
-    const sameContainer = await initializeContainer();
-    expect(sameContainer).toBe(container); // Should be the same instance
-
-    // Initialization logic should not be called again
+    // Initialization logic should be called once
     expect(mockCacheServiceConstructorFn).toHaveBeenCalledTimes(1);
     expect(mockYoutubeServiceConstructorFn).toHaveBeenCalledTimes(1);
     expect(mockTranscriptServiceConstructorFn).toHaveBeenCalledTimes(1); // Added

@@ -32,7 +32,7 @@ describe("YoutubeService - getVideoComments", () => {
         JSON.stringify({ name, options })
       ),
     } as unknown as CacheService;
-    youtubeService = new YoutubeService(cacheService);
+    youtubeService = new YoutubeService("test_api_key", cacheService);
     youtubeService.resetApiCreditsUsed(); // Reset credits for each test
     jest.clearAllMocks();
   });

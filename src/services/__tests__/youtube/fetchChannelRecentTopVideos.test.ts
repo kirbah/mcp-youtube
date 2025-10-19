@@ -59,7 +59,10 @@ describe("YoutubeService - fetchChannelRecentTopVideos", () => {
       (cacheKey, operation) => operation()
     );
 
-    youtubeService = new YoutubeService(mockCacheServiceInstance);
+    youtubeService = new YoutubeService(
+      "test-api-key",
+      mockCacheServiceInstance
+    );
     youtubeService.resetApiCreditsUsed();
   });
 

@@ -52,7 +52,10 @@ describe("YoutubeService.getChannelStatistics", () => {
       "../../cache.service"
     );
     mockCacheServiceInstance = new MockedCacheService();
-    youtubeService = new YoutubeService(mockCacheServiceInstance);
+    youtubeService = new YoutubeService(
+      "test_api_key",
+      mockCacheServiceInstance
+    );
   });
 
   afterEach(() => {

@@ -8,6 +8,7 @@ import { FindConsistentOutlierChannelsOptions } from "../../../types/analyzer.ty
 import { ChannelCache, LatestAnalysis } from "../../../types/niche.types";
 import { youtube_v3 } from "googleapis";
 import { CACHE_COLLECTIONS } from "../../../config/cache.config";
+import { mocked, mockedModule } from "../../../__tests__/utils/mocks";
 
 // Helper function to create mock LatestAnalysis object
 function createMockLatestAnalysis(
@@ -104,7 +105,8 @@ jest.mock("../../cache.service", () => {
   ).CacheService;
   return {
     CacheService: jest.fn().mockImplementation(() => {
-      const instance = new actualCacheService(); // No db in constructor
+      const MOCK_MDB_CONNECTION_STRING = "mongodb://mock-db"; // Define mock connection string
+      const instance = new actualCacheService(MOCK_MDB_CONNECTION_STRING); // Pass mock connection string
       jest.spyOn(instance, "createOperationKey");
       jest.spyOn(instance, "getOrSet");
 
@@ -152,56 +154,53 @@ const MockedNicheRepository = NicheRepository;
 
 // Mock VideoManagementService
 jest.mock("../../youtube.service.ts", () => {
-  // We need to mock the actual implementation to use the CacheService mock
   const actualYoutubeService = jest.requireActual(
     "../../youtube.service.ts"
   ).YoutubeService;
-
   return {
-    YoutubeService: jest.fn().mockImplementation((cacheService: any) => {
-      const instance = new actualYoutubeService(cacheService);
-      jest.spyOn(instance, "fetchChannelRecentTopVideos");
+    YoutubeService: jest
+      .fn()
+      .mockImplementation((apiKey: string, cacheService: any) => {
+        const instance = new actualYoutubeService(apiKey, cacheService); // Pass apiKey
+        jest.spyOn(instance, "fetchChannelRecentTopVideos");
 
-      // Mock the internal youtube API calls that fetchChannelRecentTopVideos makes
-      // This is crucial when getOrSet's operation() is executed
-      instance.youtube = {
-        search: {
-          list: jest.fn(),
-        },
-        videos: {
-          list: jest.fn(),
-        },
-      };
+        instance.youtube = {
+          search: {
+            list: jest.fn(),
+          },
+          videos: {
+            list: jest.fn(),
+          },
+        };
 
-      // Default mock for youtube.search.list and youtube.videos.list
-      // These can be overridden by specific tests if needed
-      instance.youtube.search.list.mockResolvedValue({
-        data: { items: [] },
-      });
-      instance.youtube.videos.list.mockResolvedValue({
-        data: { items: [] },
-      });
+        instance.youtube.search.list.mockResolvedValue({
+          data: { items: [] },
+        });
+        instance.youtube.videos.list.mockResolvedValue({
+          data: { items: [] },
+        });
 
-      return instance;
-    }),
+        return instance;
+      }),
   };
 });
 // Mock analysis.logic functions
 jest.mock("../analysis.logic");
-const mockedAnalysisLogic = analysisLogic;
+const mockedAnalysisLogic = mockedModule(analysisLogic); // Cast to Mocked type
 
 describe("executeDeepConsistencyAnalysis Function", () => {
-  let cacheServiceInstance: CacheService; // Changed to non-mocked type as it's not directly mocked here
+  let cacheServiceInstance: CacheService;
   let videoManagementInstance: jest.Mocked<VideoManagementService>;
   let nicheRepositoryInstance: jest.Mocked<NicheRepository>;
 
-  // Define variables in a broader scope
   let publishedAfterString: string;
   let mockSuccessVideos: youtube_v3.Schema$Video[];
   let genericError: Error;
 
+  const DUMMY_API_KEY = "dummy-api-key"; // Define dummy API key
+
   const baseMockOptions: FindConsistentOutlierChannelsOptions = {
-    query: "test query", // Added required 'query' property
+    query: "test query",
     channelAge: "NEW",
     consistencyLevel: "MODERATE",
     outlierMagnitude: "STANDARD",
@@ -210,18 +209,14 @@ describe("executeDeepConsistencyAnalysis Function", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset mocks for each test
     (getDb as jest.Mock).mockResolvedValue(mockDb);
 
-    // cacheServiceInstance is no longer directly used by executeDeepConsistencyAnalysis,
-    // but it's still needed for the YoutubeService constructor if we were not mocking YoutubeService fully.
-    // Since YoutubeService is fully mocked, cacheServiceInstance is not strictly needed here for the test itself.
-    // However, keeping it for consistency with the mock setup of YoutubeService.
-    cacheServiceInstance = new MockedCacheService();
-    videoManagementInstance = new VideoManagementService(cacheServiceInstance); // YoutubeService now takes CacheService
-    nicheRepositoryInstance = new MockedNicheRepository();
+    cacheServiceInstance = mocked(new MockedCacheService());
+    videoManagementInstance = mocked(
+      new VideoManagementService(DUMMY_API_KEY, cacheServiceInstance)
+    ); // Explicitly cast
+    nicheRepositoryInstance = mocked(new MockedNicheRepository()); // Explicitly cast
 
-    // Initialize variables for each test
     publishedAfterString = new Date().toISOString();
     genericError = new Error("Network Error");
     mockSuccessVideos = [
@@ -230,30 +225,21 @@ describe("executeDeepConsistencyAnalysis Function", () => {
         snippet: {
           publishedAt: "sometime",
           title: "t",
-          channelId: "channel1_success", // Use literal string or define const
+          channelId: "channel1_success",
         },
         statistics: { viewCount: "1" },
       },
     ];
 
-    // Reset the mock implementation for fetchChannelRecentTopVideos for each test
-    // No need to mock fetchChannelRecentTopVideos here directly,
-    // as the YoutubeService mock now uses the actual implementation
-    // which will interact with the mocked cacheServiceInstance.
-    // We just need to ensure cacheServiceInstance is set up for the test.
-
     mockedAnalysisLogic.isQuotaError.mockReturnValue(false);
     mockedAnalysisLogic.calculateChannelAgePublishedAfter.mockReturnValue(
       publishedAfterString
-    ); // Use the initialized variable
-    mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
-    mockedAnalysisLogic.calculateConsistencyMetrics.mockReturnValue(
-      // calculateConsistencyMetrics returns an object { sourceVideoCount, metrics: {...} }
-      {
-        sourceVideoCount: 10, // Default mock value
-        metrics: createMockLatestAnalysis().metrics,
-      }
     );
+    mockedAnalysisLogic.getConsistencyThreshold.mockReturnValue(0.7);
+    mockedAnalysisLogic.calculateConsistencyMetrics.mockReturnValue({
+      sourceVideoCount: 10,
+      metrics: createMockLatestAnalysis().metrics,
+    });
   });
 
   it("should attempt to run without throwing an error with empty inputs", async () => {
