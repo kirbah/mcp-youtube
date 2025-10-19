@@ -27,19 +27,16 @@ export default function createServer({
 }: {
   config: z.infer<typeof configSchema>;
 }) {
-  process.env.YOUTUBE_API_KEY = config.youtubeApiKey;
-  if (
-    config.mdbMcpConnectionString &&
-    config.mdbMcpConnectionString.startsWith("mongodb")
-  ) {
-    process.env.MDB_MCP_CONNECTION_STRING = config.mdbMcpConnectionString;
-  }
-
-  if (!process.env.YOUTUBE_API_KEY) {
+  // Early exit if the API key is missing.
+  if (!config.youtubeApiKey) {
     throw new Error("YOUTUBE_API_KEY is not set.");
   }
 
-  const container = initializeContainer();
+  const container = initializeContainer({
+    apiKey: config.youtubeApiKey,
+    mdbMcpConnectionString: config.mdbMcpConnectionString,
+  });
+
   const server = new McpServer({
     name: "YouTube",
     version: pkg.version,

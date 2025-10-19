@@ -5,6 +5,20 @@ const DATABASE_NAME = "youtube_niche_analysis";
 // These will hold the single, shared connection promise and client instance.
 let connectionPromise: Promise<MongoClient> | null = null;
 let mongoClient: MongoClient | null = null;
+let _connectionString: string | null = null; // To store the connection string
+
+/**
+ * Initializes the database connection. This should be called once at startup.
+ * @param connectionString The MongoDB connection string.
+ */
+export function initializeDatabase(connectionString: string): void {
+  if (!connectionString) {
+    throw new Error(
+      "MongoDB connection string is required for database initialization."
+    );
+  }
+  _connectionString = connectionString;
+}
 
 /**
  * Gets a promise that resolves to the connected MongoClient.
@@ -14,15 +28,13 @@ let mongoClient: MongoClient | null = null;
 function getClientPromise(): Promise<MongoClient> {
   // If the promise doesn't exist, create it. This block runs only once.
   if (!connectionPromise) {
-    const connectionString = process.env.MDB_MCP_CONNECTION_STRING;
-    if (!connectionString) {
-      // Use Promise.reject to handle errors in an async context
+    if (!_connectionString) {
       return Promise.reject(
-        new Error("MDB_MCP_CONNECTION_STRING environment variable is required")
+        new Error("Database not initialized. Call initializeDatabase() first.")
       );
     }
 
-    const client = new MongoClient(connectionString);
+    const client = new MongoClient(_connectionString);
     connectionPromise = client.connect().then((connectedClient) => {
       mongoClient = connectedClient; // Store the resolved client
       return connectedClient;
@@ -50,5 +62,6 @@ export async function disconnectFromDatabase(): Promise<void> {
     await mongoClient.close();
     mongoClient = null;
     connectionPromise = null; // Reset for potential future connections in tests, etc.
+    _connectionString = null; // Also reset the connection string
   }
 }

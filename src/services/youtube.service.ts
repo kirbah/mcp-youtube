@@ -72,11 +72,15 @@ export class YoutubeService {
   private readonly ABSOLUTE_MAX_RESULTS = 500;
   private apiCreditsUsed: number = 0;
 
-  constructor(cacheService: CacheService) {
+  constructor(apiKey: string, cacheService: CacheService) {
+    if (!apiKey) {
+      throw new Error("YouTube API key is required but was not provided.");
+    }
+
     this.cacheService = cacheService;
     this.youtube = google.youtube({
       version: "v3",
-      auth: process.env.YOUTUBE_API_KEY,
+      auth: apiKey,
     });
   }
 

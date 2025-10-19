@@ -17,6 +17,11 @@ interface GenericCacheEntry<T> {
 
 export class CacheService {
   private readonly CACHE_COLLECTION_PREFIX = "yt_cache_";
+  private readonly mdbMcpConnectionString: string | undefined;
+
+  constructor(mdbMcpConnectionString?: string) {
+    this.mdbMcpConnectionString = mdbMcpConnectionString;
+  }
 
   /**
    * The core generic caching method. It attempts to retrieve data from the cache using a key.
@@ -40,7 +45,7 @@ export class CacheService {
     params?: object,
     pathsToExclude?: string[]
   ): Promise<T> {
-    if (!process.env.MDB_MCP_CONNECTION_STRING) {
+    if (!this.mdbMcpConnectionString) {
       // If no DB is configured, bypass caching and execute the operation directly.
       return operation();
     }
