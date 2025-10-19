@@ -46,7 +46,10 @@ describe("YoutubeService.getTrendingVideos", () => {
       "../../cache.service"
     );
     mockCacheServiceInstance = new MockedCacheService();
-    videoManagement = new YoutubeService(mockCacheServiceInstance);
+    videoManagement = new YoutubeService(
+      "test_api_key",
+      mockCacheServiceInstance
+    );
 
     // Access the mock directly from the mocked module
     // The google.youtube() call here will use the mocked implementation.
@@ -223,13 +226,18 @@ describe("YoutubeService.getTrendingVideos", () => {
       return { data: { items: [] } };
     });
     // Re-initialize with no API key
-    expect(() => new YoutubeService(mockCacheServiceInstance)).not.toThrow(); // Constructor itself might not throw if API key check is lazy
+    expect(
+      () => new YoutubeService("test_api_key", mockCacheServiceInstance)
+    ).not.toThrow(); // Constructor itself might not throw if API key check is lazy
 
     // Simulate that a call to youtube.videos.list would fail if auth (API key) is missing.
     mockVideosList.mockRejectedValue(new Error("Missing API key"));
     delete process.env.YOUTUBE_API_KEY; // Ensure API key is not set for this specific test scenario
 
-    const freshVideoManagement = new YoutubeService(mockCacheServiceInstance); // Create a new instance that would use the missing API key
+    const freshVideoManagement = new YoutubeService(
+      "test_api_key",
+      mockCacheServiceInstance
+    ); // Create a new instance that would use the missing API key
     await expect(freshVideoManagement.getTrendingVideos({})).rejects.toThrow(
       "YouTube API call for getTrendingVideos failed"
     );

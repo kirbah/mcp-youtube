@@ -92,7 +92,9 @@ describe("YoutubeService.getChannelTopVideos", () => {
     }));
 
     // Mock CacheService and its methods
-    mockCacheService = new CacheService({} as any);
+    mockCacheService = new (CacheService as jest.Mock<CacheService>)(
+      {} as any
+    ) as jest.Mocked<CacheService>;
     mockCacheService.createOperationKey.mockImplementation(
       (operationName, options) =>
         `${operationName}-${JSON.stringify(options || {})}`
@@ -101,7 +103,7 @@ describe("YoutubeService.getChannelTopVideos", () => {
       async (key, operation, _ttl, _collection) => operation()
     );
 
-    videoManagement = new YoutubeService(mockCacheService); // Pass mockCacheService
+    videoManagement = new YoutubeService("test-api-key", mockCacheService); // Pass mockCacheService and a dummy API key
     (parseYouTubeNumber as jest.Mock).mockImplementation((val) =>
       parseInt(val || "0")
     );

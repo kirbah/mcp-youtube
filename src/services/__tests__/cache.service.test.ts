@@ -26,10 +26,10 @@ jest.mock("../database.service", () => {
 let cacheServiceInstance: CacheService;
 
 describe("CacheService", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // We need to get the actual mock functions used by the mocked getDb
     // This ensures our tests assert against the correct mock instances.
-    const mockDb = getDb(); // This is the mocked getDb
+    const mockDb = await getDb(); // Await the mocked getDb to get the Db object
     const mockCollection = mockDb.collection("test_collection"); // Provide a collection name
 
     actualMockUpdateOne = mockCollection.updateOne as jest.Mock;
@@ -47,10 +47,11 @@ describe("CacheService", () => {
     // Clear the getDb mock itself and the collection mock function
     // getDb (the imported function) is mocked by jest.mock
     (getDb as jest.Mock).mockClear();
-    // getDb().collection is also a mock function from our factory
+    // mockDb.collection is also a mock function from our factory
     (mockDb.collection as jest.Mock).mockClear();
 
-    cacheServiceInstance = new CacheService();
+    // Instantiate CacheService with a connection string by default for tests that expect caching
+    cacheServiceInstance = new CacheService("mongodb://test");
   });
 
   describe("createOperationKey", () => {
@@ -89,19 +90,8 @@ describe("CacheService", () => {
     const freshData = { value: "fresh" };
     const cachedData = { value: "cached" };
 
-    describe("when MDB_MCP_CONNECTION_STRING is set", () => {
-      const originalEnv = process.env;
-
-      beforeEach(() => {
-        process.env = {
-          ...originalEnv,
-          MDB_MCP_CONNECTION_STRING: "mongodb://test",
-        };
-      });
-
-      afterEach(() => {
-        process.env = originalEnv;
-      });
+    describe("when CacheService is initialized with a connection string", () => {
+      // cacheServiceInstance is already initialized with a connection string in the outer beforeEach
 
       it("should return cached data if available and not expired", async () => {
         actualMockFindOne.mockResolvedValue({
@@ -200,22 +190,17 @@ describe("CacheService", () => {
       });
     });
 
-    describe("when MDB_MCP_CONNECTION_STRING is not set", () => {
-      const originalEnv = process.env;
+    describe("when CacheService is initialized without a connection string", () => {
+      let bypassCacheServiceInstance: CacheService;
 
       beforeEach(() => {
-        jest.resetModules();
-        process.env = { ...originalEnv };
-        delete process.env.MDB_MCP_CONNECTION_STRING;
-      });
-
-      afterEach(() => {
-        process.env = originalEnv;
+        // Instantiate CacheService without a connection string to bypass caching
+        bypassCacheServiceInstance = new CacheService();
       });
 
       it("should bypass caching and execute the operation directly", async () => {
         const operation = jest.fn().mockResolvedValue(freshData);
-        const result = await cacheServiceInstance.getOrSet(
+        const result = await bypassCacheServiceInstance.getOrSet(
           key,
           operation,
           ttlSeconds,

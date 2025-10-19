@@ -1,5 +1,12 @@
 import createServer, { configSchema } from "../index";
 import { z } from "zod";
+import * as databaseService from "../services/database.service"; // Import the module to mock
+
+// Mock the initializeDatabase function
+jest.mock("../services/database.service", () => ({
+  ...jest.requireActual("../services/database.service"), // Keep actual implementations for other exports
+  initializeDatabase: jest.fn(), // Mock initializeDatabase
+}));
 
 describe("createServer", () => {
   const originalEnv = process.env;
@@ -7,37 +14,51 @@ describe("createServer", () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
-    delete process.env.MDB_MCP_CONNECTION_STRING;
+    // Clear any previous calls to the mock
+    (databaseService.initializeDatabase as jest.Mock).mockClear();
   });
 
   afterEach(() => {
     process.env = originalEnv;
   });
 
-  it("should set MDB_MCP_CONNECTION_STRING if it is a valid mongodb connection string", () => {
+  it("should call initializeDatabase with the correct connection string if provided", () => {
+    const mockConnectionString = "mongodb://test";
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
-      mdbMcpConnectionString: "mongodb://test",
+      mdbMcpConnectionString: mockConnectionString,
     };
     createServer({ config });
-    expect(process.env.MDB_MCP_CONNECTION_STRING).toBe("mongodb://test");
+    expect(databaseService.initializeDatabase).toHaveBeenCalledTimes(1);
+    expect(databaseService.initializeDatabase).toHaveBeenCalledWith(
+      mockConnectionString
+    );
   });
 
-  it("should not set MDB_MCP_CONNECTION_STRING if it is not a valid mongodb connection string", () => {
+  it("should not call initializeDatabase if mdbMcpConnectionString is not provided", () => {
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
-      mdbMcpConnectionString: "not-a-mongodb-string",
+      // mdbMcpConnectionString is optional and not provided
     };
     createServer({ config });
-    expect(process.env.MDB_MCP_CONNECTION_STRING).toBeUndefined();
+    expect(databaseService.initializeDatabase).not.toHaveBeenCalled();
   });
 
-  it("should not set MDB_MCP_CONNECTION_STRING if it is an empty string", () => {
+  it("should not call initializeDatabase if mdbMcpConnectionString is an empty string", () => {
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
       mdbMcpConnectionString: "",
     };
     createServer({ config });
-    expect(process.env.MDB_MCP_CONNECTION_STRING).toBeUndefined();
+    expect(databaseService.initializeDatabase).not.toHaveBeenCalled();
+  });
+
+  it("should throw an error if youtubeApiKey is not set", () => {
+    const config: z.infer<typeof configSchema> = {
+      youtubeApiKey: "", // Missing API key
+    };
+    expect(() => createServer({ config })).toThrow(
+      "YOUTUBE_API_KEY is not set."
+    );
   });
 });

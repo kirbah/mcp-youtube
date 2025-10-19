@@ -10,6 +10,7 @@ import {
   FindConsistentOutlierChannelsOptions,
   NicheAnalysisOutput,
 } from "../../types/analyzer.types";
+import { mocked } from "../../__tests__/utils/mocks";
 
 // Mock dependencies
 jest.mock("../cache.service");
@@ -36,10 +37,14 @@ describe("NicheAnalyzerService", () => {
   const mockFormatAndRankAnalysisResults =
     formatAndRankAnalysisResults as jest.Mock;
 
+  const DUMMY_API_KEY = "dummy-api-key"; // Define dummy API key
+
   beforeEach(() => {
     // Reset mocks before each test
-    mockCacheService = new CacheService(null as any);
-    mockVideoManagement = new YoutubeService(mockCacheService);
+    mockCacheService = mocked(new CacheService(null as any)); // Explicitly cast
+    mockVideoManagement = mocked(
+      new YoutubeService(DUMMY_API_KEY, mockCacheService)
+    ); // Explicitly cast
 
     // Provide mock implementations for VideoManagement methods
     mockVideoManagement.resetApiCreditsUsed = jest.fn();
@@ -48,13 +53,13 @@ describe("NicheAnalyzerService", () => {
     mockVideoManagement.batchFetchChannelStatistics = jest.fn();
     mockVideoManagement.fetchChannelRecentTopVideos = jest.fn();
     mockVideoManagement.getVideo = jest.fn();
-    mockVideoManagement.getTranscript = jest.fn();
+    // mockVideoManagement.getTranscript = jest.fn(); // Removed as it's not a public method
     mockVideoManagement.getChannelStatistics = jest.fn();
     mockVideoManagement.getChannelTopVideos = jest.fn();
     mockVideoManagement.getTrendingVideos = jest.fn();
     mockVideoManagement.getVideoCategories = jest.fn();
 
-    mockNicheRepository = new NicheRepository(null as any); // Initialize mockNicheRepository
+    mockNicheRepository = mocked(new NicheRepository()); // Corrected constructor call and explicitly cast
 
     nicheAnalyzerService = new NicheAnalyzerService(
       mockVideoManagement,

@@ -43,7 +43,10 @@ describe("YoutubeService.getVideo", () => {
     // The constructor of CacheService is mocked, so new CacheService() will return our mock implementation
     mockCacheServiceInstance = new CacheService({} as any); // Pass a dummy db, it won't be used by the mock
 
-    youtubeService = new YoutubeService(mockCacheServiceInstance); // Pass the mocked CacheService instance
+    youtubeService = new YoutubeService(
+      "test_api_key",
+      mockCacheServiceInstance
+    ); // Pass the mocked CacheService instance
   });
 
   afterEach(() => {
