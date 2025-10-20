@@ -27,9 +27,7 @@ describe("DatabaseService Lifecycle", () => {
   const MOCK_CONN_STRING = "mongodb://test-connection";
   const mockDbInstance = {} as Db; // A dummy Db object for our mock to return
 
-  // --- REVISED MOCK SETUP ---
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockClientInstance: any; // Use 'any' to avoid type-fighting with mocks
+  let mockClientInstance: any;
 
   beforeEach(() => {
     // Reset mocks as before
