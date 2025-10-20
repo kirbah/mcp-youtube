@@ -35,10 +35,16 @@ function getClientPromise(): Promise<MongoClient> {
     }
 
     const client = new MongoClient(_connectionString);
-    connectionPromise = client.connect().then((connectedClient) => {
-      mongoClient = connectedClient; // Store the resolved client
-      return connectedClient;
-    });
+    connectionPromise = client
+      .connect()
+      .then((connectedClient) => {
+        mongoClient = connectedClient; // Store the resolved client
+        return connectedClient;
+      })
+      .catch((err) => {
+        connectionPromise = null; // Allow for a retry on the next call
+        throw err; // Re-throw the original error
+      });
   }
   return connectionPromise;
 }

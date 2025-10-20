@@ -1,85 +1,157 @@
-import { Db } from "mongodb";
+// --- 1. Mock the 'mongodb' library ---
+// We provide a mock implementation for MongoClient and its methods.
+const mockConnect = jest.fn();
+const mockDb = jest.fn();
+const mockClose = jest.fn();
 
-// Mock the entire database.service module
-const mockInitializeDatabase = jest.fn();
-const mockGetDb = jest.fn();
-const mockDisconnectFromDatabase = jest.fn();
-
-jest.mock("../database.service", () => ({
-  initializeDatabase: mockInitializeDatabase,
-  getDb: mockGetDb,
-  disconnectFromDatabase: mockDisconnectFromDatabase,
+// This is the mock MongoClient constructor
+const mockMongoClient = jest.fn(() => ({
+  connect: mockConnect,
+  db: mockDb,
+  close: mockClose,
 }));
 
-describe("DatabaseService Connection Lifecycle", () => {
-  const mockDbInstance = {} as Db; // A simple mock Db object
+jest.mock("mongodb", () => {
+  // This replaces the actual 'mongodb' library with our mock version
+  return {
+    MongoClient: mockMongoClient,
+  };
+});
+
+// --- 2. Import the *actual* service functions we want to test ---
+import * as dbService from "../database.service";
+import { Db } from "mongodb";
+
+describe("DatabaseService Lifecycle", () => {
+  const MOCK_DB_NAME = "youtube_niche_analysis";
+  const MOCK_CONN_STRING = "mongodb://test-connection";
+  const mockDbInstance = {} as Db; // A dummy Db object for our mock to return
+
+  let mockClientInstance: any;
 
   beforeEach(() => {
-    // Reset all mocks before each test
-    mockInitializeDatabase.mockClear();
-    mockGetDb.mockClear();
-    mockDisconnectFromDatabase.mockClear();
+    // Reset mocks as before
+    mockMongoClient.mockClear();
+    mockConnect.mockClear();
+    mockDb.mockClear();
+    mockClose.mockClear();
 
-    // Default mock implementation for getDb to return a resolved Db instance
-    mockGetDb.mockResolvedValue(mockDbInstance);
+    // Create a single, consistent instance for the test
+    mockClientInstance = {
+      connect: mockConnect,
+      db: mockDb,
+      close: mockClose,
+    };
 
-    // Initialize the database with a dummy connection string for tests that expect it
-    mockInitializeDatabase("mongodb://dummy-connection-string");
+    // The constructor mock now returns this specific instance
+    mockMongoClient.mockReturnValue(mockClientInstance);
+
+    // The connect mock now resolves with that same instance
+    mockConnect.mockResolvedValue(mockClientInstance);
+
+    mockDb.mockReturnValue(mockDbInstance);
   });
 
   afterEach(async () => {
-    // Ensure disconnect is called to reset the internal state of database.service
-    await mockDisconnectFromDatabase();
+    // --- 3. This is CRITICAL for test isolation ---
+    // Use the real disconnect function to reset the singleton's internal state
+    await dbService.disconnectFromDatabase();
   });
 
-  it("should connect lazily, get DB, and disconnect successfully", async () => {
-    // Initial call to getDb should trigger the connection
-    const dbInstance = await mockGetDb();
-    expect(mockInitializeDatabase).toHaveBeenCalledTimes(1);
-    expect(mockGetDb).toHaveBeenCalledTimes(1);
-    expect(dbInstance).toEqual(mockDbInstance);
-
-    // Subsequent call to getDb should not trigger a new connection (as per the actual service's singleton logic)
-    // However, since we are mocking getDb directly, we need to simulate this behavior if desired.
-    // For now, we'll just assert that getDb is called again, as the mock doesn't have internal state.
-    await mockGetDb();
-    expect(mockGetDb).toHaveBeenCalledTimes(2);
-
-    // Disconnect from Database
-    await mockDisconnectFromDatabase();
-    expect(mockDisconnectFromDatabase).toHaveBeenCalledTimes(1);
-  });
-
-  it("should throw an error if initializeDatabase is not called", async () => {
-    // Reset mocks and ensure initializeDatabase is NOT called
-    mockInitializeDatabase.mockClear();
-    mockGetDb.mockClear();
-    mockDisconnectFromDatabase.mockClear();
-
-    // Configure mockGetDb to reject with the expected error
-    mockGetDb.mockRejectedValue(
-      new Error("Database not initialized. Call initializeDatabase() first.")
-    );
-
-    // Disconnect first to ensure a clean state where initializeDatabase hasn't been called
-    await mockDisconnectFromDatabase(); // This will clear the internal state of the actual service if it was used
-    await expect(mockGetDb()).rejects.toThrow(
+  it("should throw an error if getDb is called before initialization", async () => {
+    // We expect the real getDb function to reject because _connectionString is null
+    await expect(dbService.getDb()).rejects.toThrow(
       "Database not initialized. Call initializeDatabase() first."
     );
   });
 
-  it("should reconnect after disconnection", async () => {
-    await mockGetDb();
-    expect(mockGetDb).toHaveBeenCalledTimes(1);
-    await mockDisconnectFromDatabase();
-    expect(mockDisconnectFromDatabase).toHaveBeenCalledTimes(1);
+  it("should initialize, connect lazily on first getDb call, and return the db instance", async () => {
+    // Initialize the service with our test connection string
+    dbService.initializeDatabase(MOCK_CONN_STRING);
 
-    // Calling getDb again should trigger a new connection
-    // Reset mockGetDb to simulate a fresh connection attempt
-    mockGetDb.mockClear();
-    mockGetDb.mockResolvedValue(mockDbInstance); // Re-resolve for the new connection
+    // At this point, no connection should have been made yet
+    expect(mockConnect).not.toHaveBeenCalled();
 
-    await mockGetDb();
-    expect(mockGetDb).toHaveBeenCalledTimes(1); // Called once after reset
+    // The first call to getDb should trigger the connection
+    const db = await dbService.getDb();
+
+    // Now, we verify the actual logic ran
+    expect(mockMongoClient).toHaveBeenCalledWith(MOCK_CONN_STRING);
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+    expect(mockDb).toHaveBeenCalledWith(MOCK_DB_NAME);
+    expect(db).toBe(mockDbInstance);
+  });
+
+  it("should reuse the existing connection promise on subsequent calls", async () => {
+    dbService.initializeDatabase(MOCK_CONN_STRING);
+
+    // Call getDb multiple times
+    await dbService.getDb();
+    await dbService.getDb();
+    const db = await dbService.getDb();
+
+    // The core test of the singleton: connect should only be called ONCE
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+    expect(db).toBe(mockDbInstance);
+  });
+
+  it("should handle connection failure and allow for a retry", async () => {
+    dbService.initializeDatabase(MOCK_CONN_STRING);
+
+    // --- 1. Simulate a failure ---
+    // Use mockRejectedValueOnce to make the first call fail
+    mockConnect.mockRejectedValueOnce(new Error("Connection failed"));
+
+    // Expect the first call to getDb to fail
+    await expect(dbService.getDb()).rejects.toThrow("Connection failed");
+
+    // Verify that the connection was attempted
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+
+    // --- 2. Simulate a success on the next try ---
+    // The service should have reset its promise, so a second call should try again.
+    // Our beforeEach already configured the default mock to succeed.
+    await expect(dbService.getDb()).resolves.toBe(mockDbInstance);
+
+    // The critical assertion: connect was called a SECOND time.
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+  });
+
+  it("should handle concurrent calls by creating only one connection", async () => {
+    dbService.initializeDatabase(MOCK_CONN_STRING);
+
+    // Fire off two calls to getDb concurrently without awaiting them individually
+    const promise1 = dbService.getDb();
+    const promise2 = dbService.getDb();
+
+    // Await them both together
+    const [db1, db2] = await Promise.all([promise1, promise2]);
+
+    // The critical assertion: connect was only ever called ONCE for both.
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+
+    // And both calls resolved to the exact same Db instance.
+    expect(db1).toBe(mockDbInstance);
+    expect(db2).toBe(mockDbInstance);
+  });
+
+  it("should disconnect and allow for a new connection", async () => {
+    dbService.initializeDatabase(MOCK_CONN_STRING);
+
+    // First connection
+    await dbService.getDb();
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+
+    // Disconnect using the real service function
+    await dbService.disconnectFromDatabase();
+    expect(mockClose).toHaveBeenCalledTimes(1);
+
+    // Re-initialize and connect again
+    dbService.initializeDatabase("mongodb://new-string");
+    await dbService.getDb();
+
+    // A new connection should have been made
+    expect(mockConnect).toHaveBeenCalledTimes(2); // Called once before, once now
+    expect(mockMongoClient).toHaveBeenCalledWith("mongodb://new-string");
   });
 });
