@@ -49,7 +49,10 @@ export default function createServer({
           return await handler(args);
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : String(err);
-          return { content: [{ type: "text", text: `Error: ${errorMessage}` }], isError: true };
+          return {
+            content: [{ type: "text", text: `Error: ${errorMessage}` }],
+            isError: true,
+          };
         }
       }
     );
