@@ -11,6 +11,7 @@ import pkg from "../package.json" with { type: "json" };
 export const configSchema = z.object({
   youtubeApiKey: z
     .string()
+    .optional()
     .describe("YouTube Data API key for accessing the YouTube API."),
   mdbMcpConnectionString: z
     .string()
@@ -26,7 +27,7 @@ export default function createServer({
   config: z.infer<typeof configSchema>;
 }) {
   const container = initializeContainer({
-    apiKey: config.youtubeApiKey,
+    apiKey: config.youtubeApiKey || "",
     mdbMcpConnectionString: config.mdbMcpConnectionString,
   });
 
