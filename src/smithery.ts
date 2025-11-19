@@ -35,13 +35,28 @@ export default function createServer({
     version: pkg.version,
   });
 
-  allTools(container).forEach(({ config, handler }) => {
+  // Helper function to preserve the generic type link between schema and handler
+  function registerTool<T extends z.ZodObject<any>>(
+    config: { name: string; description: string; inputSchema: T },
+    handler: (args: z.infer<T>) => Promise<any>
+  ) {
     server.tool(
       config.name,
       config.description,
       config.inputSchema.shape,
-      handler
+      async (args: z.infer<T>) => {
+        try {
+          return await handler(args);
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          return { content: [{ type: "text", text: `Error: ${errorMessage}` }], isError: true };
+        }
+      }
     );
+  }
+
+  allTools(container).forEach(({ config, handler }) => {
+    registerTool(config, handler);
   });
 
   // Return the inner server object. No event listeners are needed here.
