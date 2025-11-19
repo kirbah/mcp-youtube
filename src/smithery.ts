@@ -2,11 +2,9 @@
 
 import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { allTools } from "./tools/index.js";
 import { initializeContainer } from "./container.js";
-import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
 
 // 1. Define and export the configuration schema for Smithery.
@@ -49,35 +47,3 @@ export default function createServer({
   // Return the inner server object. No event listeners are needed here.
   return server.server;
 }
-
-// 3. Create the `main` function for backward-compatible STDIO execution.
-// This function handles the full lifecycle for STDIO only.
-async function main() {
-  const server = createServer({
-    config: {
-      youtubeApiKey: process.env.YOUTUBE_API_KEY!,
-      mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING!,
-    },
-  });
-
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error(`YouTube MCP server (v${pkg.version}) running in stdio mode.`);
-
-  // Graceful shutdown handlers for STDIO mode (e.g., Ctrl+C)
-  const cleanup = async () => {
-    console.error("Shutting down STDIO server...");
-    await disconnectFromDatabase();
-    console.error("Database disconnected. Exiting.");
-    process.exit(0);
-  };
-
-  process.on("SIGINT", () => void cleanup());
-  process.on("SIGTERM", () => void cleanup());
-}
-
-// By default, the server starts with stdio transport
-main().catch((error) => {
-  console.error("Server error:", error);
-  process.exit(1);
-});
