@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "npx @smithery/cli dev",
     "build": "npm run build:http",
-    "build:http": "npx @smithery/cli build",
+    "build:http": "npx @smithery/cli build ./src/smithery.ts",
     "start": "npm run start:http",
     "start:http": "node .smithery/index.cjs",
     "build:stdio": "tsc",

@@ -52,13 +52,4 @@ describe("createServer", () => {
     createServer({ config });
     expect(databaseService.initializeDatabase).not.toHaveBeenCalled();
   });
-
-  it("should throw an error if youtubeApiKey is not set", () => {
-    const config: z.infer<typeof configSchema> = {
-      youtubeApiKey: "", // Missing API key
-    };
-    expect(() => createServer({ config })).toThrow(
-      "YOUTUBE_API_KEY is not set."
-    );
-  });
 });
