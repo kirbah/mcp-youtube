@@ -1,27 +1,14 @@
 #!/usr/bin/env node
 
 import "dotenv/config";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { allTools } from "./tools/index.js";
+import { configSchema } from "./server.js";
 import { initializeContainer } from "./container.js";
 import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
+import { createMcpServer } from "./server.js";
 
-// 1. Define and export the configuration schema for Smithery.
-export const configSchema = z.object({
-  youtubeApiKey: z
-    .string()
-    .describe("YouTube Data API key for accessing the YouTube API."),
-  mdbMcpConnectionString: z
-    .string()
-    .optional()
-    .describe("MongoDB connection string to cache the data."),
-});
-
-// 2. Create the `createServer` function for Smithery's HTTP runtime.
-// It sets up the server but does NOT handle transport or shutdown.
 export default function createServer({
   config,
 }: {
@@ -32,26 +19,11 @@ export default function createServer({
     mdbMcpConnectionString: config.mdbMcpConnectionString,
   });
 
-  const server = new McpServer({
-    name: "YouTube",
-    version: pkg.version,
-  });
+  const server = createMcpServer(container);
 
-  allTools(container).forEach(({ config, handler }) => {
-    server.tool(
-      config.name,
-      config.description,
-      config.inputSchema.shape,
-      handler
-    );
-  });
-
-  // Return the inner server object. No event listeners are needed here.
   return server.server;
 }
 
-// 3. Create the `main` function for backward-compatible STDIO execution.
-// This function handles the full lifecycle for STDIO only.
 async function main() {
   const server = createServer({
     config: {
