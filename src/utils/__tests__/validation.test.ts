@@ -23,7 +23,7 @@ describe("validation", () => {
       const params = { name: "Test", age: "30" } as any; // Cast to any to allow invalid type for testing
       expect(() => validateParams(params, testSchema)).toThrow(Error);
       expect(() => validateParams(params, testSchema)).toThrow(
-        "Validation error: Expected number, received string"
+        "Validation error: Invalid input: expected number, received string"
       );
     });
 

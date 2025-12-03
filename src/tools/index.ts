@@ -53,13 +53,14 @@ import type {
   VideoCategoriesParams,
   FindConsistentOutlierChannelsParams,
 } from "../types/tools.js";
-import { z, AnyZodObject } from "zod";
+import { z } from "zod";
 
 export interface ToolDefinition {
   config: {
     name: string;
     description: string;
-    inputSchema: AnyZodObject;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    inputSchema: z.ZodObject<any>;
   };
   handler: (params: Record<string, unknown>) => Promise<CallToolResult>;
 }
