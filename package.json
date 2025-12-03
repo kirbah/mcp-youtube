@@ -5,7 +5,7 @@
   "description": "YouTube MCP server for token-optimized, structured data using the YouTube Data API v3.",
   "main": "dist/index.js",
   "type": "module",
-  "module": "src/index.ts",
+  "module": "src/smithery.ts",
   "bin": {
     "mcp-youtube": "dist/index.js"
   },
