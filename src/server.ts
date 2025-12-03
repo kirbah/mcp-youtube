@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import pkg from "../package.json" with { type: "json" };
-
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { allTools } from "./tools/index.js";
 import { IServiceContainer } from "./container.js";
@@ -60,8 +59,8 @@ export function createMcpServer(container: IServiceContainer) {
             isError: true,
           };
         }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
     );
   }
 
