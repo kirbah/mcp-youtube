@@ -22,9 +22,7 @@
   <a href="package.json">
     <img src="https://img.shields.io/node/v/@kirbah/mcp-youtube.svg" alt="Node.js Version Support" />
   </a>
-</p>
-
-<p align="left">
+  <!-- Smithery Badge -->
   <a href="https://smithery.ai/server/@kirbah/mcp-youtube">
     <img src="https://smithery.ai/badge/@kirbah/mcp-youtube" alt="View on Smithery" />
   </a>
