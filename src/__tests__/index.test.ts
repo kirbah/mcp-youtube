@@ -1,4 +1,5 @@
-import createServer, { configSchema } from "../index";
+import createServer from "../index";
+import { configSchema } from "../server";
 import { z } from "zod";
 import * as databaseService from "../services/database.service"; // Import the module to mock
 
