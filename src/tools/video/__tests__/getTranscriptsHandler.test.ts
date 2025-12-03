@@ -204,7 +204,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError");
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected array, received string");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected array, received string"
+      );
     }
     expect(mockTranscriptService.getTranscriptSegments).not.toHaveBeenCalled();
   });
@@ -222,7 +224,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError");
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      );
     }
     expect(mockTranscriptService.getTranscriptSegments).not.toHaveBeenCalled();
   });
@@ -240,7 +244,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError");
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      );
     }
     expect(mockTranscriptService.getTranscriptSegments).not.toHaveBeenCalled();
   });
@@ -258,7 +264,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError");
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Expected string, received number");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected string, received number"
+      );
     }
     expect(mockTranscriptService.getTranscriptSegments).not.toHaveBeenCalled();
   });
@@ -352,7 +360,9 @@ describe("getTranscriptsHandler", () => {
       const errorResult = result.error as CallToolResult["error"];
       expect(errorResult.error).toBe("ToolExecutionError");
       const parsedMessage = JSON.parse(errorResult.message);
-      expect(parsedMessage[0].message).toBe("Required");
+      expect(parsedMessage[0].message).toBe(
+        "Invalid input: expected array, received undefined"
+      );
     }
     expect(mockTranscriptService.getTranscriptSegments).not.toHaveBeenCalled();
   });

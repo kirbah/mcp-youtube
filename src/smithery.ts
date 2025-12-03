@@ -36,8 +36,10 @@ export default function createServer({
   });
 
   // Helper function to preserve the generic type link between schema and handler
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function registerTool<T extends z.ZodObject<any>>(
     config: { name: string; description: string; inputSchema: T },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handler: (args: z.infer<T>) => Promise<any>
   ) {
     server.tool(
@@ -46,6 +48,7 @@ export default function createServer({
       config.inputSchema.shape,
       async (args: z.infer<T>) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return await handler(args);
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : String(err);
