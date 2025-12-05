@@ -5,6 +5,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { allTools } from "./tools/index.js";
 import { IServiceContainer } from "./container.js";
 import { registerPrompts } from "./prompts/index.js";
+import { registerResources } from "./resources/index.js";
 
 export const configSchema = z.object({
   youtubeApiKey: z
@@ -70,6 +71,8 @@ export function createMcpServer(container: IServiceContainer) {
   );
 
   registerPrompts(server, container);
+
+  registerResources(server, container);
 
   return server;
 }
