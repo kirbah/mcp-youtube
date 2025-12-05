@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { IServiceContainer } from "../container.js";
-import { TranscriptResource } from "./transcript.js";
+import {
+  TranscriptResource,
+  TranscriptLocalizedResource,
+} from "./transcript.js";
 
-const RESOURCE_CLASSES = [TranscriptResource];
+const RESOURCE_CLASSES = [TranscriptResource, TranscriptLocalizedResource];
 
 export function registerResources(
   server: McpServer,
