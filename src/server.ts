@@ -4,6 +4,7 @@ import pkg from "../package.json" with { type: "json" };
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { allTools } from "./tools/index.js";
 import { IServiceContainer } from "./container.js";
+import { registerPrompts } from "./prompts/index.js";
 
 export const configSchema = z.object({
   youtubeApiKey: z
@@ -67,6 +68,8 @@ export function createMcpServer(container: IServiceContainer) {
   allTools(container).forEach(({ config, handler }) =>
     registerTool(config, handler)
   );
+
+  registerPrompts(server, container);
 
   return server;
 }
