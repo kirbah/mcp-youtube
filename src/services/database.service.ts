@@ -68,6 +68,5 @@ export async function disconnectFromDatabase(): Promise<void> {
     await mongoClient.close();
     mongoClient = null;
     connectionPromise = null; // Reset for potential future connections in tests, etc.
-    _connectionString = null; // Also reset the connection string
   }
 }

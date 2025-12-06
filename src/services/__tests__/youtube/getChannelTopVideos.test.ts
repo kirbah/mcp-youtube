@@ -903,13 +903,14 @@ describe("YoutubeService.getChannelTopVideos", () => {
     const errorMessage = "Failed to fetch video details";
     mockVideosList.mockRejectedValue(new Error(errorMessage));
 
+    // With Promise.allSettled, the inner error is caught and a new one is thrown.
+    // The final error message comes from the catch block of the 'operation' function.
     await expect(
       videoManagement.getChannelTopVideos({ channelId: mockChannelId })
     ).rejects.toThrow(
       `YouTube API call for getChannelTopVideos failed for channelId: ${mockChannelId}`
     );
 
-    // Verify search.list was called
     expect(mockSearchList).toHaveBeenCalledTimes(1);
     expect(mockSearchList).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -917,7 +918,6 @@ describe("YoutubeService.getChannelTopVideos", () => {
       })
     );
 
-    // Verify videos.list was attempted
     expect(mockVideosList).toHaveBeenCalledTimes(1);
     expect(mockVideosList).toHaveBeenCalledWith(
       expect.objectContaining({
