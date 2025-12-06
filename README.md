@@ -2,6 +2,10 @@
 
 <!-- Badges Start -->
 <p align="left">
+  <!-- Smithery Badge -->
+  <a href="https://smithery.ai/server/@kirbah/mcp-youtube">
+    <img alt="Smithery Badge" src="https://smithery.ai/badge/@kirbah/mcp-youtube" />
+  </a>
   <!-- GitHub Actions CI -->
   <a href="https://github.com/kirbah/mcp-youtube/actions/workflows/ci.yml">
     <img src="https://github.com/kirbah/mcp-youtube/actions/workflows/ci.yml/badge.svg" alt="CI Status" />
@@ -21,12 +25,6 @@
   <!-- Node Version -->
   <a href="package.json">
     <img src="https://img.shields.io/node/v/@kirbah/mcp-youtube.svg" alt="Node.js Version Support" />
-  </a>
-</p>
-
-<p align="left">
-  <a href="https://smithery.ai/server/@kirbah/mcp-youtube">
-    <img src="https://smithery.ai/badge/@kirbah/mcp-youtube" alt="View on Smithery" />
   </a>
 </p>
 <!-- Badges End -->
