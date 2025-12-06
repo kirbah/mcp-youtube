@@ -58,6 +58,8 @@ describe("GetVideoCommentsTool", () => {
     const result = await tool.execute(invalidParams);
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain("Too small: expected string to have >=1 characters");
+    expect(result.content[0].text).toContain(
+      "Too small: expected string to have >=1 characters"
+    );
   });
 });
