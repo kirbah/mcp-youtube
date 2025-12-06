@@ -54,7 +54,7 @@ export const searchVideosSchema = z.object({
 export class SearchVideosTool extends BaseTool<typeof searchVideosSchema> {
   name = "searchVideos";
   description =
-    "Searches for videos based on a query string. Returns a list of videos matching the search criteria, including titles, descriptions, and metadata. Use this when you need to find videos related to specific topics or keywords.";
+    "Universal search tool for YouTube content. Use this to find **videos** (default) or **channels**. To find a specific content creator, you MUST set `type` to 'channel'. Supports filtering by `recency` (e.g., 'pastWeek') and `videoDuration`. Returns `videoId` or `channelId` needed for other tools.";
   schema = searchVideosSchema;
 
   protected async executeImpl(

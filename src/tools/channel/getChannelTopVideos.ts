@@ -33,7 +33,7 @@ export class GetChannelTopVideosTool extends BaseTool<
 > {
   name = "getChannelTopVideos";
   description =
-    "Retrieves the top videos from a specific channel. Returns a list of the most viewed or popular videos from the channel, based on view count. Use this when you want to identify the most successful content from a channel.";
+    "Retrieves a channel's most popular videos. CRITICAL: Requires a valid `channelId` (starting with 'UC...'), NOT a channel handle or name. Use `searchVideos` (type='channel') first to find the `channelId` if you only have a name.";
   schema = getChannelTopVideosSchema;
 
   protected async executeImpl(
