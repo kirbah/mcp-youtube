@@ -1,13 +1,11 @@
 import { z } from "zod";
-import { YoutubeService } from "../../services/youtube.service.js";
-import { formatError } from "../../utils/errorHandler.js";
+import { BaseTool } from "../base.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import {
   regionCodeSchema,
   categoryIdSchema,
   maxResultsSchema,
 } from "../../utils/validation.js";
-import type { TrendingParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getTrendingVideosSchema = z.object({
@@ -26,25 +24,20 @@ export const getTrendingVideosSchema = z.object({
     ),
 });
 
-export const getTrendingVideosConfig = {
-  name: "getTrendingVideos",
-  description:
-    "Retrieves trending videos based on region and category. Returns a list of videos that are currently popular in the specified region and category. Use this when you want to discover what's trending in specific areas or categories. To get available category IDs and their names, use the getVideoCategories tool first.",
-  inputSchema: getTrendingVideosSchema,
-};
+export class GetTrendingVideosTool extends BaseTool<
+  typeof getTrendingVideosSchema
+> {
+  name = "getTrendingVideos";
+  description =
+    "Retrieves trending videos based on region and category. Returns a list of videos that are currently popular in the specified region and category. Use this when you want to discover what's trending in specific areas or categories. To get available category IDs and their names, use the getVideoCategories tool first.";
+  schema = getTrendingVideosSchema;
 
-export const getTrendingVideosHandler = async (
-  params: TrendingParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
-    const validatedParams = getTrendingVideosSchema.parse(params);
-
+  protected async executeImpl(
+    params: z.infer<typeof getTrendingVideosSchema>
+  ): Promise<CallToolResult> {
     const trendingVideos =
-      await youtubeService.getTrendingVideos(validatedParams);
+      await this.container.youtubeService.getTrendingVideos(params);
 
     return formatSuccess(trendingVideos);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}

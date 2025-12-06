@@ -1,9 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import pkg from "../package.json" with { type: "json" };
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { allTools } from "./tools/index.js";
 import { IServiceContainer } from "./container.js";
+import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts/index.js";
 import { registerResources } from "./resources/index.js";
 
@@ -29,46 +28,7 @@ export function createMcpServer(container: IServiceContainer) {
     version: pkg.version,
   });
 
-  // --- Centralized helper to register tools with annotations ---
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function registerTool<T extends z.ZodObject<any>>(
-    config: { name: string; description: string; inputSchema: T },
-    handler: (args: z.infer<T>) => Promise<CallToolResult>
-  ) {
-    const humanReadableTitle = config.name
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase());
-
-    server.registerTool(
-      config.name,
-      {
-        description: config.description,
-        inputSchema: config.inputSchema,
-        annotations: {
-          title: humanReadableTitle,
-          readOnlyHint: true,
-          idempotentHint: true,
-        },
-      },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      (async (args: z.infer<T>): Promise<CallToolResult> => {
-        try {
-          return await handler(args);
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: "text", text: `Error: ${errorMessage}` }],
-            isError: true,
-          };
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
-    );
-  }
-
-  allTools(container).forEach(({ config, handler }) =>
-    registerTool(config, handler)
-  );
+  registerTools(server, container);
 
   registerPrompts(server, container);
 

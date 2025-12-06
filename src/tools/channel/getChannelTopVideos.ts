@@ -1,9 +1,7 @@
 import { z } from "zod";
-import { YoutubeService } from "../../services/youtube.service.js";
-import { formatError } from "../../utils/errorHandler.js";
+import { BaseTool } from "../base.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema, maxResultsSchema } from "../../utils/validation.js";
-import type { ChannelParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelTopVideosSchema = z.object({
@@ -30,24 +28,20 @@ export const getChannelTopVideosSchema = z.object({
     ),
 });
 
-export const getChannelTopVideosConfig = {
-  name: "getChannelTopVideos",
-  description:
-    "Retrieves the top videos from a specific channel. Returns a list of the most viewed or popular videos from the channel, based on view count. Use this when you want to identify the most successful content from a channel.",
-  inputSchema: getChannelTopVideosSchema,
-};
+export class GetChannelTopVideosTool extends BaseTool<
+  typeof getChannelTopVideosSchema
+> {
+  name = "getChannelTopVideos";
+  description =
+    "Retrieves the top videos from a specific channel. Returns a list of the most viewed or popular videos from the channel, based on view count. Use this when you want to identify the most successful content from a channel.";
+  schema = getChannelTopVideosSchema;
 
-export const getChannelTopVideosHandler = async (
-  params: ChannelParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
-    const validatedParams = getChannelTopVideosSchema.parse(params);
-
-    const topVideos = await youtubeService.getChannelTopVideos(validatedParams);
+  protected async executeImpl(
+    params: z.infer<typeof getChannelTopVideosSchema>
+  ): Promise<CallToolResult> {
+    const topVideos =
+      await this.container.youtubeService.getChannelTopVideos(params);
 
     return formatSuccess(topVideos);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}

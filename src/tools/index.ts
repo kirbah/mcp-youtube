@@ -1,153 +1,81 @@
-// Video tools
-import {
-  getVideoDetailsConfig,
-  getVideoDetailsHandler,
-} from "./video/getVideoDetails.js";
-import {
-  searchVideosConfig,
-  searchVideosHandler,
-} from "./video/searchVideos.js";
-import {
-  getTranscriptsConfig,
-  getTranscriptsHandler,
-} from "./video/getTranscripts.js";
-import {
-  getVideoCommentsConfig,
-  getVideoCommentsHandler,
-  getVideoCommentsSchema, // Import the schema
-} from "./video/getVideoComments.js";
-
-// Channel tools
-import {
-  getChannelStatisticsConfig,
-  getChannelStatisticsHandler,
-} from "./channel/getChannelStatistics.js";
-import {
-  getChannelTopVideosConfig,
-  getChannelTopVideosHandler,
-} from "./channel/getChannelTopVideos.js";
-
-// General tools
-import {
-  getTrendingVideosConfig,
-  getTrendingVideosHandler,
-} from "./general/getTrendingVideos.js";
-import {
-  getVideoCategoriesConfig,
-  getVideoCategoriesHandler,
-} from "./general/getVideoCategories.js";
-import {
-  findConsistentOutlierChannelsConfig,
-  findConsistentOutlierChannelsHandler,
-} from "./general/findConsistentOutlierChannels.js";
-
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { IServiceContainer } from "../container.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { IServiceContainer } from "../container.js";
-import type {
-  VideoDetailsParams,
-  SearchParams,
-  TranscriptsParams,
-  ChannelStatisticsParams,
-  ChannelParams,
-  TrendingParams,
-  VideoCategoriesParams,
-  FindConsistentOutlierChannelsParams,
-} from "../types/tools.js";
-import { z } from "zod";
+import z from "zod";
+import { formatError } from "../utils/errorHandler.js";
 
-export interface ToolDefinition {
-  config: {
-    name: string;
-    description: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    inputSchema: z.ZodObject<any>;
-  };
-  handler: (params: Record<string, unknown>) => Promise<CallToolResult>;
+// Import all tool classes
+import { GetVideoDetailsTool } from "./video/getVideoDetails.js";
+import { SearchVideosTool } from "./video/searchVideos.js";
+import { GetTranscriptsTool } from "./video/getTranscripts.js";
+import { GetVideoCommentsTool } from "./video/getVideoComments.js";
+import { GetChannelStatisticsTool } from "./channel/getChannelStatistics.js";
+import { GetChannelTopVideosTool } from "./channel/getChannelTopVideos.js";
+import { GetTrendingVideosTool } from "./general/getTrendingVideos.js";
+import { GetVideoCategoriesTool } from "./general/getVideoCategories.js";
+import { FindConsistentOutlierChannelsTool } from "./general/findConsistentOutlierChannels.js";
+
+interface ITool {
+  readonly name: string;
+  readonly description: string;
+  readonly schema: z.ZodObject<z.ZodRawShape>;
+  execute(args: z.infer<this["schema"]>): Promise<CallToolResult>;
 }
 
-export function allTools(container: IServiceContainer): ToolDefinition[] {
-  // We no longer get 'db' from the container.
-  const { youtubeService, transcriptService } = container;
+type ToolConstructor = new (container: IServiceContainer) => ITool;
 
-  // 2. Define all tools, wrapping the original handlers with the dependencies they need.
-  const toolDefinitions: ToolDefinition[] = [
-    // Video tools
-    {
-      config: getVideoDetailsConfig,
-      // WRAP the handler and CAST the params
-      handler: (params) =>
-        getVideoDetailsHandler(
-          params as unknown as VideoDetailsParams,
-          youtubeService
-        ),
-    },
-    {
-      config: searchVideosConfig,
-      handler: (params) =>
-        searchVideosHandler(params as unknown as SearchParams, youtubeService),
-    },
-    {
-      config: getTranscriptsConfig,
-      handler: (params) =>
-        getTranscriptsHandler(
-          params as unknown as TranscriptsParams,
-          transcriptService
-        ),
-    },
-    {
-      config: getVideoCommentsConfig,
-      handler: (params) =>
-        getVideoCommentsHandler(
-          params as unknown as z.infer<typeof getVideoCommentsSchema>,
-          youtubeService
-        ),
-    },
-    // Channel tools
-    {
-      config: getChannelStatisticsConfig,
-      handler: (params) =>
-        getChannelStatisticsHandler(
-          params as unknown as ChannelStatisticsParams,
-          youtubeService
-        ),
-    },
-    {
-      config: getChannelTopVideosConfig,
-      handler: (params) =>
-        getChannelTopVideosHandler(
-          params as unknown as ChannelParams,
-          youtubeService
-        ),
-    },
-    // General tools
-    {
-      config: getTrendingVideosConfig,
-      handler: (params) =>
-        getTrendingVideosHandler(
-          params as unknown as TrendingParams,
-          youtubeService
-        ),
-    },
-    {
-      config: getVideoCategoriesConfig,
-      handler: (params) =>
-        getVideoCategoriesHandler(
-          params as unknown as VideoCategoriesParams,
-          youtubeService
-        ),
-    },
+// 1. Maintain a list of Constructors
+const TOOL_CLASSES = [
+  GetVideoDetailsTool,
+  SearchVideosTool,
+  GetTranscriptsTool,
+  GetVideoCommentsTool,
+  GetChannelStatisticsTool,
+  GetChannelTopVideosTool,
+  GetTrendingVideosTool,
+  GetVideoCategoriesTool,
+];
+
+export function registerTools(server: McpServer, container: IServiceContainer) {
+  const toolsToRegister: ToolConstructor[] = [
+    ...(TOOL_CLASSES as ToolConstructor[]),
   ];
 
   if (process.env.MDB_MCP_CONNECTION_STRING) {
-    toolDefinitions.push({
-      config: findConsistentOutlierChannelsConfig,
-      handler: (params) =>
-        findConsistentOutlierChannelsHandler(
-          params as unknown as FindConsistentOutlierChannelsParams,
-          youtubeService
-        ),
-    });
+    toolsToRegister.push(FindConsistentOutlierChannelsTool);
   }
 
-  return toolDefinitions;
+  for (const ToolClass of toolsToRegister) {
+    // Instantiate with DI container
+    const toolInstance = new ToolClass(container);
+
+    const humanReadableTitle = toolInstance.name
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str: string) => str.toUpperCase());
+
+    // Register with MCP Server
+    server.registerTool(
+      toolInstance.name,
+      {
+        description: toolInstance.description,
+        inputSchema: toolInstance.schema,
+        annotations: {
+          title: humanReadableTitle,
+          readOnlyHint: true,
+          idempotentHint: true,
+        },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      (async (
+        args: z.infer<typeof toolInstance.schema>
+      ): Promise<CallToolResult> => {
+        try {
+          return await toolInstance.execute(args);
+        } catch (err) {
+          return formatError(err);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
+    );
+  }
 }

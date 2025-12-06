@@ -1,199 +1,137 @@
 /* eslint-env node */
 /* eslint-parser-options project: ["./tsconfig.test.json"] */
-import { getChannelTopVideosHandler } from "../getChannelTopVideos";
-import { formatSuccess } from "../../../utils/responseFormatter";
-import { formatError } from "../../../utils/errorHandler";
-import { YoutubeService } from "../../../services/youtube.service";
+import { GetChannelTopVideosTool } from "../getChannelTopVideos";
+import type { YoutubeService } from "../../../services/youtube.service";
+import { IServiceContainer } from "../../../container";
 
-// Mock utility functions
-jest.mock("../../../utils/responseFormatter", () => ({
-  formatSuccess: jest.fn((data) => ({
-    statusCode: 200,
-    body: JSON.stringify(data),
-  })),
-}));
-jest.mock("../../../utils/errorHandler", () => ({
-  formatError: jest.fn((error) => {
-    const message =
-      error instanceof Error ? error.message : "An unknown error occurred";
-    let statusCode = 500;
-    if (
-      error &&
-      typeof error === "object" &&
-      "name" in error &&
-      error.name === "ZodError"
-    ) {
-      statusCode = 400;
-    }
-    return { statusCode, body: JSON.stringify({ message }) };
-  }),
-}));
+// Only mock the service
+jest.mock("../../../services/youtube.service");
 
-// Mock VideoManagement
-jest.mock("../../../services/youtube.service", () => ({
-  YoutubeService: jest.fn().mockImplementation(() => ({
-    getChannelTopVideos: jest.fn(),
-    getChannelStatistics: jest.fn(),
-    getVideo: jest.fn(),
-    searchVideos: jest.fn(),
-    getTranscript: jest.fn(),
-    getTrendingVideos: jest.fn(),
-    getVideoCategories: jest.fn(),
-  })),
-}));
-
-describe("getChannelTopVideosHandler", () => {
-  let mockVideoManager: jest.Mocked<YoutubeService>;
+describe("GetChannelTopVideosTool", () => {
+  let mockYoutubeService: jest.Mocked<YoutubeService>;
+  let tool: GetChannelTopVideosTool;
 
   beforeEach(() => {
-    mockVideoManager = new YoutubeService();
-    // Clear mocks for specific methods used in this test suite
-    mockVideoManager.getChannelTopVideos.mockClear();
-    mockVideoManager.getChannelStatistics.mockClear();
-    mockVideoManager.getVideo.mockClear();
-    mockVideoManager.searchVideos.mockClear();
-    mockVideoManager.getTranscript.mockClear();
-    mockVideoManager.getTrendingVideos.mockClear();
-    mockVideoManager.getVideoCategories.mockClear();
+    mockYoutubeService = {
+      getChannelTopVideos: jest.fn(),
+    } as unknown as jest.Mocked<YoutubeService>;
 
-    (formatSuccess as jest.Mock).mockClear();
-    (formatError as jest.Mock).mockClear();
+    const container = {
+      youtubeService: mockYoutubeService,
+    } as unknown as IServiceContainer;
+
+    tool = new GetChannelTopVideosTool(container);
+
+    jest.clearAllMocks();
   });
 
-  it("should return top videos for a valid channelId and maxResults", async () => {
+  it("should be defined", () => {
+    expect(tool).toBeDefined();
+    expect(tool.name).toBe("getChannelTopVideos");
+  });
+
+  it("should return top videos using default optional parameters", async () => {
     const mockTopVideosResult = [
-      {
-        id: "vid1",
-        title: "Top Video 1",
-        description: null,
-        publishedAt: "2023-01-01T00:00:00Z",
-        duration: "PT1M0S",
-        viewCount: 1000,
-        likeCount: 100,
-        commentCount: 10,
-        likeToViewRatio: 0.1,
-        commentToViewRatio: 0.01,
-        tags: [],
-        categoryId: "10",
-        defaultLanguage: "en",
-      },
-      {
-        id: "vid2",
-        title: "Top Video 2",
-        description: null,
-        publishedAt: "2023-01-02T00:00:00Z",
-        duration: "PT2M0S",
-        viewCount: 900,
-        likeCount: 90,
-        commentCount: 9,
-        likeToViewRatio: 0.1,
-        commentToViewRatio: 0.01,
-        tags: [],
-        categoryId: "10",
-        defaultLanguage: "en",
-      },
+      { id: "vid1", title: "Video 1" },
+      { id: "vid2", title: "Video 2" },
     ];
-    mockVideoManager.getChannelTopVideos.mockResolvedValue(mockTopVideosResult);
-
-    const params = { channelId: "UC123", maxResults: 2 };
-    const result = await getChannelTopVideosHandler(params, mockVideoManager);
-
-    expect(mockVideoManager.getChannelTopVideos).toHaveBeenCalledWith({
-      channelId: "UC123",
-      maxResults: 2,
-      includeTags: false,
-      descriptionDetail: "NONE",
-    });
-    expect(formatSuccess).toHaveBeenCalledWith(mockTopVideosResult);
-    expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body as string)).toEqual(mockTopVideosResult);
-  });
-
-  it("should use default maxResults when not provided", async () => {
-    const mockTopVideosResult = [
-      {
-        id: "vid1",
-        title: "Top Video 1",
-        description: null,
-        publishedAt: "2023-01-01T00:00:00Z",
-        duration: "PT1M0S",
-        viewCount: 1000,
-        likeCount: 100,
-        commentCount: 10,
-        likeToViewRatio: 0.1,
-        commentToViewRatio: 0.01,
-        tags: [],
-        categoryId: "10",
-        defaultLanguage: "en",
-      },
-    ];
-    mockVideoManager.getChannelTopVideos.mockResolvedValue(mockTopVideosResult);
-
-    const params = { channelId: "UC123" }; // maxResults is not provided
-    await getChannelTopVideosHandler(params, mockVideoManager);
-
-    expect(mockVideoManager.getChannelTopVideos).toHaveBeenCalledWith({
-      channelId: "UC123",
-      maxResults: 10, // Default value
-      includeTags: false,
-      descriptionDetail: "NONE",
-    });
-    expect(formatSuccess).toHaveBeenCalledWith(mockTopVideosResult);
-  });
-
-  it("should return a 400 error for an invalid channelId (empty string)", async () => {
-    const params = { channelId: "", maxResults: 5 };
-    const result = await getChannelTopVideosHandler(params, mockVideoManager);
-
-    expect(mockVideoManager.getChannelTopVideos).not.toHaveBeenCalled();
-    expect(formatError).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "ZodError" })
+    mockYoutubeService.getChannelTopVideos.mockResolvedValue(
+      mockTopVideosResult as any
     );
-    expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body as string).message).toBeDefined();
+
+    // Only providing required channelId
+    const params = { channelId: "UC123" };
+    const result = await tool.execute(params);
+
+    // Assert defaults were applied: maxResults=10, includeTags=false, descriptionDetail=NONE
+    expect(mockYoutubeService.getChannelTopVideos).toHaveBeenCalledWith({
+      channelId: "UC123",
+      maxResults: 10,
+      includeTags: false,
+      descriptionDetail: "NONE",
+    });
+
+    expect(result.success).toBe(true);
+    expect(JSON.parse(result.content[0].text as string)).toEqual(
+      mockTopVideosResult
+    );
   });
 
-  it("should return a 400 error if maxResults is less than 1", async () => {
+  it("should correctly pass all provided optional parameters", async () => {
+    const mockTopVideosResult = [{ id: "vid1", title: "Detailed Video" }];
+    mockYoutubeService.getChannelTopVideos.mockResolvedValue(
+      mockTopVideosResult as any
+    );
+
+    const params = {
+      channelId: "UC123",
+      maxResults: 5,
+      includeTags: true,
+      descriptionDetail: "SNIPPET" as const, // "as const" ensures it matches the Zod Enum type
+    };
+
+    await tool.execute(params);
+
+    expect(mockYoutubeService.getChannelTopVideos).toHaveBeenCalledWith({
+      channelId: "UC123",
+      maxResults: 5,
+      includeTags: true,
+      descriptionDetail: "SNIPPET",
+    });
+  });
+
+  it("should return a validation error for an invalid channelId", async () => {
+    const params = { channelId: "" }; // Empty string
+    const result = await tool.execute(params);
+
+    expect(mockYoutubeService.getChannelTopVideos).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    // Expect error to specifically mention the field
+    expect(result.content[0].text).toMatch(/channelId/);
+  });
+
+  it("should return a validation error if maxResults is less than 1", async () => {
     const params = { channelId: "UC123", maxResults: 0 };
-    const result = await getChannelTopVideosHandler(params, mockVideoManager);
+    const result = await tool.execute(params);
 
-    expect(mockVideoManager.getChannelTopVideos).not.toHaveBeenCalled();
-    expect(formatError).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "ZodError" })
-    );
-    expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body as string).message).toBeDefined();
+    expect(mockYoutubeService.getChannelTopVideos).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("maxResults");
   });
 
-  it("should return a 400 error if maxResults is greater than 500", async () => {
+  it("should return a validation error if maxResults is greater than 500", async () => {
     const params = { channelId: "UC123", maxResults: 501 };
-    const result = await getChannelTopVideosHandler(params, mockVideoManager);
+    const result = await tool.execute(params);
 
-    expect(mockVideoManager.getChannelTopVideos).not.toHaveBeenCalled();
-    expect(formatError).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "ZodError" })
-    );
-    expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body as string).message).toBeDefined();
+    expect(mockYoutubeService.getChannelTopVideos).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("maxResults");
   });
 
-  it("should return a 500 error if videoManager.getChannelTopVideos throws an error", async () => {
+  it("should return a validation error if descriptionDetail is invalid", async () => {
+    const params = {
+      channelId: "UC123",
+      descriptionDetail: "INVALID_OPTION",
+    };
+    // @ts-ignore - deliberately passing invalid enum for test
+    const result = await tool.execute(params);
+
+    expect(mockYoutubeService.getChannelTopVideos).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Invalid option: expected one of");
+  });
+
+  it("should handle service errors gracefully", async () => {
     const errorMessage = "API Error";
-    mockVideoManager.getChannelTopVideos.mockRejectedValue(
+    mockYoutubeService.getChannelTopVideos.mockRejectedValue(
       new Error(errorMessage)
     );
 
-    const params = { channelId: "UC123", maxResults: 5 };
-    const result = await getChannelTopVideosHandler(params, mockVideoManager);
+    const params = { channelId: "UC123" };
+    const result = await tool.execute(params);
 
-    expect(mockVideoManager.getChannelTopVideos).toHaveBeenCalledWith({
-      channelId: "UC123",
-      maxResults: 5,
-      includeTags: false,
-      descriptionDetail: "NONE",
-    });
-    expect(formatError).toHaveBeenCalledWith(new Error(errorMessage));
-    expect(result.statusCode).toBe(500);
-    expect(JSON.parse(result.body as string).message).toBe(errorMessage);
+    expect(mockYoutubeService.getChannelTopVideos).toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBe(`Error: ${errorMessage}`);
   });
 });

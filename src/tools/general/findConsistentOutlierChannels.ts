@@ -1,12 +1,10 @@
 import { z } from "zod";
-import { formatError } from "../../utils/errorHandler.js";
+import { BaseTool } from "../base.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { regionCodeSchema } from "../../utils/validation.js";
 import { NicheAnalyzerService } from "../../services/nicheAnalyzer.service.js";
-import { YoutubeService } from "../../services/youtube.service.js";
 import { NicheRepository } from "../../services/analysis/niche.repository.js";
 import type { FindConsistentOutlierChannelsOptions } from "../../types/analyzer.types.js";
-import type { FindConsistentOutlierChannelsParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const findConsistentOutlierChannelsSchema = z.object({
@@ -54,29 +52,27 @@ export const findConsistentOutlierChannelsSchema = z.object({
     .describe("Optional. Max number of channels to return. Default: 10."),
 });
 
-export const findConsistentOutlierChannelsConfig = {
-  name: "findConsistentOutlierChannels",
-  description:
-    "A powerful, high-cost discovery tool. It finds emerging channels that show consistent, high-performance relative to their size within a specific topic and timeframe.",
-  inputSchema: findConsistentOutlierChannelsSchema,
-};
+export class FindConsistentOutlierChannelsTool extends BaseTool<
+  typeof findConsistentOutlierChannelsSchema
+> {
+  name = "findConsistentOutlierChannels";
+  description =
+    "A powerful, high-cost discovery tool. It finds emerging channels that show consistent, high-performance relative to their size within a specific topic and timeframe.";
+  schema = findConsistentOutlierChannelsSchema;
 
-export const findConsistentOutlierChannelsHandler = async (
-  params: FindConsistentOutlierChannelsParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
+  protected async executeImpl(
+    params: z.infer<typeof findConsistentOutlierChannelsSchema>
+  ): Promise<CallToolResult> {
     // --- THIS IS THE EXPLICIT CONVERSION POINT ---
     // We use Zod to parse the user's flexible input.
     // The result of `parse` is a new, complete object with all defaults applied.
     // This new object perfectly matches the strict `...Options` type.
-    const validatedOptions: FindConsistentOutlierChannelsOptions =
-      findConsistentOutlierChannelsSchema.parse(params);
+    const validatedOptions: FindConsistentOutlierChannelsOptions = params;
 
     // Now, we create our services and pass them the strict, validated options.
     const nicheRepository = new NicheRepository();
     const nicheAnalyzer = new NicheAnalyzerService(
-      youtubeService,
+      this.container.youtubeService,
       nicheRepository
     );
 
@@ -85,7 +81,5 @@ export const findConsistentOutlierChannelsHandler = async (
       await nicheAnalyzer.findConsistentOutlierChannels(validatedOptions);
 
     return formatSuccess(searchResults);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}

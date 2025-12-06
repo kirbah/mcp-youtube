@@ -1,8 +1,7 @@
 import { z } from "zod";
+import { BaseTool } from "../base.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { YoutubeService } from "../../services/youtube.service.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
-import { formatError } from "../../utils/errorHandler.js";
 
 // 2. Define the Input Schema (`getVideoCommentsSchema`)
 export const getVideoCommentsSchema = z.object({
@@ -40,31 +39,22 @@ export const getVideoCommentsSchema = z.object({
     ),
 });
 
-// 3. Define the Tool Configuration (`getVideoCommentsConfig`)
-export const getVideoCommentsConfig = {
-  name: "getVideoComments",
-  description:
-    "Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.",
-  inputSchema: getVideoCommentsSchema,
-  inject: ["youtubeService"],
-};
+export class GetVideoCommentsTool extends BaseTool<
+  typeof getVideoCommentsSchema
+> {
+  name = "getVideoComments";
+  description =
+    "Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.";
+  schema = getVideoCommentsSchema;
 
-// 4. Create the Placeholder Tool Handler (`getVideoCommentsHandler`)
-export async function getVideoCommentsHandler(
-  params: z.infer<typeof getVideoCommentsSchema>,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> {
-  try {
-    // First, validate the parameters (this is the standard pattern)
-    const validatedParams = getVideoCommentsSchema.parse(params);
-
+  protected async executeImpl(
+    params: z.infer<typeof getVideoCommentsSchema>
+  ): Promise<CallToolResult> {
     // Call the service with the validated parameters
-    const comments = await youtubeService.getVideoComments(validatedParams);
+    const comments =
+      await this.container.youtubeService.getVideoComments(params);
 
     // Use the standard success formatter
     return formatSuccess(comments);
-  } catch (error: unknown) {
-    // Use the standard error formatter
-    return formatError(error);
   }
 }

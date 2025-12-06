@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
-import { YoutubeService } from "../../services/youtube.service.js";
-import { formatError } from "../../utils/errorHandler.js";
+import { BaseTool } from "../base.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { querySchema, maxResultsSchema } from "../../utils/validation.js";
-import type { SearchParams } from "../../types/tools.js";
 import type { LeanVideoSearchResult } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
@@ -53,21 +51,16 @@ export const searchVideosSchema = z.object({
     .describe("2-letter country code to restrict results"),
 });
 
-export const searchVideosConfig = {
-  name: "searchVideos",
-  description:
-    "Searches for videos based on a query string. Returns a list of videos matching the search criteria, including titles, descriptions, and metadata. Use this when you need to find videos related to specific topics or keywords.",
-  inputSchema: searchVideosSchema,
-};
+export class SearchVideosTool extends BaseTool<typeof searchVideosSchema> {
+  name = "searchVideos";
+  description =
+    "Searches for videos based on a query string. Returns a list of videos matching the search criteria, including titles, descriptions, and metadata. Use this when you need to find videos related to specific topics or keywords.";
+  schema = searchVideosSchema;
 
-export const searchVideosHandler = async (
-  params: SearchParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
-    const validatedParams = searchVideosSchema.parse(params);
-
-    const rawResults = await youtubeService.searchVideos(validatedParams);
+  protected async executeImpl(
+    params: z.infer<typeof searchVideosSchema>
+  ): Promise<CallToolResult> {
+    const rawResults = await this.container.youtubeService.searchVideos(params);
 
     const leanResults: LeanVideoSearchResult[] = rawResults.map(
       (result: youtube_v3.Schema$SearchResult) => ({
@@ -81,7 +74,5 @@ export const searchVideosHandler = async (
     );
 
     return formatSuccess(leanResults);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}
