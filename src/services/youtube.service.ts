@@ -277,10 +277,11 @@ export class YoutubeService {
 
     try {
       const batchSize = 50;
+      const promises = [];
       for (let i = 0; i < channelIds.length; i += batchSize) {
         const batch = channelIds.slice(i, i + batchSize);
 
-        const response = await this.trackCost(
+        const promise = this.trackCost(
           () =>
             this.youtube.channels.list({
               part: ["snippet", "statistics"],
@@ -288,14 +289,31 @@ export class YoutubeService {
             }),
           API_COSTS["channels.list"]
         );
+        promises.push(promise);
+      }
 
-        if (response.data.items) {
-          for (const channel of response.data.items) {
-            if (channel.id) {
-              results.set(channel.id, channel);
+      const outcomes = await Promise.allSettled(promises);
+      for (const outcome of outcomes) {
+        if (outcome.status === "fulfilled") {
+          const response = outcome.value;
+          if (response.data.items) {
+            for (const channel of response.data.items) {
+              if (channel.id) {
+                results.set(channel.id, channel);
+              }
             }
           }
+        } else {
+          // Log the failure but don't crash the entire operation
+          console.error(
+            "A batch in batchFetchChannelStatistics failed:",
+            outcome.reason
+          );
         }
+      }
+
+      if (results.size === 0 && channelIds.length > 0) {
+        throw new Error("All batches failed to retrieve channel statistics.");
       }
     } catch (error) {
       throw new YouTubeApiError(
@@ -475,9 +493,10 @@ export class YoutubeService {
           .filter((id): id is string => id !== undefined);
 
         const videoDetails: youtube_v3.Schema$Video[] = [];
+        const detailPromises = [];
         for (let i = 0; i < videoIds.length; i += this.MAX_RESULTS_PER_PAGE) {
           const batch = videoIds.slice(i, i + this.MAX_RESULTS_PER_PAGE);
-          const response = await this.trackCost(
+          const promise = this.trackCost(
             () =>
               this.youtube.videos.list({
                 part: ["snippet", "statistics", "contentDetails"],
@@ -485,9 +504,27 @@ export class YoutubeService {
               }),
             API_COSTS["videos.list"]
           );
-          if (response.data.items) {
-            videoDetails.push(...response.data.items);
+          detailPromises.push(promise);
+        }
+
+        const detailOutcomes = await Promise.allSettled(detailPromises);
+        for (const outcome of detailOutcomes) {
+          if (outcome.status === "fulfilled") {
+            const response = outcome.value;
+            if (response.data.items) {
+              videoDetails.push(...response.data.items);
+            }
+          } else {
+            console.error(
+              "A video details batch in getChannelTopVideos failed:",
+              outcome.reason
+            );
           }
+        }
+
+        // If we had IDs to fetch but got no details, it means all batches failed.
+        if (videoDetails.length === 0 && videoIds.length > 0) {
+          throw new Error("All batches failed to retrieve video details.");
         }
 
         return videoDetails.slice(0, targetResults).map((video) => {
