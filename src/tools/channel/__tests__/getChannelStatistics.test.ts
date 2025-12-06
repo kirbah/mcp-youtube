@@ -1,9 +1,6 @@
 import { GetChannelStatisticsTool } from "../getChannelStatistics";
 import type { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
-// USE REAL FORMATTER
-import { formatSuccess } from "../../../utils/responseFormatter";
-import { ZodError } from "zod";
 
 // Only mock the service
 jest.mock("../../../services/youtube.service");

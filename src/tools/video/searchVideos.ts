@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { youtube_v3 } from "googleapis";
 import { BaseTool } from "../base.js";
-import { formatError } from "../../utils/errorHandler.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { querySchema, maxResultsSchema } from "../../utils/validation.js";
 import type { LeanVideoSearchResult } from "../../types/youtube.js";

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { BaseTool } from "../base.js";
-import { formatError } from "../../utils/errorHandler.js";
 import {
   formatSuccess,
   formatVideoMap,

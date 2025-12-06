@@ -1,144 +1,155 @@
-import { findConsistentOutlierChannelsHandler } from "../findConsistentOutlierChannels";
+import { FindConsistentOutlierChannelsTool } from "../findConsistentOutlierChannels";
 import { NicheAnalyzerService } from "../../../services/nicheAnalyzer.service";
+import { NicheRepository } from "../../../services/analysis/niche.repository";
 import { YoutubeService } from "../../../services/youtube.service";
-import { Db } from "mongodb";
+import { IServiceContainer } from "../../../container";
 
-// Mock dependencies
-// IMPORTANT: Mock the class here, not just its prototype for full control if needed elsewhere.
+// Mock the dependencies that are instantiated inside the Tool
 jest.mock("../../../services/nicheAnalyzer.service");
-jest.mock("../../../services/youtube.service");
 jest.mock("../../../services/analysis/niche.repository");
-jest.mock("mongodb");
+// Mock the dependency passed via container
+jest.mock("../../../services/youtube.service");
 
-describe("findConsistentOutlierChannelsHandler", () => {
+describe("FindConsistentOutlierChannelsTool", () => {
   let mockYoutubeService: jest.Mocked<YoutubeService>;
-  let mockDb: jest.Mocked<Db>;
-  // NicheRepository is instantiated within the handler, so we don't need a top-level mock instance for it.
-  // NicheAnalyzerService is also instantiated within the handler.
+  let mockNicheAnalyzerInstance: {
+    findConsistentOutlierChannels: jest.Mock;
+  };
+  let tool: FindConsistentOutlierChannelsTool;
 
   beforeEach(() => {
+    // 1. Setup Container Mock
+    mockYoutubeService = {} as unknown as jest.Mocked<YoutubeService>;
+    const container = {
+      youtubeService: mockYoutubeService,
+    } as unknown as IServiceContainer;
+
+    // 2. Setup NicheAnalyzerService Mock (Constructor & Instance)
+    mockNicheAnalyzerInstance = {
+      findConsistentOutlierChannels: jest.fn(),
+    };
+    (NicheAnalyzerService as jest.Mock).mockImplementation(
+      () => mockNicheAnalyzerInstance
+    );
+
+    // 3. Setup NicheRepository Mock (Constructor)
+    (NicheRepository as jest.Mock).mockImplementation(() => ({}));
+
+    // 4. Initialize Tool
+    tool = new FindConsistentOutlierChannelsTool(container);
+
     jest.clearAllMocks();
-
-    // Assign a Jest mock function to the prototype method.
-    // This ensures that any instance of NicheAnalyzerService created will use this mock.
-    NicheAnalyzerService.prototype.findConsistentOutlierChannels = jest.fn();
-
-    // Create fresh mock instances for services passed as arguments to the handler
-    mockYoutubeService = new YoutubeService({} as any);
-    mockDb = new Db("test", "test") as jest.Mocked<Db>;
-
-    // If YoutubeService or Db methods were called, they would need setup here, e.g.:
-    // mockYoutubeService.someMethod = jest.fn().mockResolvedValue(...);
-
-    // NicheRepository is newed up inside handler. If its methods were called by
-    // NicheAnalyzerService.findConsistentOutlierChannels OR if NicheAnalyzerService constructor
-    // did something complex with it, we might need to mock NicheRepository.prototype methods too.
-    // For now, assuming it's simple or its interactions are not part of these specific tests' assertions.
   });
 
-  it("should call NicheAnalyzerService.findConsistentOutlierChannels with correct parameters and return data", async () => {
+  it("should be defined", () => {
+    expect(tool).toBeDefined();
+    expect(tool.name).toBe("findConsistentOutlierChannels");
+  });
+
+  it("should validate inputs, instantiate services, and return results", async () => {
     // Arrange
-    const mockRequestParams = {
-      query: "test keyword", // Changed from keywords to query to match schema
-      // ... other valid parameters based on findConsistentOutlierChannelsSchema ...
-      maxResults: 10,
-    };
-
-    const mockOutlierChannels = [{ channelId: "UC-test-channel" }];
-    (
-      NicheAnalyzerService.prototype.findConsistentOutlierChannels as jest.Mock
-    ).mockResolvedValue(mockOutlierChannels);
-
-    // Act
-    // The handler expects (params, youtubeService, db)
-    // It does not use Express-style req/res objects.
-    const result = await findConsistentOutlierChannelsHandler(
-      mockRequestParams as any,
-      mockYoutubeService,
-      mockDb
+    const mockOutlierChannels = [
+      { channelId: "UC-test", title: "Test Channel" },
+    ];
+    mockNicheAnalyzerInstance.findConsistentOutlierChannels.mockResolvedValue(
+      mockOutlierChannels
     );
 
-    // Assert
-    // The first argument to findConsistentOutlierChannels is the validated params object.
-    // The original test was checking against individual properties from a `body` object.
-    // We need to ensure the schema validation inside the handler would pass with mockRequestParams.
-    // For simplicity, we'll assume mockRequestParams is already validated for this assertion.
+    const params = {
+      query: "test niche",
+      maxResults: 5,
+    };
+
+    // Act
+    const result = await tool.execute(params);
+
+    // Assert: Check Service Instantiation
+    expect(NicheRepository).toHaveBeenCalledTimes(1);
+    expect(NicheAnalyzerService).toHaveBeenCalledTimes(1);
+    expect(NicheAnalyzerService).toHaveBeenCalledWith(
+      mockYoutubeService,
+      expect.any(Object) // The mock repository instance
+    );
+
+    // Assert: Check Method Call with Defaults + Explicit Params
     expect(
-      NicheAnalyzerService.prototype.findConsistentOutlierChannels
-    ).toHaveBeenCalledWith(
-      expect.objectContaining({ query: "test keyword", maxResults: 10 })
-    );
+      mockNicheAnalyzerInstance.findConsistentOutlierChannels
+    ).toHaveBeenCalledWith({
+      query: "test niche",
+      maxResults: 5,
+      channelAge: "NEW", // Default from Zod
+      consistencyLevel: "MODERATE", // Default from Zod
+      outlierMagnitude: "STANDARD", // Default from Zod
+    });
 
-    // The handler returns a CallToolResult, check its structure
+    // Assert: Check Result
     expect(result.success).toBe(true);
-    expect(result.content).toBeDefined();
-    expect(result.content?.length).toBe(1);
-    expect(result.content?.[0].type).toBe("text");
-    expect(JSON.parse(result.content![0].text)).toEqual(mockOutlierChannels);
+    expect(JSON.parse(result.content[0].text as string)).toEqual(
+      mockOutlierChannels
+    );
   });
 
-  it("should return a formatted error if NicheAnalyzerService.findConsistentOutlierChannels throws an error", async () => {
-    // Arrange
-    const mockRequestParams = {
-      query: "test keyword",
-      // ... other parameters
-    };
-
-    const errorMessage = "Test error from service";
-    (
-      NicheAnalyzerService.prototype.findConsistentOutlierChannels as jest.Mock
-    ).mockRejectedValue(new Error(errorMessage));
-
-    // Act
-    const result = await findConsistentOutlierChannelsHandler(
-      mockRequestParams as any,
-      mockYoutubeService,
-      mockDb
+  it("should correctly pass all optional parameters", async () => {
+    mockNicheAnalyzerInstance.findConsistentOutlierChannels.mockResolvedValue(
+      []
     );
 
-    // Assert
-    // The handler uses formatError, so the result should match that structure.
-    expect(result.success).toBe(false);
-    expect(result.error?.message).toBe(errorMessage);
-    expect(result.error?.error).toBe("ToolExecutionError");
+    const params = {
+      query: "advanced niche",
+      channelAge: "ESTABLISHED" as const,
+      consistencyLevel: "HIGH" as const,
+      outlierMagnitude: "STRONG" as const,
+      regionCode: "DE",
+      videoCategoryId: "27",
+      maxResults: 20,
+    };
+
+    await tool.execute(params);
+
+    expect(
+      mockNicheAnalyzerInstance.findConsistentOutlierChannels
+    ).toHaveBeenCalledWith(params);
   });
 
-  it("should return a formatted error if input parameters are invalid (e.g., query missing)", async () => {
-    // Arrange
-    const mockRequestParams = {
-      // query is missing, which findConsistentOutlierChannelsSchema will reject
-      maxResults: 10,
+  it("should return a validation error if query is missing", async () => {
+    // @ts-ignore - deliberately passing empty object to test required field
+    const result = await tool.execute({});
+
+    expect(
+      mockNicheAnalyzerInstance.findConsistentOutlierChannels
+    ).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    // Zod error for required field
+    expect(result.content[0].text).toContain(
+      "Invalid input: expected string, received undefined"
+    );
+  });
+
+  it("should return a validation error if regionCode is invalid", async () => {
+    const params = {
+      query: "test",
+      regionCode: "INVALID_CODE", // Too long
     };
 
-    // We don't need to mock findConsistentOutlierChannels here, as schema validation should fail first.
+    const result = await tool.execute(params);
 
-    // Act
-    const result = await findConsistentOutlierChannelsHandler(
-      mockRequestParams as any,
-      mockYoutubeService,
-      mockDb
+    expect(
+      mockNicheAnalyzerInstance.findConsistentOutlierChannels
+    ).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(/regionCode/);
+  });
+
+  it("should handle service errors gracefully", async () => {
+    const errorMessage = "Analyzer failed";
+    mockNicheAnalyzerInstance.findConsistentOutlierChannels.mockRejectedValue(
+      new Error(errorMessage)
     );
 
-    // Assert
-    expect(result.success).toBe(false);
-    expect(result.error?.error).toBe("ToolExecutionError");
-    // The message from ZodError (which is error.message when error is ZodError) is a JSON string of issues.
-    // We expect it to contain the message "Required" for the "query" path.
-    expect(result.error?.message).toBeDefined();
-    expect(result.error?.message).toContain("invalid_type");
-    expect(result.error?.message).toContain(
-      "Invalid input: expected string, received undefined"
-    );
+    const params = { query: "test" };
+    const result = await tool.execute(params);
 
-    // To be more precise, we can parse the JSON string in error.message
-    const zodIssues = JSON.parse(result.error!.message);
-    expect(Array.isArray(zodIssues)).toBe(true);
-    expect(zodIssues.length).toBeGreaterThan(0);
-    expect(zodIssues[0].code).toBe("invalid_type");
-    expect(zodIssues[0].path).toEqual(["query"]);
-    // Zod v3.22 changed this message from "Required" to a more descriptive one.
-    expect(zodIssues[0].message).toBe(
-      "Invalid input: expected string, received undefined"
-    );
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain(errorMessage);
   });
 });

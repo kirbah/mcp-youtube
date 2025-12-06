@@ -1,117 +1,84 @@
-import { getVideoCategoriesHandler } from "../getVideoCategories";
-// import { youtube } from '@googleapis/youtube'; // Removed
-import { YoutubeService } from "../../../services/youtube.service";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types";
+import { GetVideoCategoriesTool } from "../getVideoCategories";
+import type { YoutubeService } from "../../../services/youtube.service";
+import { IServiceContainer } from "../../../container";
 
-jest.mock("googleapis", () => {
-  const mockVideoCategoriesList = jest.fn();
-  return {
-    google: {
-      youtube: jest.fn(() => ({
-        videoCategories: {
-          list: mockVideoCategoriesList,
-        },
-      })),
-    },
-    // expose the mock itself to be reset/configured in tests
-    mockVideoCategoriesList_DO_NOT_USE_DIRECTLY: mockVideoCategoriesList,
-  };
-});
-jest.mock("../../../services/youtube.service"); // Mock YoutubeService
+// Only mock the service layer, not the external google library
+jest.mock("../../../services/youtube.service");
 
-// Helper to access the deeply nested mock
-const getMockVideoCategoriesList = () => {
-  const mockedGoogleapis = jest.requireMock("googleapis");
-  // google.youtube() returns the object with videoCategories.list
-  // So we need to get the mock from the result of the call to youtube()
-  // This is a bit tricky because google.youtube is also a mock.
-  // Let's access the one set up for the test.
-  return mockedGoogleapis.google.youtube().videoCategories.list;
-};
-
-describe("getVideoCategoriesHandler", () => {
-  let mockVideoManager: jest.Mocked<YoutubeService>;
-  let mockVideoCategoriesList: jest.Mock;
+describe("GetVideoCategoriesTool", () => {
+  let mockYoutubeService: jest.Mocked<YoutubeService>;
+  let tool: GetVideoCategoriesTool;
 
   beforeEach(() => {
-    mockVideoManager = new YoutubeService();
-    mockVideoManager.getVideoCategories = jest.fn(); // This is the method from VideoManagement
+    // Create a typed mock for the service
+    mockYoutubeService = {
+      getVideoCategories: jest.fn(),
+    } as unknown as jest.Mocked<YoutubeService>;
 
-    // Reset the list mock for each test
-    mockVideoCategoriesList = getMockVideoCategoriesList();
-    mockVideoCategoriesList.mockReset();
+    const container = {
+      youtubeService: mockYoutubeService,
+    } as unknown as IServiceContainer;
+
+    tool = new GetVideoCategoriesTool(container);
+    jest.clearAllMocks();
   });
 
-  it("should return a list of video categories", async () => {
-    const mockApiResponse = {
-      data: {
-        items: [
-          { id: "1", snippet: { title: "Film & Animation" } },
-          { id: "2", snippet: { title: "Autos & Vehicles" } },
-        ],
-      },
-    };
-    mockVideoCategoriesList.mockResolvedValue(mockApiResponse);
+  it("should be defined", () => {
+    expect(tool).toBeDefined();
+    expect(tool.name).toBe("getVideoCategories");
+  });
 
-    // This is what VideoManagement's method should return after processing API response
-    const expectedCategoriesFromVideoManager = [
+  it("should return categories using the default regionCode 'US' when none is provided", async () => {
+    const mockCategories = [
       { id: "1", title: "Film & Animation" },
       { id: "2", title: "Autos & Vehicles" },
     ];
-    (mockVideoManager.getVideoCategories as jest.Mock).mockResolvedValue(
-      expectedCategoriesFromVideoManager
-    );
+    mockYoutubeService.getVideoCategories.mockResolvedValue(mockCategories);
 
-    const params = { regionCode: "US" };
-    const result = await getVideoCategoriesHandler(params, mockVideoManager);
+    // Act: Call with empty object
+    const result = await tool.execute({});
 
-    expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
+    // Assert: Zod default applied
+    expect(mockYoutubeService.getVideoCategories).toHaveBeenCalledWith("US");
+
+    // Assert: Result shape
     expect(result.success).toBe(true);
-    if (result.success && result.content) {
-      const returnedData = JSON.parse(result.content[0].text as string);
-      expect(returnedData).toEqual(expectedCategoriesFromVideoManager);
-    } else {
-      throw new Error("Result was successful but content was missing");
-    }
-  });
-
-  it("should handle errors when fetching categories", async () => {
-    // Configure VideoManagement mock to throw an error
-    (mockVideoManager.getVideoCategories as jest.Mock).mockRejectedValue(
-      new Error("API Error")
-    );
-
-    const params = { regionCode: "US" };
-    const result = await getVideoCategoriesHandler(params, mockVideoManager);
-
-    expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      const errorResult = result.error as CallToolResult["error"];
-      expect(errorResult.message).toBe("API Error");
-      expect(result.content).toEqual([]); // Expect empty content array for errors
-    }
-  });
-
-  it('should use default regionCode "US" if not provided', async () => {
-    const mockCategories = [{ id: "10", title: "Music" }];
-    (mockVideoManager.getVideoCategories as jest.Mock).mockResolvedValue(
+    expect(JSON.parse(result.content[0].text as string)).toEqual(
       mockCategories
     );
+  });
 
-    const params = {}; // No regionCode provided
-    const result = await getVideoCategoriesHandler(params, mockVideoManager);
+  it("should return categories for a specifically provided regionCode", async () => {
+    const mockCategories = [{ id: "10", title: "Music" }];
+    mockYoutubeService.getVideoCategories.mockResolvedValue(mockCategories);
 
-    // The handler itself applies the default, so getVideoCategories (from VideoManager) should be called with 'US'
-    expect(mockVideoManager.getVideoCategories).toHaveBeenCalledWith("US");
-    expect(result.success).toBe(true);
-    if (result.success && result.content) {
-      const returnedData = JSON.parse(result.content[0].text as string);
-      expect(returnedData).toEqual(mockCategories);
-    } else {
-      throw new Error(
-        "Result was successful but content was missing for default regionCode test"
-      );
-    }
+    const params = { regionCode: "JP" };
+    await tool.execute(params);
+
+    expect(mockYoutubeService.getVideoCategories).toHaveBeenCalledWith("JP");
+  });
+
+  it("should return a validation error if regionCode is invalid", async () => {
+    const params = { regionCode: "USA" }; // Invalid: 3 letters, schema likely expects 2
+
+    const result = await tool.execute(params);
+
+    expect(mockYoutubeService.getVideoCategories).not.toHaveBeenCalled();
+    expect(result.isError).toBe(true);
+    // BaseTool captures the Zod error; check for field specificity
+    expect(result.content[0].text).toMatch(/regionCode/);
+  });
+
+  it("should handle service errors gracefully", async () => {
+    const errorMessage = "YouTube API Error";
+    mockYoutubeService.getVideoCategories.mockRejectedValue(
+      new Error(errorMessage)
+    );
+
+    const result = await tool.execute({ regionCode: "US" });
+
+    expect(mockYoutubeService.getVideoCategories).toHaveBeenCalledWith("US");
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain(errorMessage);
   });
 });
