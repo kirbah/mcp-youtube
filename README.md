@@ -35,6 +35,10 @@
 
 This Model Context Protocol (MCP) server empowers AI language models to seamlessly interact with YouTube. It's engineered to return **lean, structured data**, significantly **reducing token consumption** and making it ideal for cost-effective and performant LLM applications. Access a comprehensive suite of tools for video search, detail retrieval, transcript fetching, channel analysis, and trend discovery—all optimized for AI.
 
+**Built with MCP TypeScript Starter**
+
+This project follows the architecture defined in the [MCP TypeScript Starter](https://github.com/kirbah/mcp-typescript-starter). If you are looking to build your own MCP server using these same patterns (Class-based Tools, Dependency Injection, and strict Type Safety), I recommend using that repository as your starting point.
+
 ## Quick Start: Adding to an MCP Client
 
 The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client application (like Claude Desktop or a custom client).
