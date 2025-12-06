@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { YoutubeService } from "../../services/youtube.service.js";
-import { formatError } from "../../utils/errorHandler.js";
-import { formatSuccess } from "../../utils/responseFormatter.js";
+import { BaseTool } from "../base.js";
 import { videoIdSchema } from "../../utils/validation.js";
 import {
   calculateLikeToViewRatio,
@@ -9,10 +7,11 @@ import {
 } from "../../utils/engagementCalculator.js";
 import { parseYouTubeNumber } from "../../utils/numberParser.js";
 import { formatDescription } from "../../utils/textUtils.js";
-import type { VideoDetailsParams } from "../../types/tools.js";
 import type { LeanVideoDetails } from "../../types/youtube.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { formatSuccess } from "../../utils/responseFormatter.js";
 
+// Make schema correctly exported for use in types if needed
 export const getVideoDetailsSchema = z.object({
   videoIds: z
     .array(videoIdSchema)
@@ -33,23 +32,18 @@ export const getVideoDetailsSchema = z.object({
     ),
 });
 
-export const getVideoDetailsConfig = {
-  name: "getVideoDetails",
-  description:
-    "Get detailed information about multiple YouTube videos. Returns comprehensive data including video metadata, statistics, and content details. Use this when you need complete information about specific videos.",
-  inputSchema: getVideoDetailsSchema,
-};
+export class GetVideoDetailsTool extends BaseTool<typeof getVideoDetailsSchema> {
+  name = "getVideoDetails";
+  description =
+    "Get detailed information about multiple YouTube videos. Returns comprehensive data including video metadata, statistics, and content details. Use this when you need complete information about specific videos.";
+  schema = getVideoDetailsSchema;
 
-export const getVideoDetailsHandler = async (
-  params: VideoDetailsParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
-    const validatedParams = getVideoDetailsSchema.parse(params);
-
-    const videoPromises = validatedParams.videoIds.map(async (videoId) => {
+  protected async executeImpl(
+    params: z.infer<typeof getVideoDetailsSchema>
+  ): Promise<CallToolResult> {
+    const videoPromises = params.videoIds.map(async (videoId) => {
       // 1. Call the service. Caching is now transparent and handled inside youtubeService.
-      const fullVideoDetails = await youtubeService.getVideo({
+      const fullVideoDetails = await this.container.youtubeService.getVideo({
         videoId,
         parts: ["snippet", "statistics", "contentDetails"],
       });
@@ -74,7 +68,7 @@ export const getVideoDetailsHandler = async (
 
       const formattedDescription = formatDescription(
         fullVideoDetails.snippet?.description,
-        validatedParams.descriptionDetail
+        params.descriptionDetail
       );
 
       const baseLeanDetails = {
@@ -101,11 +95,11 @@ export const getVideoDetailsHandler = async (
           ? { ...baseLeanDetails, description: formattedDescription }
           : baseLeanDetails;
 
-      const leanDetails: LeanVideoDetails = validatedParams.includeTags
+      const leanDetails: LeanVideoDetails = params.includeTags
         ? {
-            ...detailsWithDescription,
-            tags: fullVideoDetails.snippet?.tags ?? [],
-          }
+          ...detailsWithDescription,
+          tags: fullVideoDetails.snippet?.tags ?? [],
+        }
         : detailsWithDescription;
 
       // Return the final transformed object for this video
@@ -119,7 +113,6 @@ export const getVideoDetailsHandler = async (
     );
 
     return formatSuccess(finalOutput);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}
+

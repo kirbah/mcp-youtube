@@ -1,9 +1,7 @@
 import { z } from "zod";
-import { YoutubeService } from "../../services/youtube.service.js";
-import { formatError } from "../../utils/errorHandler.js";
+import { BaseTool } from "../base.js";
 import { formatSuccess } from "../../utils/responseFormatter.js";
 import { channelIdSchema } from "../../utils/validation.js";
-import type { ChannelStatisticsParams } from "../../types/tools.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 export const getChannelStatisticsSchema = z.object({
@@ -13,28 +11,23 @@ export const getChannelStatisticsSchema = z.object({
     .describe("Array of YouTube channel IDs to get statistics for"),
 });
 
-export const getChannelStatisticsConfig = {
-  name: "getChannelStatistics",
-  description:
-    "Retrieves statistics for multiple channels. Returns detailed metrics including subscriber count, view count, video count, and channel creation date for each channel. Use this when you need to analyze the performance and reach of multiple YouTube channels.",
-  // The inputSchema is now the complete Zod object schema.
-  inputSchema: getChannelStatisticsSchema,
-};
+export class GetChannelStatisticsTool extends BaseTool<
+  typeof getChannelStatisticsSchema
+> {
+  name = "getChannelStatistics";
+  description =
+    "Retrieves statistics for multiple channels. Returns detailed metrics including subscriber count, view count, video count, and channel creation date for each channel. Use this when you need to analyze the performance and reach of multiple YouTube channels.";
+  schema = getChannelStatisticsSchema;
 
-export const getChannelStatisticsHandler = async (
-  params: ChannelStatisticsParams,
-  youtubeService: YoutubeService
-): Promise<CallToolResult> => {
-  try {
-    const validatedParams = getChannelStatisticsSchema.parse(params);
-
-    const statsPromises = validatedParams.channelIds.map((channelId) =>
-      youtubeService.getChannelStatistics(channelId)
+  protected async executeImpl(
+    params: z.infer<typeof getChannelStatisticsSchema>
+  ): Promise<CallToolResult> {
+    const statsPromises = params.channelIds.map((channelId) =>
+      this.container.youtubeService.getChannelStatistics(channelId)
     );
 
     const statisticsResults = await Promise.all(statsPromises);
     return formatSuccess(statisticsResults);
-  } catch (error: unknown) {
-    return formatError(error);
   }
-};
+}
+
