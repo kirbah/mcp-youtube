@@ -77,4 +77,3 @@ export class SearchVideosTool extends BaseTool<typeof searchVideosSchema> {
     return formatSuccess(leanResults);
   }
 }
-

@@ -7,7 +7,7 @@ export abstract class BaseTool<
   T extends z.ZodObject<z.ZodRawShape> = z.ZodObject<z.ZodRawShape>,
 > {
   // Dependencies are injected automatically via constructor
-  constructor(protected container: IServiceContainer) { }
+  constructor(protected container: IServiceContainer) {}
 
   // Abstract properties that every tool must define
   abstract name: string;
@@ -28,10 +28,9 @@ export abstract class BaseTool<
     } catch (err) {
       // 3. Centralized Error Handling
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error(
-        `Tool execution failed: ${this.name}`,
-        { error: errorMessage }
-      );
+      console.error(`Tool execution failed: ${this.name}`, {
+        error: errorMessage,
+      });
 
       return {
         content: [{ type: "text", text: `Error: ${errorMessage}` }],

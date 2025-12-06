@@ -35,11 +35,9 @@ export class GetTrendingVideosTool extends BaseTool<
   protected async executeImpl(
     params: z.infer<typeof getTrendingVideosSchema>
   ): Promise<CallToolResult> {
-    const trendingVideos = await this.container.youtubeService.getTrendingVideos(
-      params
-    );
+    const trendingVideos =
+      await this.container.youtubeService.getTrendingVideos(params);
 
     return formatSuccess(trendingVideos);
   }
 }
-

@@ -51,12 +51,10 @@ export class GetVideoCommentsTool extends BaseTool<
     params: z.infer<typeof getVideoCommentsSchema>
   ): Promise<CallToolResult> {
     // Call the service with the validated parameters
-    const comments = await this.container.youtubeService.getVideoComments(
-      params
-    );
+    const comments =
+      await this.container.youtubeService.getVideoComments(params);
 
     // Use the standard success formatter
     return formatSuccess(comments);
   }
 }
-

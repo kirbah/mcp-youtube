@@ -70,5 +70,3 @@ export function registerTools(server: McpServer, container: IServiceContainer) {
     );
   }
 }
-
-

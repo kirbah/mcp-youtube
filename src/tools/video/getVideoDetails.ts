@@ -32,7 +32,9 @@ export const getVideoDetailsSchema = z.object({
     ),
 });
 
-export class GetVideoDetailsTool extends BaseTool<typeof getVideoDetailsSchema> {
+export class GetVideoDetailsTool extends BaseTool<
+  typeof getVideoDetailsSchema
+> {
   name = "getVideoDetails";
   description =
     "Get detailed information about multiple YouTube videos. Returns comprehensive data including video metadata, statistics, and content details. Use this when you need complete information about specific videos.";
@@ -97,9 +99,9 @@ export class GetVideoDetailsTool extends BaseTool<typeof getVideoDetailsSchema> 
 
       const leanDetails: LeanVideoDetails = params.includeTags
         ? {
-          ...detailsWithDescription,
-          tags: fullVideoDetails.snippet?.tags ?? [],
-        }
+            ...detailsWithDescription,
+            tags: fullVideoDetails.snippet?.tags ?? [],
+          }
         : detailsWithDescription;
 
       // Return the final transformed object for this video
@@ -115,4 +117,3 @@ export class GetVideoDetailsTool extends BaseTool<typeof getVideoDetailsSchema> 
     return formatSuccess(finalOutput);
   }
 }
-

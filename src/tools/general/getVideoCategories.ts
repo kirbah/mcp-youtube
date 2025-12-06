@@ -25,10 +25,8 @@ export class GetVideoCategoriesTool extends BaseTool<
   ): Promise<CallToolResult> {
     const { regionCode } = params;
 
-    const categories = await this.container.youtubeService.getVideoCategories(
-      regionCode
-    );
+    const categories =
+      await this.container.youtubeService.getVideoCategories(regionCode);
     return formatSuccess(categories);
   }
 }
-

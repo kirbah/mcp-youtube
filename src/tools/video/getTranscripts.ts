@@ -22,8 +22,8 @@ export const getTranscriptsSchema = z.object({
     .default("key_segments")
     .describe(
       "The desired transcript format. " +
-      "'full_text': Returns the entire transcript as a single string. " +
-      "'key_segments': (Default) Returns only the video's intro hook and final call to action."
+        "'full_text': Returns the entire transcript as a single string. " +
+        "'key_segments': (Default) Returns only the video's intro hook and final call to action."
     ),
 });
 
@@ -51,4 +51,3 @@ export class GetTranscriptsTool extends BaseTool<typeof getTranscriptsSchema> {
     return formatSuccess(result);
   }
 }
-

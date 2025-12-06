@@ -39,11 +39,9 @@ export class GetChannelTopVideosTool extends BaseTool<
   protected async executeImpl(
     params: z.infer<typeof getChannelTopVideosSchema>
   ): Promise<CallToolResult> {
-    const topVideos = await this.container.youtubeService.getChannelTopVideos(
-      params
-    );
+    const topVideos =
+      await this.container.youtubeService.getChannelTopVideos(params);
 
     return formatSuccess(topVideos);
   }
 }
-

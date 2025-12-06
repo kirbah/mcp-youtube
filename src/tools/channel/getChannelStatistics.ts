@@ -30,4 +30,3 @@ export class GetChannelStatisticsTool extends BaseTool<
     return formatSuccess(statisticsResults);
   }
 }
-

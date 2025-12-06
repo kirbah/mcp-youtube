@@ -77,11 +77,9 @@ export class FindConsistentOutlierChannelsTool extends BaseTool<
     );
 
     // The analyzer's method is called with the guaranteed, complete options object.
-    const searchResults = await nicheAnalyzer.findConsistentOutlierChannels(
-      validatedOptions
-    );
+    const searchResults =
+      await nicheAnalyzer.findConsistentOutlierChannels(validatedOptions);
 
     return formatSuccess(searchResults);
   }
 }
-
