@@ -15,6 +15,15 @@ import { GetTrendingVideosTool } from "./general/getTrendingVideos.js";
 import { GetVideoCategoriesTool } from "./general/getVideoCategories.js";
 import { FindConsistentOutlierChannelsTool } from "./general/findConsistentOutlierChannels.js";
 
+interface ITool {
+  readonly name: string;
+  readonly description: string;
+  readonly schema: z.ZodObject<z.ZodRawShape>;
+  execute(args: z.infer<this["schema"]>): Promise<CallToolResult>;
+}
+
+type ToolConstructor = new (container: IServiceContainer) => ITool;
+
 // 1. Maintain a list of Constructors
 const TOOL_CLASSES = [
   GetVideoDetailsTool,
@@ -28,9 +37,8 @@ const TOOL_CLASSES = [
 ];
 
 export function registerTools(server: McpServer, container: IServiceContainer) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const toolsToRegister: Array<new (container: IServiceContainer) => any> = [
-    ...TOOL_CLASSES,
+  const toolsToRegister: ToolConstructor[] = [
+    ...(TOOL_CLASSES as ToolConstructor[]),
   ];
 
   if (process.env.MDB_MCP_CONNECTION_STRING) {
@@ -57,6 +65,7 @@ export function registerTools(server: McpServer, container: IServiceContainer) {
           idempotentHint: true,
         },
       },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       (async (
         args: z.infer<typeof toolInstance.schema>
       ): Promise<CallToolResult> => {
