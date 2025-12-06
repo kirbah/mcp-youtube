@@ -1,8 +1,6 @@
 import { GetVideoCategoriesTool } from "../getVideoCategories";
 import type { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
-// USE REAL FORMATTER
-import { formatSuccess } from "../../../utils/responseFormatter";
 
 // Only mock the service layer, not the external google library
 jest.mock("../../../services/youtube.service");

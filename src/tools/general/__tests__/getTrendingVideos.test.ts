@@ -1,11 +1,6 @@
-import {
-  GetTrendingVideosTool,
-  getTrendingVideosSchema,
-} from "../getTrendingVideos";
+import { GetTrendingVideosTool } from "../getTrendingVideos";
 import type { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
-// USE REAL FORMATTER
-import { formatSuccess } from "../../../utils/responseFormatter";
 
 // Only mock the heavy service, not the utils
 jest.mock("../../../services/youtube.service");

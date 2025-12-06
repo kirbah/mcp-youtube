@@ -3,8 +3,6 @@
 import { GetChannelTopVideosTool } from "../getChannelTopVideos";
 import type { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
-// USE REAL FORMATTER
-import { formatSuccess } from "../../../utils/responseFormatter";
 
 // Only mock the service
 jest.mock("../../../services/youtube.service");

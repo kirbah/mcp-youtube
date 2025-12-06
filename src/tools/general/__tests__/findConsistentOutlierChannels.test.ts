@@ -3,8 +3,6 @@ import { NicheAnalyzerService } from "../../../services/nicheAnalyzer.service";
 import { NicheRepository } from "../../../services/analysis/niche.repository";
 import { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
-// USE REAL FORMATTER
-import { formatSuccess } from "../../../utils/responseFormatter";
 
 // Mock the dependencies that are instantiated inside the Tool
 jest.mock("../../../services/nicheAnalyzer.service");
