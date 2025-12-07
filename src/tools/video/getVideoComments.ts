@@ -44,7 +44,7 @@ export class GetVideoCommentsTool extends BaseTool<
 > {
   name = "getVideoComments";
   description =
-    "Retrieves comments for a YouTube video. Allows sorting, limiting results, and fetching a small number of replies per comment.";
+    "Retrieves comments for a video. Warning: Setting `maxReplies` > 0 significantly increases API cost. Only set `maxReplies` if you specifically need to analyze conversation threads. Defaults to top-level comments only.";
   schema = getVideoCommentsSchema;
 
   protected async executeImpl(

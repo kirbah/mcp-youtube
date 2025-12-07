@@ -20,14 +20,15 @@ describe("featureFlags", () => {
     process.env = originalEnv;
   });
 
-  it('should return true if the feature flag environment variable is "true"', () => {
-    process.env[FEATURE_FLAGS.toolGetCommentSentiment] = "true";
-    expect(isEnabled("toolGetCommentSentiment")).toBe(true);
-  });
-
-  it('should return true if the feature flag environment variable is "TRUE" (case-insensitive)', () => {
-    process.env[FEATURE_FLAGS.toolAnalyzeThumbnails] = "TRUE";
-    expect(isEnabled("toolAnalyzeThumbnails")).toBe(true);
+  it.each([
+    ["true", true],
+    ["TRUE", true],
+    ["false", false],
+    ["", false],
+    [undefined, false],
+  ])("should return %s when env variable is %s", (value, expected) => {
+    process.env[FEATURE_FLAGS.toolGetCommentSentiment] = value;
+    expect(isEnabled("toolGetCommentSentiment")).toBe(expected);
   });
 
   it('should return false if the feature flag environment variable is "false"', () => {
