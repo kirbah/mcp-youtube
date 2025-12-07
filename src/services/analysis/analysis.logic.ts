@@ -32,11 +32,11 @@ export function calculateChannelAgePublishedAfter(
   const targetDate = new Date(); // Start with current date
   const monthsToSubtract = channelAge === "NEW" ? 6 : 24;
 
-  // Subtract months
-  targetDate.setMonth(targetDate.getMonth() - monthsToSubtract);
-
   // Set the date to the first day of the month
   targetDate.setDate(1);
+
+  // Subtract months
+  targetDate.setMonth(targetDate.getMonth() - monthsToSubtract);
 
   // Normalize the date to the beginning of the day (UTC)
   // This is crucial for caching: by setting hours, minutes, seconds, and milliseconds to 0,
