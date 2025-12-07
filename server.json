@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.kirbah/mcp-youtube",
   "title": "YouTube Data",
   "description": "YouTube MCP server for token-optimized, structured data using the YouTube Data API v3.",
