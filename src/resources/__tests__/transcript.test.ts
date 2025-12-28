@@ -81,7 +81,10 @@ describe("BaseResource", () => {
       expect.stringContaining("Resource read failed: MockResource"),
       expect.any(Object)
     );
+  });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });
 
@@ -175,6 +178,10 @@ describe("TranscriptResource", () => {
       })
     ).rejects.toThrow("Transcript not found for video 789 in language en");
   });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 });
 
 describe("TranscriptLocalizedResource", () => {
@@ -209,6 +216,10 @@ describe("TranscriptLocalizedResource", () => {
     expect(resource.uri.toString()).toBe(
       "youtube://transcript/{videoId}/{language_code}"
     );
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });
 
@@ -277,5 +288,9 @@ describe("registerResources", () => {
     await callback(testUri, testVars);
 
     expect(TranscriptResource.prototype.read).toHaveBeenCalledWith(testUri, testVars);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });
