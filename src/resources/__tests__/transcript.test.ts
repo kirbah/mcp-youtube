@@ -1,14 +1,10 @@
-
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { ReadResourceResult } from "@modelcontextprotocol/sdk/types";
 import { IServiceContainer } from "../../../container";
 import { TranscriptService } from "../../../services/transcript.service";
 import { BaseResource } from "../base";
 import { registerResources } from "../index";
-import {
-  TranscriptLocalizedResource,
-  TranscriptResource,
-} from "../transcript";
+import { TranscriptLocalizedResource, TranscriptResource } from "../transcript";
 
 jest.mock("@modelcontextprotocol/sdk/server/mcp", () => {
   const originalModule = jest.requireActual(
@@ -29,10 +25,7 @@ class MockResource extends BaseResource {
   uri = "mock://resource/{id}";
   mimeType = "text/plain";
 
-  readImpl(
-    _uri: URL,
-    _variables?: unknown
-  ): Promise<ReadResourceResult> {
+  readImpl(_uri: URL, _variables?: unknown): Promise<ReadResourceResult> {
     throw new Error("Method not implemented.");
   }
 }
@@ -135,10 +128,9 @@ describe("TranscriptResource", () => {
     (transcriptService.getTranscriptSegments as jest.Mock).mockResolvedValue(
       mockServiceResult
     );
-    const result = await resource.read(
-      new URL("youtube://transcript/abc"),
-      { videoId: "abc" }
-    );
+    const result = await resource.read(new URL("youtube://transcript/abc"), {
+      videoId: "abc",
+    });
 
     expect(result).toEqual({
       contents: [
@@ -272,7 +264,8 @@ describe("registerResources", () => {
   });
 
   it("should wire the callback to the resource's read method", async () => {
-    jest.spyOn(TranscriptResource.prototype, "read")
+    jest
+      .spyOn(TranscriptResource.prototype, "read")
       .mockResolvedValue({ contents: [] });
 
     registerResources(server, container);
@@ -287,7 +280,10 @@ describe("registerResources", () => {
     const testVars = { videoId: "xyz" };
     await callback(testUri, testVars);
 
-    expect(TranscriptResource.prototype.read).toHaveBeenCalledWith(testUri, testVars);
+    expect(TranscriptResource.prototype.read).toHaveBeenCalledWith(
+      testUri,
+      testVars
+    );
   });
 
   afterEach(() => {
