@@ -1,13 +1,14 @@
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp";
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { ReadResourceResult } from "@modelcontextprotocol/sdk/types";
 import { IServiceContainer } from "../../../container";
 import { TranscriptService } from "../../../services/transcript.service";
 import { BaseResource } from "../base";
 import { registerResources } from "../index";
-import { TranscriptLocalizedResource, TranscriptResource } from "../transcript";
+import {
+  TranscriptLocalizedResource,
+  TranscriptResource,
+} from "../transcript";
 
 jest.mock("@modelcontextprotocol/sdk/server/mcp", () => {
   const originalModule = jest.requireActual(
@@ -28,7 +29,10 @@ class MockResource extends BaseResource {
   uri = "mock://resource/{id}";
   mimeType = "text/plain";
 
-  readImpl(uri: URL, variables?: unknown): Promise<ReadResourceResult> {
+  readImpl(
+    _uri: URL,
+    _variables?: unknown
+  ): Promise<ReadResourceResult> {
     throw new Error("Method not implemented.");
   }
 }
@@ -78,7 +82,6 @@ describe("BaseResource", () => {
       expect.any(Object)
     );
 
-    consoleErrorSpy.mockRestore();
   });
 });
 
@@ -99,7 +102,7 @@ describe("TranscriptResource", () => {
     (transcriptService.getTranscriptSegments as jest.Mock).mockResolvedValue({
       transcript: "some text",
     });
-    await resource["readImpl"](new URL("youtube://transcript/123"), {
+    await resource.read(new URL("youtube://transcript/123"), {
       videoId: "123",
     });
     expect(transcriptService.getTranscriptSegments).toHaveBeenCalledWith(
@@ -113,7 +116,7 @@ describe("TranscriptResource", () => {
     (transcriptService.getTranscriptSegments as jest.Mock).mockResolvedValue({
       transcript: "some text",
     });
-    await resource["readImpl"](new URL("youtube://transcript/123"), {
+    await resource.read(new URL("youtube://transcript/123"), {
       videoId: "123",
       language_code: "fr",
     });
@@ -129,7 +132,7 @@ describe("TranscriptResource", () => {
     (transcriptService.getTranscriptSegments as jest.Mock).mockResolvedValue(
       mockServiceResult
     );
-    const result = await resource["readImpl"](
+    const result = await resource.read(
       new URL("youtube://transcript/abc"),
       { videoId: "abc" }
     );
@@ -147,7 +150,7 @@ describe("TranscriptResource", () => {
 
   it("should throw an error if videoId is missing", async () => {
     await expect(
-      resource["readImpl"](new URL("youtube://transcript/"), {})
+      resource.read(new URL("youtube://transcript/"), {})
     ).rejects.toThrow("Missing videoId in URI variables");
   });
 
@@ -156,7 +159,7 @@ describe("TranscriptResource", () => {
       null
     );
     await expect(
-      resource["readImpl"](new URL("youtube://transcript/456"), {
+      resource.read(new URL("youtube://transcript/456"), {
         videoId: "456",
       })
     ).rejects.toThrow("Transcript not found for video 456 in language en");
@@ -167,7 +170,7 @@ describe("TranscriptResource", () => {
       other: "data",
     });
     await expect(
-      resource["readImpl"](new URL("youtube://transcript/789"), {
+      resource.read(new URL("youtube://transcript/789"), {
         videoId: "789",
       })
     ).rejects.toThrow("Transcript not found for video 789 in language en");
@@ -191,7 +194,7 @@ describe("TranscriptLocalizedResource", () => {
     (transcriptService.getTranscriptSegments as jest.Mock).mockResolvedValue({
       transcript: "some text",
     });
-    await resource["readImpl"](new URL("youtube://transcript/123/de"), {
+    await resource.read(new URL("youtube://transcript/123/de"), {
       videoId: "123",
       language_code: "de",
     });
@@ -258,8 +261,7 @@ describe("registerResources", () => {
   });
 
   it("should wire the callback to the resource's read method", async () => {
-    const readSpy = jest
-      .spyOn(TranscriptResource.prototype, "read")
+    jest.spyOn(TranscriptResource.prototype, "read")
       .mockResolvedValue({ contents: [] });
 
     registerResources(server, container);
@@ -274,7 +276,6 @@ describe("registerResources", () => {
     const testVars = { videoId: "xyz" };
     await callback(testUri, testVars);
 
-    expect(readSpy).toHaveBeenCalledWith(testUri, testVars);
-    readSpy.mockRestore();
+    expect(TranscriptResource.prototype.read).toHaveBeenCalledWith(testUri, testVars);
   });
 });
