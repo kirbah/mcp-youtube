@@ -55,7 +55,7 @@
   "homepage": "https://github.com/kirbah/mcp-youtube#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",
-    "@smithery/sdk": "^1.7.4",
+    "@smithery/sdk": "^4.0.1",
     "dotenv": "^17.2.1",
     "googleapis": "^166.0.0",
     "mongodb": "^7.0.0",
