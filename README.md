@@ -29,6 +29,10 @@
     <img src="https://smithery.ai/badge/@kirbah/mcp-youtube" alt="View on Smithery" />
   </a>
 </p>
+
+<a href="https://glama.ai/mcp/servers/@kirbah/mcp-youtube">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@kirbah/mcp-youtube/badge" />
+</a>
 <!-- Badges End -->
 
 **High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.**
