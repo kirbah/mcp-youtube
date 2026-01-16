@@ -50,6 +50,5 @@ jobs:
         if: matrix.node-version == '24.x' && !cancelled()
         uses: codecov/codecov-action@v5
         with:
-          report-type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: kirbah/mcp-youtube
