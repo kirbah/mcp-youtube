@@ -1,5 +1,0 @@
-# Smithery configuration file: https://smithery.ai/docs/build/project-config/smithery-yaml
-
-runtime: "typescript"
-env:
-  NODE_ENV: "production"

@@ -9,11 +9,7 @@ import { disconnectFromDatabase } from "./services/database.service.js";
 import pkg from "../package.json" with { type: "json" };
 import { createMcpServer } from "./server.js";
 
-export default function createServer({
-  config,
-}: {
-  config: z.infer<typeof configSchema>;
-}) {
+export async function runServer(config: z.infer<typeof configSchema>) {
   const container = initializeContainer({
     apiKey: config.youtubeApiKey,
     mdbMcpConnectionString: config.mdbMcpConnectionString,
@@ -21,20 +17,18 @@ export default function createServer({
 
   const server = createMcpServer(container);
 
-  return server.server;
-}
-
-async function main() {
-  const server = createServer({
-    config: {
-      youtubeApiKey: process.env.YOUTUBE_API_KEY!,
-      mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING!,
-    },
-  });
-
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error(`YouTube MCP server (v${pkg.version}) running in stdio mode.`);
+
+  return server;
+}
+
+async function main() {
+  await runServer({
+    youtubeApiKey: process.env.YOUTUBE_API_KEY!,
+    mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING,
+  });
 
   // Graceful shutdown handlers for STDIO mode (e.g., Ctrl+C)
   const cleanup = async () => {
@@ -49,7 +43,9 @@ async function main() {
 }
 
 // By default, the server starts with stdio transport
-main().catch((error) => {
-  console.error("Server error:", error);
-  process.exit(1);
-});
+if (process.env.NODE_ENV !== "test") {
+  main().catch((error) => {
+    console.error("Server error:", error);
+    process.exit(1);
+  });
+}

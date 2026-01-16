@@ -1,56 +1,74 @@
-import createServer from "../index";
+import { runServer } from "../index";
 import { configSchema } from "../server";
 import { z } from "zod";
 import * as databaseService from "../services/database.service"; // Import the module to mock
+import * as container from "../container";
 
 // Mock the initializeDatabase function
 jest.mock("../services/database.service", () => ({
   ...jest.requireActual("../services/database.service"), // Keep actual implementations for other exports
   initializeDatabase: jest.fn(), // Mock initializeDatabase
+  disconnectFromDatabase: jest.fn(),
 }));
 
-describe("createServer", () => {
-  const originalEnv = process.env;
+jest.mock("../container", () => ({
+  ...jest.requireActual("../container"),
+  initializeContainer: jest.fn().mockReturnValue({
+    // provide a mock container that can be used in tests
+    youtubeService: {},
+    nicheAnalyzerService: {},
+    cacheService: {},
+    transcriptService: {},
+    databaseService: {
+      initializeDatabase: jest.fn(),
+      getDb: jest.fn(),
+      disconnect: jest.fn(),
+    },
+  }),
+}));
 
+describe("runServer", () => {
   beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
     // Clear any previous calls to the mock
     (databaseService.initializeDatabase as jest.Mock).mockClear();
+    (container.initializeContainer as jest.Mock).mockClear();
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it("should call initializeDatabase with the correct connection string if provided", () => {
+  it("should call initializeContainer with the correct connection string if provided", async () => {
     const mockConnectionString = "mongodb://test";
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
       mdbMcpConnectionString: mockConnectionString,
     };
-    createServer({ config });
-    expect(databaseService.initializeDatabase).toHaveBeenCalledTimes(1);
-    expect(databaseService.initializeDatabase).toHaveBeenCalledWith(
-      mockConnectionString
-    );
+    await runServer(config);
+    expect(container.initializeContainer).toHaveBeenCalledTimes(1);
+    expect(container.initializeContainer).toHaveBeenCalledWith({
+      apiKey: config.youtubeApiKey,
+      mdbMcpConnectionString: config.mdbMcpConnectionString,
+    });
   });
 
-  it("should not call initializeDatabase if mdbMcpConnectionString is not provided", () => {
+  it("should call initializeContainer without mdbMcpConnectionString if it is not provided", async () => {
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
       // mdbMcpConnectionString is optional and not provided
     };
-    createServer({ config });
-    expect(databaseService.initializeDatabase).not.toHaveBeenCalled();
+    await runServer(config);
+    expect(container.initializeContainer).toHaveBeenCalledWith({
+      apiKey: config.youtubeApiKey,
+      mdbMcpConnectionString: undefined,
+    });
   });
 
-  it("should not call initializeDatabase if mdbMcpConnectionString is an empty string", () => {
+  it("should call initializeContainer with an empty mdbMcpConnectionString if it is an empty string", async () => {
     const config: z.infer<typeof configSchema> = {
       youtubeApiKey: "test-key",
       mdbMcpConnectionString: "",
     };
-    createServer({ config });
-    expect(databaseService.initializeDatabase).not.toHaveBeenCalled();
+    await runServer(config);
+    expect(container.initializeContainer).toHaveBeenCalledWith({
+      apiKey: config.youtubeApiKey,
+      mdbMcpConnectionString: "",
+    });
   });
 });

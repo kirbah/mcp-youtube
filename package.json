@@ -5,7 +5,6 @@
   "description": "YouTube MCP server for token-optimized, structured data using the YouTube Data API v3.",
   "main": "dist/index.js",
   "type": "module",
-  "module": "src/smithery.ts",
   "bin": {
     "mcp-youtube": "dist/index.js"
   },
@@ -15,14 +14,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "dev": "npx @smithery/cli dev",
-    "build": "npm run build:http",
-    "build:http": "npx @smithery/cli build ./src/smithery.ts",
-    "start": "npm run start:http",
-    "start:http": "node .smithery/index.cjs",
-    "build:stdio": "tsc",
-    "start:stdio": "node dist/index.js",
-    "prepublishOnly": "npm run build:stdio",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "start:client": "tsx ./src/index.ts",
     "inspector": "npx @modelcontextprotocol/inspector tsx ./src/index.ts",
     "clean": "rimraf dist",
@@ -55,7 +48,6 @@
   "homepage": "https://github.com/kirbah/mcp-youtube#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",
-    "@smithery/sdk": "^1.7.4",
     "dotenv": "^17.2.1",
     "googleapis": "^166.0.0",
     "mongodb": "^7.0.0",
@@ -65,7 +57,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
-    "@smithery/cli": "^1.6.3",
     "@types/jest": "30.0.0",
     "@types/node": "^24.3.0",
     "eslint": "^9.38.0",
