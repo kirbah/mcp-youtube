@@ -30,11 +30,8 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      - name: Build project stdio
-        run: npm run build:stdio
-
-      - name: Build project http
-        run: npm run build # test smithery build
+      - name: Build project
+        run: npm run build
 
       - name: Run linter
         run: npm run lint
@@ -55,9 +52,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: kirbah/mcp-youtube
-
-      - name: Upload test results to Codecov
-        if: matrix.node-version == '24.x' && !cancelled()
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}

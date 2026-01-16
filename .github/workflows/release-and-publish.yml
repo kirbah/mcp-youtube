@@ -66,7 +66,7 @@ jobs:
           jq --arg v "${{ env.VERSION }}" '.version = $v | .packages[].version = $v' server.json > tmp && mv tmp server.json
 
       - name: Build project
-        run: npm run build:stdio
+        run: npm run build
 
       - name: Commit version bump
         run: |
