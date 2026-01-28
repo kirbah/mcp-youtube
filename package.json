@@ -1,6 +1,6 @@
 {
   "name": "@kirbah/mcp-youtube",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "mcpName": "io.github.kirbah/mcp-youtube",
   "description": "YouTube MCP server for token-optimized, structured data using the YouTube Data API v3.",
   "main": "dist/index.js",
