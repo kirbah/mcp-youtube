@@ -1,12 +1,12 @@
 import { TranscriptService } from "../transcript.service";
 import { CacheService } from "../cache.service";
-import { getSubtitles } from "youtube-caption-extractor";
+import { fetchTranscript } from "youtube-transcript-plus";
 
 // Mock the dependencies
 jest.mock("../cache.service");
-jest.mock("youtube-caption-extractor");
+jest.mock("youtube-transcript-plus");
 
-const mockGetSubtitles = getSubtitles as jest.Mock;
+const mockFetchTranscript = fetchTranscript as jest.Mock;
 const MockCacheService = CacheService;
 
 describe("TranscriptService", () => {
@@ -95,7 +95,8 @@ describe("TranscriptService", () => {
   });
 
   describe("fetchAndCacheRawTranscript", () => {
-    const mockSubtitles = [{ text: "hello world", start: "0", dur: "1" }];
+    const mockApiResponse = [{ text: "hello world", offset: 0, duration: 1 }];
+    const expectedSubtitles = [{ text: "hello world", start: "0", dur: "1" }];
     const videoId = "video1";
     const lang = "en";
     const cacheKey = "someCacheKey";
@@ -104,11 +105,11 @@ describe("TranscriptService", () => {
       cacheService.createOperationKey.mockReturnValue(cacheKey);
     });
 
-    it("should call getSubtitles when cache is empty and return fetched data", async () => {
+    it("should call fetchTranscript when cache is empty and return mapped data", async () => {
       cacheService.getOrSet.mockImplementation(async (key, operation) =>
         operation()
       );
-      mockGetSubtitles.mockResolvedValue(mockSubtitles);
+      mockFetchTranscript.mockResolvedValue(mockApiResponse);
 
       // @ts-ignore
       const result = await transcriptService.fetchAndCacheRawTranscript(
@@ -123,15 +124,15 @@ describe("TranscriptService", () => {
         expect.any(String),
         expect.any(Object)
       );
-      expect(mockGetSubtitles).toHaveBeenCalledWith({ videoID: videoId, lang });
-      expect(result).toEqual(mockSubtitles);
+      expect(mockFetchTranscript).toHaveBeenCalledWith(videoId, { lang });
+      expect(result).toEqual(expectedSubtitles);
     });
 
-    it("should return an empty array if getSubtitles call fails", async () => {
+    it("should return an empty array if fetchTranscript call fails", async () => {
       cacheService.getOrSet.mockImplementation(async (key, operation) =>
         operation()
       );
-      mockGetSubtitles.mockRejectedValue(new Error("Fetch failed"));
+      mockFetchTranscript.mockRejectedValue(new Error("Fetch failed"));
 
       // @ts-ignore
       const result = await transcriptService.fetchAndCacheRawTranscript(
@@ -142,8 +143,8 @@ describe("TranscriptService", () => {
       expect(result).toEqual([]);
     });
 
-    it("should return data from cache without calling getSubtitles", async () => {
-      cacheService.getOrSet.mockResolvedValue(mockSubtitles);
+    it("should return data from cache without calling fetchTranscript", async () => {
+      cacheService.getOrSet.mockResolvedValue(expectedSubtitles);
 
       // @ts-ignore
       const result = await transcriptService.fetchAndCacheRawTranscript(
@@ -158,8 +159,8 @@ describe("TranscriptService", () => {
         expect.any(String),
         expect.any(Object)
       );
-      expect(mockGetSubtitles).not.toHaveBeenCalled();
-      expect(result).toEqual(mockSubtitles);
+      expect(mockFetchTranscript).not.toHaveBeenCalled();
+      expect(result).toEqual(expectedSubtitles);
     });
   });
 

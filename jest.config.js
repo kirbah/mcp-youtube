@@ -15,7 +15,14 @@ export default {
         },
       },
     ],
+    "node_modules/youtube-transcript-plus/.+\\.js$": [
+      "ts-jest",
+      {
+        useESM: true,
+      },
+    ],
   },
+  transformIgnorePatterns: ["node_modules/(?!youtube-transcript-plus)"],
   testMatch: ["**/__tests__/**/*.test.ts", "**/?(*.)+(spec|test).ts"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
 
