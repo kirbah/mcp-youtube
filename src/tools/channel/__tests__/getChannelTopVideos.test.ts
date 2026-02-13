@@ -1,5 +1,3 @@
-/* eslint-env node */
-/* eslint-parser-options project: ["./tsconfig.test.json"] */
 import { GetChannelTopVideosTool } from "../getChannelTopVideos";
 import type { YoutubeService } from "../../../services/youtube.service";
 import { IServiceContainer } from "../../../container";
