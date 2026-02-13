@@ -52,7 +52,7 @@
     "googleapis": "^166.0.0",
     "mongodb": "^7.0.0",
     "tsx": "^4.20.4",
-    "youtube-caption-extractor": "^1.9.1",
+    "youtube-transcript-plus": "^1.1.2",
     "zod": "^4.1.13"
   },
   "devDependencies": {
