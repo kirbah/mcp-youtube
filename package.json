@@ -49,10 +49,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",
     "dotenv": "^17.2.1",
-    "googleapis": "^166.0.0",
+    "googleapis": "^171.4.0",
     "mongodb": "^7.0.0",
     "tsx": "^4.20.4",
-    "youtube-transcript-plus": "^1.1.2",
+    "youtube-transcript-plus": "^1.2.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {

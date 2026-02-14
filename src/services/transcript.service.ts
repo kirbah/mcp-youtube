@@ -1,14 +1,6 @@
-import { fetchTranscript } from "youtube-transcript-plus";
+import { fetchTranscript, TranscriptResponse } from "youtube-transcript-plus";
 import { CacheService } from "./cache.service.js";
 import { CACHE_TTLS, CACHE_COLLECTIONS } from "../config/cache.config.js";
-
-// Mirrors youtube-transcript-plus's TranscriptResponse (not re-exported by the package)
-interface TranscriptResponseItem {
-  text: string;
-  duration: number;
-  offset: number;
-  lang?: string;
-}
 
 // Local Subtitle type matching the shape expected by the rest of the codebase.
 interface Subtitle {
@@ -57,15 +49,20 @@ export class TranscriptService {
 
     const operation = async (): Promise<Subtitle[]> => {
       try {
-        const transcript = (await fetchTranscript(videoId, {
-          lang,
-        })) as TranscriptResponseItem[];
+        const transcript: TranscriptResponse[] = await fetchTranscript(
+          videoId,
+          {
+            lang,
+          }
+        );
         // Map youtube-transcript-plus format to the Subtitle shape used internally
-        return transcript.map((item) => ({
-          start: String(item.offset),
-          dur: String(item.duration),
-          text: item.text,
-        }));
+        return transcript.map(
+          (item: { offset: number; duration: number; text: string }) => ({
+            start: String(item.offset),
+            dur: String(item.duration),
+            text: item.text,
+          })
+        );
       } catch (error) {
         console.error(
           `[TranscriptService] Failed to fetch transcript for ${videoId} (lang: ${lang}):`,
