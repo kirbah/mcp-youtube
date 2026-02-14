@@ -11,6 +11,10 @@ jest.mock("../services/database.service", () => ({
   disconnectFromDatabase: jest.fn(),
 }));
 
+jest.mock("youtube-transcript-plus", () => ({
+  fetchTranscript: jest.fn(),
+}));
+
 jest.mock("../container", () => ({
   ...jest.requireActual("../container"),
   initializeContainer: jest.fn().mockReturnValue({

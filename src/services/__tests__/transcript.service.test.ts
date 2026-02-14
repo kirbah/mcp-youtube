@@ -4,7 +4,9 @@ import { fetchTranscript } from "youtube-transcript-plus";
 
 // Mock the dependencies
 jest.mock("../cache.service");
-jest.mock("youtube-transcript-plus");
+jest.mock("youtube-transcript-plus", () => ({
+  fetchTranscript: jest.fn(),
+}));
 
 const mockFetchTranscript = fetchTranscript as jest.Mock;
 const MockCacheService = CacheService;
