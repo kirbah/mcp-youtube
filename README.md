@@ -51,11 +51,11 @@ xychart-beta
     bar "MCP-YouTube (Optimized)" [209, 402, 86]
 ```
 
-| API Method                 | Raw YouTube Tokens | MCP-YouTube Tokens | Token Savings | Data Size       |
-| :------------------------- | :----------------- | :----------------- | :------------ | :-------------- |
-| **`getChannelStatistics`** | 673                | **86**             | **~87% Less** | 1.8 KB ➔ 0.2 KB |
-| `getVideoDetails`          | 854                | **209**            | **~75% Less** | 2.9 KB ➔ 0.6 KB |
-| `searchVideos`             | 1115               | **402**            | **~64% Less** | 3.4 KB ➔ 1.2 KB |
+| API Method             | Raw YouTube Tokens | MCP-YouTube Tokens | Token Savings | Data Size       |
+| :--------------------- | :----------------- | :----------------- | :------------ | :-------------- |
+| `getChannelStatistics` | 673                | **86**             | **~87% Less** | 1.9 KB ➔ 0.2 KB |
+| `getVideoDetails`      | 854                | **209**            | **~75% Less** | 2.9 KB ➔ 0.6 KB |
+| `searchVideos`         | 1115               | **402**            | **~64% Less** | 3.4 KB ➔ 1.2 KB |
 
 _(Curious? You can compare the [raw API responses vs optimized outputs](examples/comparisons/) in the examples folder)._
 
@@ -77,7 +77,7 @@ Tired of MCP tools crashing your AI client? This server is built to be a rock-so
 
 ## Quick Start: Installation
 
-The easiest way to install this server is by clicking the **"Add to Claude Desktop"** (or other supported clients) button on our [Glama server page](https://glama.ai/mcp/servers/@kirbah/mcp-youtube).
+The easiest way to install this server is by clicking the **"Add to Claude Desktop"** (or other supported clients) button on [Glama server page](https://glama.ai/mcp/servers/@kirbah/mcp-youtube).
 
 ### Manual Configuration
 
