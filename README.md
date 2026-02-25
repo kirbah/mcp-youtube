@@ -37,7 +37,7 @@ Unlike standard API wrappers that flood your LLM with redundant data, this serve
 
 Most MCP servers are weekend projects. `@kirbah/mcp-youtube` is built for reliable, daily, cost-effective agentic workflows.
 
-### 📉 1. Save Up to 75% on Tokens (and Context Window)
+### 📉 1. Save Up to 87% on Tokens (and Context Window)
 
 The raw YouTube API returns massive JSON payloads filled with nested eTags, redundant thumbnails, and localization data that LLMs don't need. This server structures the data to give your LLM exactly what it needs to reason, and nothing else.
 
