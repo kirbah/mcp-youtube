@@ -29,59 +29,79 @@
 </a>
 <!-- Badges End -->
 
-**High-efficiency YouTube MCP server: Get token-optimized, structured data for your LLMs using the YouTube Data API v3.**
+**A production-grade YouTube Data MCP server engineered specifically for AI agents.**
 
-This Model Context Protocol (MCP) server empowers AI language models to seamlessly interact with YouTube. It's engineered to return **lean, structured data**, significantly **reducing token consumption** and making it ideal for cost-effective and performant LLM applications. Access a comprehensive suite of tools for video search, detail retrieval, transcript fetching, channel analysis, and trend discovery—all optimized for AI.
+Unlike standard API wrappers that flood your LLM with redundant data, this server strips away YouTube's heavy payload bloat. It is designed to save you massive amounts of context window tokens, protect your daily API quotas via caching, and run reliably without breaking your workflows.
 
-**Built with MCP TypeScript Starter**
+## Why Choose This Server?
 
-This project follows the architecture defined in the [MCP TypeScript Starter](https://github.com/kirbah/mcp-typescript-starter). If you are looking to build your own MCP server using these same patterns (Class-based Tools, Dependency Injection, and strict Type Safety), I recommend using that repository as your starting point.
+Most MCP servers are weekend projects. `@kirbah/mcp-youtube` is built for reliable, daily, cost-effective agentic workflows.
 
-## Quick Start: Adding to an MCP Client
+### 📉 1. Save Up to 87% on Tokens (and Context Window)
 
-The easiest way to use `@kirbah/mcp-youtube` is with an MCP-compatible client application (like Claude Desktop or a custom client).
+The raw YouTube API returns massive JSON payloads filled with nested eTags, redundant thumbnails, and localization data that LLMs don't need. This server structures the data to give your LLM exactly what it needs to reason, and nothing else.
 
-1.  **Ensure you have a YouTube Data API v3 Key.**
-    - If you don't have one, follow the [YouTube API Setup](#youtube-api-setup) instructions below.
+```mermaid
+%%{init: { "theme": "base", "themeVariables": { "xyChart": { "plotColorPalette": "#ef4444, #22c55e" } } } }%%
+xychart-beta
+    title "Token Consumption (Lower is Better)"
+    x-axis ["getVideoDetails", "searchVideos", "getChannelStats"]
+    y-axis "Context Tokens" 0 --> 1200
+    bar "Raw YouTube API" [854, 1115, 673]
+    bar "MCP-YouTube (Optimized)" [209, 402, 86]
+```
 
-2.  **MongoDB Connection String (Optional):** This server can use MongoDB to cache API responses and store analysis data, which significantly improves performance and reduces API quota usage. If you don't provide a connection string, the server will run without a database, but performance will be degraded, and you may hit API quota limits faster. You can get a free MongoDB Atlas cluster to obtain a connection string.
+| API Method                 | Raw YouTube Tokens | MCP-YouTube Tokens | Token Savings | Data Size       |
+| :------------------------- | :----------------- | :----------------- | :------------ | :-------------- |
+| **`getChannelStatistics`** | 673                | **86**             | **~87% Less** | 1.8 KB ➔ 0.2 KB |
+| `getVideoDetails`          | 854                | **209**            | **~75% Less** | 2.9 KB ➔ 0.6 KB |
+| `searchVideos`             | 1115               | **402**            | **~64% Less** | 3.4 KB ➔ 1.2 KB |
 
-    **Important:** If you use MongoDB, the server is hardcoded to use the database name `youtube_niche_analysis`. Your connection string must point to this database, and your user must have read/write permissions for it.
+_(Curious? You can compare the [raw API responses vs optimized outputs](examples/comparisons/) in the examples folder)._
 
-3.  **Configure your MCP client:**
-    Add the following JSON configuration to your client, replacing `"YOUR_YOUTUBE_API_KEY_HERE"` with your actual API key.
+### 🛡️ 2. Protect Your API Quotas (Smart Caching)
 
-    ```json
-    {
-      "mcpServers": {
-        "youtube": {
-          "command": "npx",
-          "args": ["-y", "@kirbah/mcp-youtube"],
-          "env": {
-            "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
-            "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube_niche_analysis"
-          }
-        }
+The YouTube Data API has strict daily limits (10,000 quota units). If your LLM gets stuck in a loop or re-asks a question, standard servers will drain your API limit in minutes.
+This server includes an optional **MongoDB caching layer**. If your agent requests a video details or searches the same trending videos twice, the server serves it from the cache - costing you **0 API quota points**.
+
+### 🏗️ 3. Production-Grade & Actively Maintained
+
+Tired of MCP tools crashing your AI client? This server is built to be a rock-solid dependency:
+
+- **97% Test Coverage:** Comprehensively unit-tested (check the Codecov badge).
+- **Zero Lint Errors/Warnings:** Enforces strict, clean code (`npm run lint` passes 100%).
+- **Active Security:** Automated Dependabot patching ensures underlying libraries are never left with known vulnerabilities.
+- **Strict Type Safety:** Built using Zod validation and the robust MCP TypeScript Starter architecture.
+
+---
+
+## Quick Start: Installation
+
+The easiest way to install this server is by clicking the **"Add to Claude Desktop"** (or other supported clients) button on our [Glama server page](https://glama.ai/mcp/servers/@kirbah/mcp-youtube).
+
+### Manual Configuration
+
+If you prefer to configure your MCP client manually (e.g., Claude Desktop or Cursor), add the following to your configuration file:
+
+1. **Get a YouTube Data API v3 Key** (See [Setup Instructions](#youtube-api-setup) below).
+2. **(Highly Recommended) Get a free MongoDB Connection String** to enable quota-saving caching.
+
+```json
+{
+  "mcpServers": {
+    "youtube": {
+      "command": "npx",
+      "args": ["-y", "@kirbah/mcp-youtube"],
+      "env": {
+        "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY_HERE",
+        "MDB_MCP_CONNECTION_STRING": "mongodb+srv://user:pass@cluster0.abc.mongodb.net/youtube_niche_analysis"
       }
     }
-    ```
+  }
+}
+```
 
-    - **Windows PowerShell Users:** `npx` can sometimes cause issues directly. If you encounter problems, try modifying the command as follows:
-      ```json
-        "command": "cmd",
-        "args": ["/k", "npx", "-y", "@kirbah/mcp-youtube"],
-      ```
-
-That's it! Your MCP client should now be able to leverage the YouTube tools provided by this server.
-
-## Why `@kirbah/mcp-youtube`?
-
-In the world of Large Language Models, every token counts. `@kirbah/mcp-youtube` is designed from the ground up with this principle in mind:
-
-- 🚀 **Token Efficiency:** Get just the data you need, precisely structured to minimize overhead for your LLM prompts and responses.
-- 🧠 **LLM-Centric Design:** Tools and data formats are tailored for easy integration and consumption by AI models.
-- 📊 **Comprehensive YouTube Toolkit:** Access a wide array of YouTube functionalities, from video details and transcripts to channel statistics and trending content.
-- 🛡️ **Robust & Reliable:** Built with strong input validation (Zod) and clear error handling.
+_(Windows PowerShell Users: If `npx` fails, try using `"command": "cmd"` and `"args": ["/k", "npx", "-y", "@kirbah/mcp-youtube"]`)_
 
 ## Key Features
 
