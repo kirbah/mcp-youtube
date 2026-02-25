@@ -1,0 +1,45 @@
+{
+  "kind": "youtube#channel",
+  "etag": "80dnV8g0pgLqnltePFklTUDMgz4",
+  "id": "UCrDwWp7EBBv4NwvScIpBDOA",
+  "snippet": {
+    "title": "Anthropic",
+    "description": "We’re an AI safety and research company. Talk to our AI assistant Claude on claude.com. Download Claude on desktop, iOS, or Android. \n\nWe believe AI will have a vast impact on the world. Anthropic is dedicated to building systems that people can rely on and generating research about the opportunities and risks of AI.\n\n",
+    "customUrl": "@anthropic-ai",
+    "publishedAt": "2023-06-15T22:02:43.974424Z",
+    "thumbnails": {
+      "default": {
+        "url": "https://yt3.ggpht.com/ux-GXUpB4PkI-qXVOpj9gGEiCkytT0Q78ka4srlxOm_Y3m1gEh5qy8Vu6vTjGSDztMT0NybtC7I=s88-c-k-c0x00ffffff-no-rj",
+        "width": 88,
+        "height": 88
+      },
+      "medium": {
+        "url": "https://yt3.ggpht.com/ux-GXUpB4PkI-qXVOpj9gGEiCkytT0Q78ka4srlxOm_Y3m1gEh5qy8Vu6vTjGSDztMT0NybtC7I=s240-c-k-c0x00ffffff-no-rj",
+        "width": 240,
+        "height": 240
+      },
+      "high": {
+        "url": "https://yt3.ggpht.com/ux-GXUpB4PkI-qXVOpj9gGEiCkytT0Q78ka4srlxOm_Y3m1gEh5qy8Vu6vTjGSDztMT0NybtC7I=s800-c-k-c0x00ffffff-no-rj",
+        "width": 800,
+        "height": 800
+      }
+    },
+    "localized": {
+      "title": "Anthropic",
+      "description": "We’re an AI safety and research company. Talk to our AI assistant Claude on claude.com. Download Claude on desktop, iOS, or Android. \n\nWe believe AI will have a vast impact on the world. Anthropic is dedicated to building systems that people can rely on and generating research about the opportunities and risks of AI.\n\n"
+    },
+    "country": "US"
+  },
+  "contentDetails": {
+    "relatedPlaylists": {
+      "likes": "",
+      "uploads": "UUrDwWp7EBBv4NwvScIpBDOA"
+    }
+  },
+  "statistics": {
+    "viewCount": "16042336",
+    "subscriberCount": "413000",
+    "hiddenSubscriberCount": false,
+    "videoCount": "170"
+  }
+}

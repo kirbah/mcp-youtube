@@ -1,0 +1,104 @@
+[
+  {
+    "kind": "youtube#searchResult",
+    "etag": "t96yltlgkCmiSc_SjBaiD1A8Oew",
+    "id": {
+      "kind": "youtube#video",
+      "videoId": "tTw1z10yMCI"
+    },
+    "snippet": {
+      "publishedAt": "2025-04-06T15:01:11Z",
+      "channelId": "UCJFMlSxcvlZg5yZUYJT0Pug",
+      "title": "MCP Servers Explained in 5 Minutes (for beginners)",
+      "description": "subscribe for more ▻ https://bit.ly/3zlUmiS follow techsnif for tech news (x) ▻ https://twitter.com/techsnif follow me on twitter (x) ...",
+      "thumbnails": {
+        "default": {
+          "url": "https://i.ytimg.com/vi/tTw1z10yMCI/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        "medium": {
+          "url": "https://i.ytimg.com/vi/tTw1z10yMCI/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        "high": {
+          "url": "https://i.ytimg.com/vi/tTw1z10yMCI/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        }
+      },
+      "channelTitle": "corbin",
+      "liveBroadcastContent": "none",
+      "publishTime": "2025-04-06T15:01:11Z"
+    }
+  },
+  {
+    "kind": "youtube#searchResult",
+    "etag": "HFShC6re5m6C2lDSdI_f2TKpPc8",
+    "id": {
+      "kind": "youtube#video",
+      "videoId": "eur8dUO9mvE"
+    },
+    "snippet": {
+      "publishedAt": "2025-02-19T12:00:59Z",
+      "channelId": "UCKWaEZ-_VweaEx1j62do_vQ",
+      "title": "What is MCP? Integrate AI Agents with Databases &amp; APIs",
+      "description": "Ready to become a certified Architect on Cloud Pak? Register now and use code IBMTechYT20 for 20% off of your exam ...",
+      "thumbnails": {
+        "default": {
+          "url": "https://i.ytimg.com/vi/eur8dUO9mvE/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        "medium": {
+          "url": "https://i.ytimg.com/vi/eur8dUO9mvE/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        "high": {
+          "url": "https://i.ytimg.com/vi/eur8dUO9mvE/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        }
+      },
+      "channelTitle": "IBM Technology",
+      "liveBroadcastContent": "none",
+      "publishTime": "2025-02-19T12:00:59Z"
+    }
+  },
+  {
+    "kind": "youtube#searchResult",
+    "etag": "SGoiV_UxKSGptgaggWiEJQIbwvE",
+    "id": {
+      "kind": "youtube#video",
+      "videoId": "xdMVgZfZ1yg"
+    },
+    "snippet": {
+      "publishedAt": "2025-05-06T22:55:40Z",
+      "channelId": "UCawZsQWqfGSbCI5yjkdVkTA",
+      "title": "What is MCP? Why is everyone talking about it?",
+      "description": "Try Zapier MCP for free today: https://bit.ly/42Babll And check out their webinar tomorrow at 10am PST: https://bit.ly/4jEZR1x Join ...",
+      "thumbnails": {
+        "default": {
+          "url": "https://i.ytimg.com/vi/xdMVgZfZ1yg/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        "medium": {
+          "url": "https://i.ytimg.com/vi/xdMVgZfZ1yg/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        "high": {
+          "url": "https://i.ytimg.com/vi/xdMVgZfZ1yg/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        }
+      },
+      "channelTitle": "Matthew Berman",
+      "liveBroadcastContent": "none",
+      "publishTime": "2025-05-06T22:55:40Z"
+    }
+  }
+]

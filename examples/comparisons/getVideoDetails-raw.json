@@ -1,0 +1,62 @@
+{
+  "kind": "youtube#video",
+  "etag": "S36-96w1KKSUzCsZT4Ue1WbeQmY",
+  "id": "CQywdSdi5iA",
+  "snippet": {
+    "publishedAt": "2025-06-16T13:03:20Z",
+    "channelId": "UCrDwWp7EBBv4NwvScIpBDOA",
+    "title": "The Model Context Protocol (MCP)",
+    "description": "Theo Chu, David Soria Parra and Alex Albert dive into the Model Context Protocol (MCP), the standard that's changing how AI applications connect with external data and tools.\n\nAnthropic open-sourced MCP in November 2024.\n\nLearn more about MCP: https://modelcontextprotocol.io\n\nRead the initial announcement: https://anthropic.com/news/model-context-protocol\n\n0:00 Introduction \n0:35 MCP and core components\n3:13 How it started\n6:22 Launching MCP and reception\n8:12 Making it open source\n9:55 Current state \n13:23 Tips for getting started \n14:57 Favorite MCP servers\n16:23 Claude 4 improvements\n18:18 What's next",
+    "thumbnails": {
+      "default": {
+        "url": "https://i.ytimg.com/vi/CQywdSdi5iA/default.jpg",
+        "width": 120,
+        "height": 90
+      },
+      "medium": {
+        "url": "https://i.ytimg.com/vi/CQywdSdi5iA/mqdefault.jpg",
+        "width": 320,
+        "height": 180
+      },
+      "high": {
+        "url": "https://i.ytimg.com/vi/CQywdSdi5iA/hqdefault.jpg",
+        "width": 480,
+        "height": 360
+      },
+      "standard": {
+        "url": "https://i.ytimg.com/vi/CQywdSdi5iA/sddefault.jpg",
+        "width": 640,
+        "height": 480
+      },
+      "maxres": {
+        "url": "https://i.ytimg.com/vi/CQywdSdi5iA/maxresdefault.jpg",
+        "width": 1280,
+        "height": 720
+      }
+    },
+    "channelTitle": "Anthropic",
+    "categoryId": "28",
+    "liveBroadcastContent": "none",
+    "defaultLanguage": "en",
+    "localized": {
+      "title": "The Model Context Protocol (MCP)",
+      "description": "Theo Chu, David Soria Parra and Alex Albert dive into the Model Context Protocol (MCP), the standard that's changing how AI applications connect with external data and tools.\n\nAnthropic open-sourced MCP in November 2024.\n\nLearn more about MCP: https://modelcontextprotocol.io\n\nRead the initial announcement: https://anthropic.com/news/model-context-protocol\n\n0:00 Introduction \n0:35 MCP and core components\n3:13 How it started\n6:22 Launching MCP and reception\n8:12 Making it open source\n9:55 Current state \n13:23 Tips for getting started \n14:57 Favorite MCP servers\n16:23 Claude 4 improvements\n18:18 What's next"
+    },
+    "defaultAudioLanguage": "en"
+  },
+  "contentDetails": {
+    "duration": "PT19M35S",
+    "dimension": "2d",
+    "definition": "hd",
+    "caption": "true",
+    "licensedContent": false,
+    "contentRating": {},
+    "projection": "rectangular"
+  },
+  "statistics": {
+    "viewCount": "228442",
+    "likeCount": "4480",
+    "favoriteCount": "0",
+    "commentCount": "242"
+  }
+}
