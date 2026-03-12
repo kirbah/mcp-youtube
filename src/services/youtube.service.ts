@@ -3,7 +3,11 @@ import {
   calculateLikeToViewRatio,
   calculateCommentToViewRatio,
 } from "../utils/engagementCalculator.js";
-import { YouTubeApiError } from "../errors/api.errors.js";
+import {
+  YouTubeApiError,
+  MissingApiKeyError,
+  AppError,
+} from "../errors/api.errors.js";
 import { parseYouTubeNumber } from "../utils/numberParser.js";
 import { formatDescription } from "../utils/textUtils.js";
 import { CacheService } from "./cache.service.js";
@@ -72,16 +76,20 @@ export class YoutubeService {
   private readonly ABSOLUTE_MAX_RESULTS = 500;
   private apiCreditsUsed: number = 0;
 
-  constructor(apiKey: string, cacheService: CacheService) {
-    if (!apiKey) {
-      throw new Error("YouTube API key is required but was not provided.");
-    }
+  private apiKey?: string;
 
+  constructor(apiKey: string | undefined, cacheService: CacheService) {
+    this.apiKey = apiKey;
     this.cacheService = cacheService;
-    this.youtube = google.youtube({
-      version: "v3",
-      auth: apiKey,
-    });
+
+    if (apiKey) {
+      this.youtube = google.youtube({
+        version: "v3",
+        auth: apiKey,
+      });
+    } else {
+      this.youtube = {} as youtube_v3.Youtube;
+    }
   }
 
   public getApiCreditsUsed(): number {
@@ -96,6 +104,9 @@ export class YoutubeService {
     operation: () => Promise<T>,
     cost: number
   ): Promise<T> {
+    if (!this.apiKey) {
+      throw new MissingApiKeyError();
+    }
     this.apiCreditsUsed += cost;
     return operation();
   }
@@ -151,6 +162,7 @@ export class YoutubeService {
         );
         return response.data.items?.[0] ?? null;
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getVideo failed for videoId: ${videoId}`,
           error
@@ -249,6 +261,7 @@ export class YoutubeService {
 
         return results.slice(0, targetResults);
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for searchVideos failed`,
           error
@@ -305,6 +318,7 @@ export class YoutubeService {
           }
         } else {
           // Log the failure but don't crash the entire operation
+          if (outcome.reason instanceof AppError) throw outcome.reason;
           console.error(
             "A batch in batchFetchChannelStatistics failed:",
             outcome.reason
@@ -316,6 +330,7 @@ export class YoutubeService {
         throw new Error("All batches failed to retrieve channel statistics.");
       }
     } catch (error) {
+      if (error instanceof AppError) throw error;
       throw new YouTubeApiError(
         `API call for batchFetchChannelStatistics failed`,
         error
@@ -357,6 +372,7 @@ export class YoutubeService {
           createdAt: channel.snippet?.publishedAt,
         };
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getChannelStatistics failed for channelId: ${channelId}`,
           error
@@ -416,6 +432,7 @@ export class YoutubeService {
 
         return videosResponse.data.items || [];
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for fetchChannelRecentTopVideos failed for channelId: ${channelId} and publishedAfter: ${publishedAfter}`,
           error
@@ -515,6 +532,7 @@ export class YoutubeService {
               videoDetails.push(...response.data.items);
             }
           } else {
+            if (outcome.reason instanceof AppError) throw outcome.reason;
             console.error(
               "A video details batch in getChannelTopVideos failed:",
               outcome.reason
@@ -566,6 +584,7 @@ export class YoutubeService {
             : videoWithDescription;
         });
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getChannelTopVideos failed for channelId: ${options.channelId}`,
           error
@@ -637,6 +656,7 @@ export class YoutubeService {
           }) || []
         );
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getTrendingVideos failed`,
           error
@@ -756,6 +776,7 @@ export class YoutubeService {
             return [];
           }
         }
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getVideoComments failed for videoId: ${options.videoId}`,
           error
@@ -798,6 +819,7 @@ export class YoutubeService {
 
         return categories || [];
       } catch (error) {
+        if (error instanceof AppError) throw error;
         throw new YouTubeApiError(
           `YouTube API call for getVideoCategories failed for regionCode: ${regionCode}`,
           error

@@ -4,6 +4,7 @@ import {
   calculateChannelAgePublishedAfter,
   isQuotaError,
 } from "./analysis.logic.js";
+import { AppError } from "../../errors/api.errors.js";
 
 export async function executeInitialCandidateSearch(
   options: FindConsistentOutlierChannelsOptions,
@@ -33,6 +34,7 @@ export async function executeInitialCandidateSearch(
 
     return Array.from(channelIds);
   } catch (error: unknown) {
+    if (error instanceof AppError) throw error;
     if (isQuotaError(error)) {
       throw new Error("YouTube API quota exceeded during Phase 1.");
     }

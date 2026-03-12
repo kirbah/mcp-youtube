@@ -77,9 +77,28 @@ Tired of MCP tools crashing your AI client? This server is built to be a rock-so
 
 ## Quick Start: Installation
 
-The easiest way to install this server is by clicking the **"Add to Claude Desktop"** (or other supported clients) button on [Glama server page](https://glama.ai/mcp/servers/@kirbah/mcp-youtube).
+### 🟢 Zero-Config Mode (No API Key Required)
 
-### Manual Configuration
+**Want to just fetch transcripts?** You can use this server immediately without any configuration! Just install and go. Add a YouTube API key later to unlock deep search and analytics.
+
+The easiest way to install this server is by clicking the **"Add to Claude Desktop"** button on the [Glama server page](https://glama.ai/mcp/servers/@kirbah/mcp-youtube).
+
+If you are configuring manually (e.g., in Cursor), just add this bare-minimum setup:
+
+```json
+{
+  "mcpServers": {
+    "youtube": {
+      "command": "npx",
+      "args": ["-y", "@kirbah/mcp-youtube"]
+    }
+  }
+}
+```
+
+_✨ **Tip:** In Zero-Config mode, you can ask your AI to simply "Read the transcript for `youtube://transcript/{videoId}`"!_
+
+### 🟡 Manual Configuration (Unlock All Features)
 
 If you prefer to configure your MCP client manually (e.g., Claude Desktop or Cursor), add the following to your configuration file:
 

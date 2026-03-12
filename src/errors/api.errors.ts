@@ -36,3 +36,12 @@ const hasResponseData = (
     "data" in error.response
   );
 };
+
+export class MissingApiKeyError extends AppError {
+  constructor() {
+    super(
+      "This tool requires a YouTube API Key. Please add YOUTUBE_API_KEY to your MCP client configuration to unlock this feature. See the project README for setup instructions."
+    );
+    this.name = "MissingApiKeyError";
+  }
+}

@@ -4,6 +4,7 @@ import {
 } from "../types/analyzer.types.js";
 import { YoutubeService } from "./youtube.service.js";
 import { NicheRepository } from "./analysis/niche.repository.js";
+import { AppError } from "../errors/api.errors.js";
 import { executeInitialCandidateSearch } from "./analysis/phase1-candidate-search.js";
 import { executeChannelPreFiltering } from "./analysis/phase2-channel-filtering.js";
 import { executeDeepConsistencyAnalysis } from "./analysis/phase3-deep-analysis.js";
@@ -67,6 +68,7 @@ export class NicheAnalyzerService {
 
       return finalOutput;
     } catch (error: unknown) {
+      if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to find consistent outlier channels: ${message}`);
     }
