@@ -26,7 +26,7 @@ export async function runServer(config: z.infer<typeof configSchema>) {
 
 async function main() {
   await runServer({
-    youtubeApiKey: process.env.YOUTUBE_API_KEY!,
+    youtubeApiKey: process.env.YOUTUBE_API_KEY,
     mdbMcpConnectionString: process.env.MDB_MCP_CONNECTION_STRING,
   });
 

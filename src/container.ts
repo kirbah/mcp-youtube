@@ -16,7 +16,7 @@ export function initializeContainer({
   apiKey,
   mdbMcpConnectionString,
 }: {
-  apiKey: string;
+  apiKey?: string;
   mdbMcpConnectionString?: string;
 }): IServiceContainer {
   if (mdbMcpConnectionString) {
