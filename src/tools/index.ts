@@ -37,12 +37,20 @@ const TOOL_CLASSES = [
 ];
 
 export function registerTools(server: McpServer, container: IServiceContainer) {
-  const toolsToRegister: ToolConstructor[] = [
-    ...(TOOL_CLASSES as ToolConstructor[]),
-  ];
+  const hasYoutubeKey = !!process.env.YOUTUBE_API_KEY;
+  const toolsToRegister: ToolConstructor[] = [];
 
-  if (process.env.MDB_MCP_CONNECTION_STRING) {
-    toolsToRegister.push(FindConsistentOutlierChannelsTool);
+  if (hasYoutubeKey) {
+    // Register all standard YouTube tools
+    toolsToRegister.push(...(TOOL_CLASSES as ToolConstructor[]));
+
+    // Register analytics tools if connection string is present
+    if (process.env.MDB_MCP_CONNECTION_STRING) {
+      toolsToRegister.push(FindConsistentOutlierChannelsTool);
+    }
+  } else {
+    // Only register tools that don't require the API key
+    toolsToRegister.push(GetTranscriptsTool);
   }
 
   for (const ToolClass of toolsToRegister) {
