@@ -139,8 +139,8 @@ export async function executeChannelPreFiltering(
     return prospectsForPhase3;
   } catch (error: unknown) {
     if (error instanceof Error) {
-      throw new Error(`Phase 2 failed: ${error.message}`);
+      throw new Error(`Phase 2 failed: ${error.message}`, { cause: error });
     }
-    throw new Error(`Phase 2 failed with an unknown error`);
+    throw new Error(`Phase 2 failed with an unknown error`, { cause: error });
   }
 }

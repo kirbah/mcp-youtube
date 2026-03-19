@@ -36,10 +36,12 @@ export async function executeInitialCandidateSearch(
   } catch (error: unknown) {
     if (error instanceof AppError) throw error;
     if (isQuotaError(error)) {
-      throw new Error("YouTube API quota exceeded during Phase 1.");
+      throw new Error("YouTube API quota exceeded during Phase 1.", {
+        cause: error,
+      });
     }
     const message =
       error instanceof Error ? error.message : "An unknown error occurred";
-    throw new Error(`Phase 1 failed: ${message}`);
+    throw new Error(`Phase 1 failed: ${message}`, { cause: error });
   }
 }

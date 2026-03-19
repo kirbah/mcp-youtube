@@ -70,7 +70,10 @@ export class NicheAnalyzerService {
     } catch (error: unknown) {
       if (error instanceof AppError) throw error;
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to find consistent outlier channels: ${message}`);
+      throw new Error(
+        `Failed to find consistent outlier channels: ${message}`,
+        { cause: error }
+      );
     }
   }
 }

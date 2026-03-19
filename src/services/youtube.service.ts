@@ -113,7 +113,7 @@ export class YoutubeService {
 
   private calculatePublishedAfter(recency: string): string {
     const now = new Date();
-    let millisecondsToSubtract = 0;
+    let millisecondsToSubtract;
 
     switch (recency) {
       case "pastHour":
