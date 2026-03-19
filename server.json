@@ -22,7 +22,7 @@
       "environmentVariables": [
         {
           "description": "YouTube Data API v3 key",
-          "isRequired": true,
+          "isRequired": false,
           "format": "string",
           "isSecret": true,
           "name": "YOUTUBE_API_KEY"
