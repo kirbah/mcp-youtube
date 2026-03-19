@@ -1,22 +1,21 @@
 // eslint.config.js
+import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 
-export default tseslint.config(
+export default defineConfig([
   // Global ignores
-  {
-    ignores: [
-      "dist/",
-      "node_modules/",
-      "coverage/",
-      "test-results/",
-      "**/*.config.js",
-      "**/*.config.mjs",
-      "**/*.config.cjs",
-    ],
-  },
+  globalIgnores([
+    "dist/",
+    "node_modules/",
+    "coverage/",
+    "test-results/",
+    "**/*.config.js",
+    "**/*.config.mjs",
+    "**/*.config.cjs",
+  ]),
 
   // Base JavaScript recommended rules
   js.configs.recommended,
@@ -124,5 +123,5 @@ export default tseslint.config(
   },
 
   // Prettier integration
-  prettier
-);
+  prettier,
+]);

@@ -179,7 +179,8 @@ export async function executeDeepConsistencyAnalysis(
     throw new Error(
       `Phase 3 failed: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 }
