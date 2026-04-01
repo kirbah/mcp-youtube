@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.node-version == '24.x' && !cancelled()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: kirbah/mcp-youtube
