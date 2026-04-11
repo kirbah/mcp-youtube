@@ -1,4 +1,5 @@
-import "dotenv/config";
+import { loadEnv } from "./env.js";
+loadEnv();
 
 // Mapping of flag names to their corresponding environment variables
 export const FEATURE_FLAGS = {
