@@ -1,4 +1,6 @@
-import "dotenv/config";
+import { loadEnv } from "./utils/env.js";
+loadEnv();
+
 import { CacheService } from "./services/cache.service.js";
 import { YoutubeService } from "./services/youtube.service.js";
 import { TranscriptService } from "./services/transcript.service.js";

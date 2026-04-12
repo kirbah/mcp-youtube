@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-import "dotenv/config";
+import { loadEnv } from "./utils/env.js";
+loadEnv();
+
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { configSchema } from "./server.js";
