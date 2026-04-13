@@ -49,12 +49,10 @@ export class TranscriptService {
 
     const operation = async (): Promise<Subtitle[]> => {
       try {
-        const transcript: TranscriptResponse[] = await fetchTranscript(
-          videoId,
-          {
-            lang,
-          }
-        );
+        const transcript = (await fetchTranscript(videoId, {
+          lang,
+        })) as TranscriptResponse[];
+
         // Map youtube-transcript-plus format to the Subtitle shape used internally
         return transcript.map(
           (item: { offset: number; duration: number; text: string }) => ({
