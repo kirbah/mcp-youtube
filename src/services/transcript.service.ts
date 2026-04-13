@@ -1,4 +1,4 @@
-import { fetchTranscript, TranscriptResponse } from "youtube-transcript-plus";
+import { fetchTranscript, TranscriptResult } from "youtube-transcript-plus";
 import { CacheService } from "./cache.service.js";
 import { CACHE_TTLS, CACHE_COLLECTIONS } from "../config/cache.config.js";
 
@@ -49,12 +49,10 @@ export class TranscriptService {
 
     const operation = async (): Promise<Subtitle[]> => {
       try {
-        const transcript: TranscriptResponse[] = await fetchTranscript(
-          videoId,
-          {
-            lang,
-          }
-        );
+        const transcript = (await fetchTranscript(videoId, {
+          lang,
+        })) as TranscriptResult[];
+
         // Map youtube-transcript-plus format to the Subtitle shape used internally
         return transcript.map(
           (item: { offset: number; duration: number; text: string }) => ({
