@@ -1,9 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { IServiceContainer } from "../container.js";
 import { BasePrompt } from "./base.js";
-import { AnalyzeNichePrompt } from "./analyzeNiche.js";
+// import { AnalyzeNichePrompt } from "./analyzeNiche.js";
 
-const PROMPT_CLASSES = [AnalyzeNichePrompt];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PromptConstructor = new (container: IServiceContainer) => BasePrompt<any>;
+const PROMPT_CLASSES: PromptConstructor[] = [];
 
 // Helper to preserve generic type safety when registering prompts
 function registerPromptSafe(
@@ -22,6 +24,10 @@ export function registerPrompts(
   server: McpServer,
   container: IServiceContainer
 ) {
+  if (PROMPT_CLASSES.length === 0) {
+    return;
+  }
+
   for (const PromptClass of PROMPT_CLASSES) {
     const promptInstance = new PromptClass(container);
     registerPromptSafe(server, promptInstance);

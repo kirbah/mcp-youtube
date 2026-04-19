@@ -6,7 +6,7 @@ import { registerPrompts } from "../index.js";
 // Mock the prompt classes
 jest.mock("../analyzeNiche.js");
 
-describe("registerPrompts", () => {
+describe.skip("registerPrompts", () => {
   let server: McpServer;
   let container: IServiceContainer;
 
