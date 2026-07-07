@@ -1,4 +1,5 @@
 import { MongoClient, Db } from "mongodb";
+import dns from "node:dns/promises";
 
 const DATABASE_NAME = "youtube_niche_analysis";
 
@@ -17,6 +18,14 @@ export function initializeDatabase(connectionString: string): void {
       "MongoDB connection string is required for database initialization."
     );
   }
+
+  // Set the DNS servers globally at startup. Fixes mongodb Error: querySrv ECONNREFUSED
+  try {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  } catch (err) {
+    console.warn("Failed to set DNS servers:", err);
+  }
+
   _connectionString = connectionString;
 }
 
