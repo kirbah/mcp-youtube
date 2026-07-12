@@ -32,6 +32,7 @@ export default {
     "!src/tools/index.ts",
     "!src/types/**/*.ts",
     "!src/**/__tests__/**",
+    "!src/radar/**",
   ],
 
   reporters: [
