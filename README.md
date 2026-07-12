@@ -37,6 +37,12 @@ Unlike standard API wrappers that flood your LLM with redundant data, this serve
 
 Most MCP servers are weekend projects. `@kirbah/mcp-youtube` is built for reliable, daily, cost-effective agentic workflows.
 
+> 🎯 **Want feedback on your own channel, not just raw data?** Check out
+> [CreatorLens](https://github.com/kirbah/CreatorLens) - a companion Claude
+> Skill built on this MCP that diagnoses common growth problems (weak
+> hooks, bad thumbnails, flatlined videos) using a real strategist's
+> framework, not just numbers.
+
 ### 📉 1. Save Up to 87% on Tokens (and Context Window)
 
 The raw YouTube API returns massive JSON payloads filled with nested eTags, redundant thumbnails, and localization data that LLMs don't need. This server structures the data to give your LLM exactly what it needs to reason, and nothing else.
@@ -121,6 +127,12 @@ If you prefer to configure your MCP client manually (e.g., Claude Desktop or Cur
 ```
 
 _(Windows PowerShell Users: If `npx` fails, try using `"command": "cmd"` and `"args": ["/k", "npx", "-y", "@kirbah/mcp-youtube"]`)_
+
+### Next Step: Add a Skill
+
+Once your server is connected, try [CreatorLens](https://github.com/kirbah/CreatorLens) -
+a Claude Skill built specifically for this MCP that turns raw YouTube data
+into growth diagnostics (weak hooks, packaging, niche doubt, format pivots).
 
 ## Key Features
 
