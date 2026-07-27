@@ -13,7 +13,7 @@ describe("GetVideoCategoriesTool", () => {
     // Create a typed mock for the service
     mockYoutubeService = {
       getVideoCategories: jest.fn(),
-    } as unknown as jest.Mocked<YoutubeService>;
+    };
 
     const container = {
       youtubeService: mockYoutubeService,

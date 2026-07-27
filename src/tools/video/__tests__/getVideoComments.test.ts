@@ -11,7 +11,7 @@ describe("GetVideoCommentsTool", () => {
   beforeEach(() => {
     mockYoutubeService = {
       getVideoComments: jest.fn(),
-    } as unknown as jest.Mocked<YoutubeService>;
+    };
 
     const container = {
       youtubeService: mockYoutubeService,

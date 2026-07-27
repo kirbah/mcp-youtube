@@ -57,7 +57,7 @@ describe("featureFlags", () => {
       process.env[envVarName] = "true";
     }
     for (const flagKey in FEATURE_FLAGS) {
-      expect(isEnabled(flagKey as keyof typeof FEATURE_FLAGS)).toBe(true);
+      expect(isEnabled(flagKey)).toBe(true);
     }
 
     // Set all flags to false
@@ -66,7 +66,7 @@ describe("featureFlags", () => {
       process.env[envVarName] = "false";
     }
     for (const flagKey in FEATURE_FLAGS) {
-      expect(isEnabled(flagKey as keyof typeof FEATURE_FLAGS)).toBe(false);
+      expect(isEnabled(flagKey)).toBe(false);
     }
   });
 });

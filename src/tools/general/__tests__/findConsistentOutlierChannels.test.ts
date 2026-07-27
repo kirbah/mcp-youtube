@@ -19,7 +19,7 @@ describe("FindConsistentOutlierChannelsTool", () => {
 
   beforeEach(() => {
     // 1. Setup Container Mock
-    mockYoutubeService = {} as unknown as jest.Mocked<YoutubeService>;
+    mockYoutubeService = {};
     const container = {
       youtubeService: mockYoutubeService,
     } as unknown as IServiceContainer;

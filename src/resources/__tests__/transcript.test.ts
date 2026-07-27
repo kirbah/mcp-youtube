@@ -89,7 +89,7 @@ describe("TranscriptResource", () => {
   beforeEach(() => {
     transcriptService = {
       getTranscriptSegments: jest.fn(),
-    } as unknown as TranscriptService;
+    } as TranscriptService;
     container = { transcriptService };
     resource = new TranscriptResource(container);
   });
@@ -184,7 +184,7 @@ describe.skip("TranscriptLocalizedResource", () => {
   beforeEach(() => {
     transcriptService = {
       getTranscriptSegments: jest.fn(),
-    } as unknown as TranscriptService;
+    } as TranscriptService;
     container = { transcriptService };
     resource = new TranscriptLocalizedResource(container);
   });

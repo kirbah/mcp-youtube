@@ -11,7 +11,7 @@ describe("GetTranscriptsTool", () => {
   beforeEach(() => {
     mockTranscriptService = {
       getTranscriptSegments: jest.fn(),
-    } as unknown as jest.Mocked<TranscriptService>;
+    };
 
     const container = {
       transcriptService: mockTranscriptService,
