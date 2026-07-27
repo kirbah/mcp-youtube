@@ -73,8 +73,8 @@ export function registerTools(server: McpServer, container: IServiceContainer) {
           idempotentHint: true,
         },
       },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      (async (
+
+      async (
         args: z.infer<typeof toolInstance.schema>
       ): Promise<CallToolResult> => {
         try {
@@ -82,8 +82,7 @@ export function registerTools(server: McpServer, container: IServiceContainer) {
         } catch (err) {
           return formatError(err);
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }) as any
+      }
     );
   }
 }

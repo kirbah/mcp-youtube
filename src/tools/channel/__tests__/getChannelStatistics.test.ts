@@ -12,7 +12,7 @@ describe("GetChannelStatisticsTool", () => {
   beforeEach(() => {
     mockYoutubeService = {
       getChannelStatistics: jest.fn(),
-    } as unknown as jest.Mocked<YoutubeService>;
+    };
 
     const container = {
       youtubeService: mockYoutubeService,

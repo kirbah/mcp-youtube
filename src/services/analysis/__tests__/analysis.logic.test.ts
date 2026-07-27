@@ -108,9 +108,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "New Channel Stale",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,
@@ -131,9 +129,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "New Channel Fresh",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,
@@ -154,9 +150,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "Established Channel Stale",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,
@@ -177,9 +171,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "Established Channel Fresh",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,
@@ -200,9 +192,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "New Channel Just Stale",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,
@@ -224,9 +214,7 @@ describe("applyStalnessHeuristic", () => {
       channelTitle: "New Channel Just Fresh",
       createdAt: new Date(),
       status: "candidate",
-      latestStats: {
-        /* ... */
-      } as any,
+      latestStats: {/* ... */} as any,
       analysisHistory: [],
       latestAnalysis: {
         analyzedAt: analysisDate,

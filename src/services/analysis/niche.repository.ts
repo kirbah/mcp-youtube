@@ -14,7 +14,7 @@ export class NicheRepository {
     const cachedChannels = await collection
       .find({ _id: { $in: ids } } as Filter<ChannelCache>)
       .toArray();
-    return cachedChannels as ChannelCache[];
+    return cachedChannels;
   }
 
   async updateChannel(
@@ -26,10 +26,6 @@ export class NicheRepository {
     const collection: Collection<ChannelCache> = db.collection(
       this.CHANNELS_CACHE_COLLECTION
     );
-    await collection.updateOne(
-      { _id: channelId } as Filter<ChannelCache>,
-      updates,
-      { upsert: true }
-    );
+    await collection.updateOne({ _id: channelId }, updates, { upsert: true });
   }
 }

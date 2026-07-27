@@ -13,7 +13,7 @@ describe("GetTrendingVideosTool", () => {
     // Create a type-safe mock
     mockYoutubeService = {
       getTrendingVideos: jest.fn(),
-    } as unknown as jest.Mocked<YoutubeService>; // Ideally use jest-mock-extended here
+    }; // Ideally use jest-mock-extended here
 
     const container = {
       youtubeService: mockYoutubeService,
