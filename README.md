@@ -1,5 +1,7 @@
 # YouTube Data MCP Server (@kirbah/mcp-youtube)
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.kirbah%2Fmcp-youtube.svg)](https://mcptoplist.com/server/io.github.kirbah%2Fmcp-youtube)
+
 <!-- Badges Start -->
 <p align="left">
   <!-- GitHub Actions CI -->
