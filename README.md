@@ -171,7 +171,7 @@ If you wish to contribute, modify the server, or run it locally outside of an MC
 
 ### Prerequisites
 
-- Node.js (version specified in `package.json` engines field - currently `>=20.0.0`)
+- Node.js (version specified in `package.json` engines field - currently `>=22.0.0`)
 - npm (usually comes with Node.js)
 - A YouTube Data API v3 Key (see [YouTube API Setup](#youtube-api-setup))
 
@@ -266,7 +266,7 @@ To have an MCP client run your _local development version_ (instead of the publi
 
 ## System Requirements
 
-- Node.js: `>=20.0.0` (as specified in `package.json`)
+- Node.js: `>=22.0.0` (as specified in `package.json`)
 - npm (for managing dependencies and running scripts)
 
 ## Deep Dive: `findConsistentOutlierChannels` Tool
