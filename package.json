@@ -55,19 +55,20 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@modelcontextprotocol/inspector": "^2.6.0",
     "@eslint/js": "^10.0.1",
     "@types/jest": "30.0.0",
-    "@types/node": "^26.1.1",
-    "eslint": "^10.8.0",
+    "@types/node": "^26.5.1",
+    "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.8.0",
-    "jest": "30.5.0",
+    "globals": "^17.12.0",
+    "jest": "30.5.1",
     "jest-junit": "^17.0.0",
     "prettier": "^3.9.6",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.4.12",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.70.0"
   },
   "engines": {
     "node": ">=20.12.0"
